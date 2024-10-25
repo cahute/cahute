@@ -49,11 +49,8 @@
 #define TIMEOUT_COMMAND_RESPONSE  10000 /* 10 seconds. */
 #define TIMEOUT_OPTIMIZE_RESPONSE 30000 /* 30 seconds. */
 
-#define IS_ASCII_HEX_DIGIT(C) \
-    (((C) >= '0' && (C) <= '9') || ((C) >= 'A' && (C) <= 'F'))
-#define ASCII_HEX_TO_NIBBLE(C) ((C) >= 'A' ? (C) - 'A' + 10 : (C) - '0')
 #define CONDITIONAL_ASCII_HEX_DIGIT(C) \
-    (IS_ASCII_HEX_DIGIT(C) ? ASCII_HEX_TO_NIBBLE(C) : 0)
+    (cahute_is_ascii_hex(C) ? cahute_ascii_hex_to_nibble(C) : 0)
 #define CONDITIONAL_ASCII_DEC_DIGIT(C) (isdigit(C) ? (C) - '0' : 0)
 
 #define PACKET_TYPE_COMMAND  1  /* 0x01 */
@@ -177,19 +174,20 @@ cahute_seven_store_string(void **bufp, cahute_u8 const *raw, size_t max_size) {
  * @return Integer, or 0 if no integer could be decoded.
  */
 CAHUTE_INLINE(unsigned long) cahute_get_long_hex(cahute_u8 const *raw) {
-    if (!IS_ASCII_HEX_DIGIT(raw[0]) || !IS_ASCII_HEX_DIGIT(raw[1])
-        || !IS_ASCII_HEX_DIGIT(raw[2]) || !IS_ASCII_HEX_DIGIT(raw[3])
-        || !IS_ASCII_HEX_DIGIT(raw[4]) || !IS_ASCII_HEX_DIGIT(raw[5])
-        || !IS_ASCII_HEX_DIGIT(raw[6]) || !IS_ASCII_HEX_DIGIT(raw[7]))
+    if (!cahute_is_ascii_hex(raw[0]) || !cahute_is_ascii_hex(raw[1])
+        || !cahute_is_ascii_hex(raw[2]) || !cahute_is_ascii_hex(raw[3])
+        || !cahute_is_ascii_hex(raw[4]) || !cahute_is_ascii_hex(raw[5])
+        || !cahute_is_ascii_hex(raw[6]) || !cahute_is_ascii_hex(raw[7]))
         return 0;
 
-    return (ASCII_HEX_TO_NIBBLE(raw[0]) << 28)
-           | (ASCII_HEX_TO_NIBBLE(raw[1]) << 24)
-           | (ASCII_HEX_TO_NIBBLE(raw[2]) << 20)
-           | (ASCII_HEX_TO_NIBBLE(raw[3]) << 16)
-           | (ASCII_HEX_TO_NIBBLE(raw[4]) << 12)
-           | (ASCII_HEX_TO_NIBBLE(raw[5]) << 8)
-           | (ASCII_HEX_TO_NIBBLE(raw[6]) << 4) | ASCII_HEX_TO_NIBBLE(raw[7]);
+    return (cahute_ascii_hex_to_nibble(raw[0]) << 28)
+           | (cahute_ascii_hex_to_nibble(raw[1]) << 24)
+           | (cahute_ascii_hex_to_nibble(raw[2]) << 20)
+           | (cahute_ascii_hex_to_nibble(raw[3]) << 16)
+           | (cahute_ascii_hex_to_nibble(raw[4]) << 12)
+           | (cahute_ascii_hex_to_nibble(raw[5]) << 8)
+           | (cahute_ascii_hex_to_nibble(raw[6]) << 4)
+           | cahute_ascii_hex_to_nibble(raw[7]);
 }
 
 /**
@@ -217,131 +215,6 @@ CAHUTE_INLINE(unsigned long) cahute_get_long_dec(cahute_u8 const *raw) {
     x = x * 10 + raw[7] - '0';
 
     return x;
-}
-
-/**
- * Apply 0x5C padding to source data and write to a destination buffer.
- *
- * SECURITY: The destination buffer is assumed to have at least data_size*2
- * bytes available. Assertions regarding the data size must be done in the
- * caller.
- *
- * @param buf Destination buffer.
- * @param data Source data to apply padding to.
- * @param data_size Size of the source data to apply padding to.
- * @return Size of the unpadded data.
- */
-CAHUTE_INLINE(int)
-cahute_seven_pad(cahute_u8 *buf, cahute_u8 const *data, size_t data_size) {
-    cahute_u8 *orig = buf;
-    cahute_u8 const *p;
-
-    for (p = data; data_size--; p++) {
-        int byte = *p;
-
-        if (byte < 32) {
-            *buf++ = '\\';
-            *buf++ = 32 + byte;
-        } else if (byte == '\\') {
-            *buf++ = '\\';
-            *buf++ = '\\';
-        } else
-            *buf++ = byte;
-    }
-
-    return (size_t)(buf - orig);
-}
-
-/**
- * Apply reverse 0x5C padding to source data and write to a destination buffer.
- *
- * This functions reads the original buffer size by using ``*buf_sizep``, and
- * sets ``*buf_sizep`` to the number of actual bytes at the end.
- *
- * @param buf Destination buffer.
- * @param buf_size Maximum capacity in the destination buffer.
- * @param data Source data to apply reverse padding to.
- * @param data_size Size of the source data to apply padding to.
- * @return Error code, or 0 if ok.
- */
-CAHUTE_INLINE(int)
-cahute_seven_unpad(
-    cahute_u8 *buf,
-    size_t *buf_sizep,
-    cahute_u8 const *data,
-    size_t data_size
-) {
-    cahute_u8 *orig = buf;
-    cahute_u8 const *p;
-    size_t buf_size = *buf_sizep;
-    size_t orig_data_size = data_size;
-
-    for (p = data; buf_size && data_size; p++, data_size--, buf_size--) {
-        int byte = *p;
-
-        if (byte == '\\') {
-            /* If we've arrived at the end, we ignore the char. */
-            if (data_size <= 1)
-                break;
-
-            byte = *++p;
-            data_size--;
-
-            *buf++ = byte == '\\' ? '\\' : byte - 32;
-        } else
-            *buf++ = byte;
-    }
-
-    if (data_size) {
-        /* ``data_size`` characters could not be converted because the
-         * destination buffer was full.
-         * Note that ``*buf_sizep`` does not need to be changed here, because
-         * it actually represents both the capacity and the actual used
-         * space in the destination buffer, since it's full. */
-        msg(ll_error,
-            "%" CAHUTE_PRIuSIZE "o/%" CAHUTE_PRIuSIZE
-            "o to unpad after "
-            "filling a buffer of %" CAHUTE_PRIuSIZE "o!",
-            data_size,
-            orig_data_size,
-            *buf_sizep);
-        return CAHUTE_ERROR_SIZE;
-    }
-
-    *buf_sizep = (size_t)(buf - orig);
-    return CAHUTE_OK;
-}
-
-/**
- * Compute an 2-byte ASCII-HEX number representation on a given buffer.
- *
- * @param buf Buffer on which to represent the number.
- * @param number Number to represent.
- */
-CAHUTE_INLINE(void)
-cahute_seven_set_ascii_hex(cahute_u8 *buf, unsigned int number) {
-    unsigned int higher = (number >> 4) & 15, lower = number & 15;
-
-    buf[0] = higher > 9 ? 'A' + higher - 10 : '0' + higher;
-    buf[1] = lower > 9 ? 'A' + lower - 10 : '0' + lower;
-}
-
-/**
- * Compute a Protocol 7.00 packet checksum.
- *
- * @param data Data to compute the checksum for.
- * @param size Size of the data to compute the checksum for.
- * @return Obtained checksum.
- */
-CAHUTE_INLINE(unsigned int)
-cahute_seven_checksum(cahute_u8 const *data, size_t size) {
-    int checksum = 0;
-    size_t i;
-
-    for (i = 0; i < size; i++)
-        checksum += data[i];
-
-    return (unsigned int)(~checksum + 1) & 255;
 }
 
 /* ---
@@ -395,13 +268,14 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
 
         /* In case we have 4 bytes to complete, we are to copy the 2 bytes
          * at the end of the buffer to the beginning. */
-        memmove(buf, &buf[5 - to_complete], 6 - to_complete);
+        if (to_complete < 6)
+            memmove(buf, &buf[to_complete], 6 - to_complete);
     } while (1);
 
     /* We assume the packet is of basic or extended format from here.
      * We want to check the basic format of the packet, complete the raw
      * packet, and check the checksum before any other treatment. */
-    if (!IS_ASCII_HEX_DIGIT(buf[1]) || !IS_ASCII_HEX_DIGIT(buf[2])
+    if (!cahute_is_ascii_hex(buf[1]) || !cahute_is_ascii_hex(buf[2])
         || (buf[3] != '0' && buf[3] != '1')) {
         msg(ll_error, "Invalid format for the usual packet header.");
         msg(ll_info, "Data read so far is the following:");
@@ -427,8 +301,8 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
         if (err)
             return err;
 
-        if (!IS_ASCII_HEX_DIGIT(buf[4]) || !IS_ASCII_HEX_DIGIT(buf[5])
-            || !IS_ASCII_HEX_DIGIT(buf[6]) || !IS_ASCII_HEX_DIGIT(buf[7])) {
+        if (!cahute_is_ascii_hex(buf[4]) || !cahute_is_ascii_hex(buf[5])
+            || !cahute_is_ascii_hex(buf[6]) || !cahute_is_ascii_hex(buf[7])) {
             msg(ll_error, "Invalid format for the data size.");
             msg(ll_info, "Data read so far is the following:");
             mem(ll_info, buf, 10);
@@ -436,10 +310,10 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
         }
 
         data_size =
-            ((ASCII_HEX_TO_NIBBLE(buf[4]) << 12)
-             | (ASCII_HEX_TO_NIBBLE(buf[5]) << 8)
-             | (ASCII_HEX_TO_NIBBLE(buf[6]) << 4)
-             | ASCII_HEX_TO_NIBBLE(buf[7]));
+            ((cahute_ascii_hex_to_nibble(buf[4]) << 12)
+             | (cahute_ascii_hex_to_nibble(buf[5]) << 8)
+             | (cahute_ascii_hex_to_nibble(buf[6]) << 4)
+             | cahute_ascii_hex_to_nibble(buf[7]));
 
         if (data_size == 0 || data_size > SEVEN_MAX_ENCODED_PACKET_DATA_SIZE) {
             msg(ll_error,
@@ -481,8 +355,8 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
     msg(ll_info, "Received packet data is the following:");
     mem(ll_info, buf, packet_size);
 
-    if (!IS_ASCII_HEX_DIGIT(buf[packet_size - 2])
-        || !IS_ASCII_HEX_DIGIT(buf[packet_size - 1])) {
+    if (!cahute_is_ascii_hex(buf[packet_size - 2])
+        || !cahute_is_ascii_hex(buf[packet_size - 1])) {
         msg(ll_error, "Invalid checksum format for the following packet:");
         mem(ll_error, buf, packet_size);
         return CAHUTE_ERROR_CORRUPT;
@@ -491,10 +365,10 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
     /* We want to compute the checksum and check if it's valid or not. */
     {
         unsigned int obtained_checksum =
-            ((ASCII_HEX_TO_NIBBLE(buf[packet_size - 2]) << 4)
-             | ASCII_HEX_TO_NIBBLE(buf[packet_size - 1]));
+            ((cahute_ascii_hex_to_nibble(buf[packet_size - 2]) << 4)
+             | cahute_ascii_hex_to_nibble(buf[packet_size - 1]));
         unsigned int computed_checksum =
-            cahute_seven_checksum(&buf[1], packet_size - 3);
+            cahute_checksub(&buf[1], packet_size - 3);
 
         if (obtained_checksum != computed_checksum) {
             msg(ll_error,
@@ -509,11 +383,12 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
     /* Now that we've decoded data, we're able to parse it a bit better. */
     state->last_packet_type = buf[0];
     state->last_packet_subtype =
-        ((ASCII_HEX_TO_NIBBLE(buf[1]) << 4) | ASCII_HEX_TO_NIBBLE(buf[2]));
+        ((cahute_ascii_hex_to_nibble(buf[1]) << 4)
+         | cahute_ascii_hex_to_nibble(buf[2]));
 
     if (data_size) {
         state->last_packet_data_size = SEVEN_MAX_PACKET_DATA_SIZE;
-        return cahute_seven_unpad(
+        return cahute_unpad_data(
             state->last_packet_data,
             &state->last_packet_data_size,
             &buf[8],
@@ -676,12 +551,9 @@ cahute_seven_send_basic(
     cahute_u8 packet[6];
 
     packet[0] = type & 255;
-    cahute_seven_set_ascii_hex(&packet[1], subtype);
+    cahute_set_ascii_hex(&packet[1], subtype);
     packet[3] = '0';
-    cahute_seven_set_ascii_hex(
-        &packet[4],
-        cahute_seven_checksum(&packet[1], 3)
-    );
+    cahute_set_ascii_hex(&packet[4], cahute_checksub(&packet[1], 3));
 
     return cahute_seven_send_and_receive(
         link,
@@ -730,17 +602,17 @@ cahute_seven_send_extended(
         return CAHUTE_ERROR_UNKNOWN;
     }
 
-    data_size = cahute_seven_pad(&packet[8], data, data_size);
+    data_size = cahute_pad_data(&packet[8], data, data_size);
 
     packet[0] = type & 255;
-    cahute_seven_set_ascii_hex(&packet[1], subtype);
+    cahute_set_ascii_hex(&packet[1], subtype);
     packet[3] = '1';
-    cahute_seven_set_ascii_hex(&packet[4], (data_size >> 8) & 255);
-    cahute_seven_set_ascii_hex(&packet[6], data_size & 255);
+    cahute_set_ascii_hex(&packet[4], (data_size >> 8) & 255);
+    cahute_set_ascii_hex(&packet[6], data_size & 255);
 
-    cahute_seven_set_ascii_hex(
+    cahute_set_ascii_hex(
         &packet[8 + data_size],
-        cahute_seven_checksum(&packet[1], 7 + data_size)
+        cahute_checksub(&packet[1], 7 + data_size)
     );
 
     return cahute_seven_send_and_receive(
@@ -813,18 +685,18 @@ cahute_seven_send_command(
      * data packets' subtype. */
     link->protocol_state.seven.last_command = code;
 
-    cahute_seven_set_ascii_hex(p, overwrite & 255);
-    cahute_seven_set_ascii_hex(&p[2], datatype & 255);
-    cahute_seven_set_ascii_hex(&p[4], (filesize >> 24) & 255);
-    cahute_seven_set_ascii_hex(&p[6], (filesize >> 16) & 255);
-    cahute_seven_set_ascii_hex(&p[8], (filesize >> 8) & 255);
-    cahute_seven_set_ascii_hex(&p[10], filesize & 255);
-    cahute_seven_set_ascii_hex(&p[12], length1 & 255);
-    cahute_seven_set_ascii_hex(&p[14], length2 & 255);
-    cahute_seven_set_ascii_hex(&p[16], length3 & 255);
-    cahute_seven_set_ascii_hex(&p[18], length4 & 255);
-    cahute_seven_set_ascii_hex(&p[20], length5 & 255);
-    cahute_seven_set_ascii_hex(&p[22], length6 & 255);
+    cahute_set_ascii_hex(p, overwrite & 255);
+    cahute_set_ascii_hex(&p[2], datatype & 255);
+    cahute_set_ascii_hex(&p[4], (filesize >> 24) & 255);
+    cahute_set_ascii_hex(&p[6], (filesize >> 16) & 255);
+    cahute_set_ascii_hex(&p[8], (filesize >> 8) & 255);
+    cahute_set_ascii_hex(&p[10], filesize & 255);
+    cahute_set_ascii_hex(&p[12], length1 & 255);
+    cahute_set_ascii_hex(&p[14], length2 & 255);
+    cahute_set_ascii_hex(&p[16], length3 & 255);
+    cahute_set_ascii_hex(&p[18], length4 & 255);
+    cahute_set_ascii_hex(&p[20], length5 & 255);
+    cahute_set_ascii_hex(&p[22], length6 & 255);
 
     p += 24;
 
@@ -922,50 +794,51 @@ cahute_seven_decode_command(
     }
 
     /* All 24 first bytes must be ASCII-HEX. */
-    if (!IS_ASCII_HEX_DIGIT(buf[0]) || !IS_ASCII_HEX_DIGIT(buf[1])
-        || !IS_ASCII_HEX_DIGIT(buf[2]) || !IS_ASCII_HEX_DIGIT(buf[3])
-        || !IS_ASCII_HEX_DIGIT(buf[4]) || !IS_ASCII_HEX_DIGIT(buf[5])
-        || !IS_ASCII_HEX_DIGIT(buf[6]) || !IS_ASCII_HEX_DIGIT(buf[7])
-        || !IS_ASCII_HEX_DIGIT(buf[8]) || !IS_ASCII_HEX_DIGIT(buf[9])
-        || !IS_ASCII_HEX_DIGIT(buf[10]) || !IS_ASCII_HEX_DIGIT(buf[11])
-        || !IS_ASCII_HEX_DIGIT(buf[12]) || !IS_ASCII_HEX_DIGIT(buf[13])
-        || !IS_ASCII_HEX_DIGIT(buf[14]) || !IS_ASCII_HEX_DIGIT(buf[15])
-        || !IS_ASCII_HEX_DIGIT(buf[16]) || !IS_ASCII_HEX_DIGIT(buf[17])
-        || !IS_ASCII_HEX_DIGIT(buf[18]) || !IS_ASCII_HEX_DIGIT(buf[19])
-        || !IS_ASCII_HEX_DIGIT(buf[20]) || !IS_ASCII_HEX_DIGIT(buf[21])
-        || !IS_ASCII_HEX_DIGIT(buf[22]) || !IS_ASCII_HEX_DIGIT(buf[23]))
+    if (!cahute_is_ascii_hex(buf[0]) || !cahute_is_ascii_hex(buf[1])
+        || !cahute_is_ascii_hex(buf[2]) || !cahute_is_ascii_hex(buf[3])
+        || !cahute_is_ascii_hex(buf[4]) || !cahute_is_ascii_hex(buf[5])
+        || !cahute_is_ascii_hex(buf[6]) || !cahute_is_ascii_hex(buf[7])
+        || !cahute_is_ascii_hex(buf[8]) || !cahute_is_ascii_hex(buf[9])
+        || !cahute_is_ascii_hex(buf[10]) || !cahute_is_ascii_hex(buf[11])
+        || !cahute_is_ascii_hex(buf[12]) || !cahute_is_ascii_hex(buf[13])
+        || !cahute_is_ascii_hex(buf[14]) || !cahute_is_ascii_hex(buf[15])
+        || !cahute_is_ascii_hex(buf[16]) || !cahute_is_ascii_hex(buf[17])
+        || !cahute_is_ascii_hex(buf[18]) || !cahute_is_ascii_hex(buf[19])
+        || !cahute_is_ascii_hex(buf[20]) || !cahute_is_ascii_hex(buf[21])
+        || !cahute_is_ascii_hex(buf[22]) || !cahute_is_ascii_hex(buf[23]))
         return CAHUTE_ERROR_UNKNOWN;
 
-    param1_size =
-        (ASCII_HEX_TO_NIBBLE(buf[12]) << 4) | ASCII_HEX_TO_NIBBLE(buf[13]);
-    param2_size =
-        (ASCII_HEX_TO_NIBBLE(buf[14]) << 4) | ASCII_HEX_TO_NIBBLE(buf[15]);
-    param3_size =
-        (ASCII_HEX_TO_NIBBLE(buf[16]) << 4) | ASCII_HEX_TO_NIBBLE(buf[17]);
-    param4_size =
-        (ASCII_HEX_TO_NIBBLE(buf[18]) << 4) | ASCII_HEX_TO_NIBBLE(buf[19]);
-    param5_size =
-        (ASCII_HEX_TO_NIBBLE(buf[20]) << 4) | ASCII_HEX_TO_NIBBLE(buf[21]);
-    param6_size =
-        (ASCII_HEX_TO_NIBBLE(buf[22]) << 4) | ASCII_HEX_TO_NIBBLE(buf[23]);
+    param1_size = (cahute_ascii_hex_to_nibble(buf[12]) << 4)
+                  | cahute_ascii_hex_to_nibble(buf[13]);
+    param2_size = (cahute_ascii_hex_to_nibble(buf[14]) << 4)
+                  | cahute_ascii_hex_to_nibble(buf[15]);
+    param3_size = (cahute_ascii_hex_to_nibble(buf[16]) << 4)
+                  | cahute_ascii_hex_to_nibble(buf[17]);
+    param4_size = (cahute_ascii_hex_to_nibble(buf[18]) << 4)
+                  | cahute_ascii_hex_to_nibble(buf[19]);
+    param5_size = (cahute_ascii_hex_to_nibble(buf[20]) << 4)
+                  | cahute_ascii_hex_to_nibble(buf[21]);
+    param6_size = (cahute_ascii_hex_to_nibble(buf[22]) << 4)
+                  | cahute_ascii_hex_to_nibble(buf[23]);
 
     if (link->protocol_state.seven.last_packet_data_size
         != 24 + param1_size + param2_size + param3_size + param4_size
                + param5_size + param6_size)
         return CAHUTE_ERROR_UNKNOWN;
 
-    overwrite =
-        (ASCII_HEX_TO_NIBBLE(buf[0]) << 4) | ASCII_HEX_TO_NIBBLE(buf[1]);
-    datatype =
-        (ASCII_HEX_TO_NIBBLE(buf[2]) << 4) | ASCII_HEX_TO_NIBBLE(buf[3]);
+    overwrite = (cahute_ascii_hex_to_nibble(buf[0]) << 4)
+                | cahute_ascii_hex_to_nibble(buf[1]);
+    datatype = (cahute_ascii_hex_to_nibble(buf[2]) << 4)
+               | cahute_ascii_hex_to_nibble(buf[3]);
     filesize =
-        ((ASCII_HEX_TO_NIBBLE(buf[4]) << 28)
-         | (ASCII_HEX_TO_NIBBLE(buf[5]) << 24)
-         | (ASCII_HEX_TO_NIBBLE(buf[6]) << 20)
-         | (ASCII_HEX_TO_NIBBLE(buf[7]) << 16)
-         | (ASCII_HEX_TO_NIBBLE(buf[8]) << 12)
-         | (ASCII_HEX_TO_NIBBLE(buf[9]) << 8)
-         | (ASCII_HEX_TO_NIBBLE(buf[10]) << 4) | ASCII_HEX_TO_NIBBLE(buf[11]));
+        ((cahute_ascii_hex_to_nibble(buf[4]) << 28)
+         | (cahute_ascii_hex_to_nibble(buf[5]) << 24)
+         | (cahute_ascii_hex_to_nibble(buf[6]) << 20)
+         | (cahute_ascii_hex_to_nibble(buf[7]) << 16)
+         | (cahute_ascii_hex_to_nibble(buf[8]) << 12)
+         | (cahute_ascii_hex_to_nibble(buf[9]) << 8)
+         | (cahute_ascii_hex_to_nibble(buf[10]) << 4)
+         | cahute_ascii_hex_to_nibble(buf[11]));
 
     param1 = &buf[24];
     param2 = param1 + param1_size;
@@ -1137,8 +1010,8 @@ cahute_seven_send_data(
     last_packet_size = size & 255;
     packet_count = (size >> 8) + !!last_packet_size;
     last_packet_size = last_packet_size ? last_packet_size : 256;
-    cahute_seven_set_ascii_hex(buf, (packet_count >> 8) & 255);
-    cahute_seven_set_ascii_hex(&buf[2], packet_count & 255);
+    cahute_set_ascii_hex(buf, (packet_count >> 8) & 255);
+    cahute_set_ascii_hex(&buf[2], packet_count & 255);
 
     if (packet_count >= 3
         && link->protocol != CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN
@@ -1180,8 +1053,8 @@ cahute_seven_send_data(
 
     /* General loop for all packets except the last one. */
     for (i = 1 + shifted; i < packet_count; i++) {
-        cahute_seven_set_ascii_hex(&buf[4], (i >> 8) & 255);
-        cahute_seven_set_ascii_hex(&buf[6], i & 255);
+        cahute_set_ascii_hex(&buf[4], (i >> 8) & 255);
+        cahute_set_ascii_hex(&buf[6], i & 255);
 
         err = cahute_read_from_file(file, offset, &buf[8], 256);
         if (err) {
@@ -1234,8 +1107,8 @@ cahute_seven_send_data(
     }
 
     /* Send the last packet. */
-    cahute_seven_set_ascii_hex(&buf[4], (packet_count >> 8) & 255);
-    cahute_seven_set_ascii_hex(&buf[6], packet_count & 255);
+    cahute_set_ascii_hex(&buf[4], (packet_count >> 8) & 255);
+    cahute_set_ascii_hex(&buf[6], packet_count & 255);
 
     err = cahute_read_from_file(file, offset, &buf[8], last_packet_size);
     if (err)
@@ -1325,8 +1198,8 @@ cahute_seven_send_data_from_buf(
     int err, shifted = 0;
 
     last_packet_size = last_packet_size ? last_packet_size : 256;
-    cahute_seven_set_ascii_hex(buf, (packet_count >> 8) & 255);
-    cahute_seven_set_ascii_hex(&buf[2], packet_count & 255);
+    cahute_set_ascii_hex(buf, (packet_count >> 8) & 255);
+    cahute_set_ascii_hex(&buf[2], packet_count & 255);
 
     if (packet_count >= 3
         && link->protocol != CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN
@@ -1365,8 +1238,8 @@ cahute_seven_send_data_from_buf(
 
     /* General loop for all packets except the last one. */
     for (i = 1 + shifted; i < packet_count; i++) {
-        cahute_seven_set_ascii_hex(&buf[4], (i >> 8) & 255);
-        cahute_seven_set_ascii_hex(&buf[6], i & 255);
+        cahute_set_ascii_hex(&buf[4], (i >> 8) & 255);
+        cahute_set_ascii_hex(&buf[6], i & 255);
         memcpy(&buf[8], data, 256);
         data += 256;
 
@@ -1407,8 +1280,8 @@ cahute_seven_send_data_from_buf(
     }
 
     /* Send the last packet. */
-    cahute_seven_set_ascii_hex(&buf[4], (packet_count >> 8) & 255);
-    cahute_seven_set_ascii_hex(&buf[6], packet_count & 255);
+    cahute_set_ascii_hex(&buf[4], (packet_count >> 8) & 255);
+    cahute_set_ascii_hex(&buf[6], packet_count & 255);
     memcpy(&buf[8], data, last_packet_size);
 
     msg(ll_info,
@@ -1514,19 +1387,19 @@ cahute_seven_receive_raw_data(
             return CAHUTE_ERROR_UNKNOWN;
         }
 
-        if (!IS_ASCII_HEX_DIGIT(buf[0]) || !IS_ASCII_HEX_DIGIT(buf[1])
-            || !IS_ASCII_HEX_DIGIT(buf[2]) || !IS_ASCII_HEX_DIGIT(buf[3])
-            || !IS_ASCII_HEX_DIGIT(buf[4]) || !IS_ASCII_HEX_DIGIT(buf[5])
-            || !IS_ASCII_HEX_DIGIT(buf[6]) || !IS_ASCII_HEX_DIGIT(buf[7])) {
+        if (!cahute_is_ascii_hex(buf[0]) || !cahute_is_ascii_hex(buf[1])
+            || !cahute_is_ascii_hex(buf[2]) || !cahute_is_ascii_hex(buf[3])
+            || !cahute_is_ascii_hex(buf[4]) || !cahute_is_ascii_hex(buf[5])
+            || !cahute_is_ascii_hex(buf[6]) || !cahute_is_ascii_hex(buf[7])) {
             msg(ll_error, "Data packet has invalid format.");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         read_packet_i =
-            ((ASCII_HEX_TO_NIBBLE(buf[4]) << 12)
-             | (ASCII_HEX_TO_NIBBLE(buf[5]) << 8)
-             | (ASCII_HEX_TO_NIBBLE(buf[6]) << 4)
-             | ASCII_HEX_TO_NIBBLE(buf[7]));
+            ((cahute_ascii_hex_to_nibble(buf[4]) << 12)
+             | (cahute_ascii_hex_to_nibble(buf[5]) << 8)
+             | (cahute_ascii_hex_to_nibble(buf[6]) << 4)
+             | cahute_ascii_hex_to_nibble(buf[7]));
         if (read_packet_i != i) {
             msg(ll_error,
                 "Unexpected sequence number (expected %u, got %u)",
@@ -1536,10 +1409,10 @@ cahute_seven_receive_raw_data(
         }
 
         read_packet_count =
-            ((ASCII_HEX_TO_NIBBLE(buf[0]) << 12)
-             | (ASCII_HEX_TO_NIBBLE(buf[1]) << 8)
-             | (ASCII_HEX_TO_NIBBLE(buf[2]) << 4)
-             | ASCII_HEX_TO_NIBBLE(buf[3]));
+            ((cahute_ascii_hex_to_nibble(buf[0]) << 12)
+             | (cahute_ascii_hex_to_nibble(buf[1]) << 8)
+             | (cahute_ascii_hex_to_nibble(buf[2]) << 4)
+             | cahute_ascii_hex_to_nibble(buf[3]));
         if (i == 1)
             packet_count = read_packet_count;
         else if (read_packet_count != packet_count) {
@@ -1654,19 +1527,19 @@ cahute_seven_receive_raw_data_into_buf(
             return CAHUTE_ERROR_UNKNOWN;
         }
 
-        if (!IS_ASCII_HEX_DIGIT(p_buf[0]) || !IS_ASCII_HEX_DIGIT(p_buf[1])
-            || !IS_ASCII_HEX_DIGIT(p_buf[2]) || !IS_ASCII_HEX_DIGIT(p_buf[3])
-            || !IS_ASCII_HEX_DIGIT(p_buf[4]) || !IS_ASCII_HEX_DIGIT(p_buf[5])
-            || !IS_ASCII_HEX_DIGIT(p_buf[6])
-            || !IS_ASCII_HEX_DIGIT(p_buf[7])) {
+        if (!cahute_is_ascii_hex(p_buf[0]) || !cahute_is_ascii_hex(p_buf[1])
+            || !cahute_is_ascii_hex(p_buf[2]) || !cahute_is_ascii_hex(p_buf[3])
+            || !cahute_is_ascii_hex(p_buf[4]) || !cahute_is_ascii_hex(p_buf[5])
+            || !cahute_is_ascii_hex(p_buf[6])
+            || !cahute_is_ascii_hex(p_buf[7])) {
             msg(ll_error, "Data packet has invalid format.");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
-        read_packet_i = (ASCII_HEX_TO_NIBBLE(p_buf[4]) << 12)
-                        | (ASCII_HEX_TO_NIBBLE(p_buf[5]) << 8)
-                        | (ASCII_HEX_TO_NIBBLE(p_buf[6]) << 4)
-                        | ASCII_HEX_TO_NIBBLE(p_buf[7]);
+        read_packet_i = (cahute_ascii_hex_to_nibble(p_buf[4]) << 12)
+                        | (cahute_ascii_hex_to_nibble(p_buf[5]) << 8)
+                        | (cahute_ascii_hex_to_nibble(p_buf[6]) << 4)
+                        | cahute_ascii_hex_to_nibble(p_buf[7]);
         if (read_packet_i != 1) {
             msg(ll_error,
                 "Unexpected sequence number %u for first packet.",
@@ -1674,10 +1547,10 @@ cahute_seven_receive_raw_data_into_buf(
             return CAHUTE_ERROR_UNKNOWN;
         }
 
-        read_packet_count = (ASCII_HEX_TO_NIBBLE(p_buf[0]) << 12)
-                            | (ASCII_HEX_TO_NIBBLE(p_buf[1]) << 8)
-                            | (ASCII_HEX_TO_NIBBLE(p_buf[2]) << 4)
-                            | ASCII_HEX_TO_NIBBLE(p_buf[3]);
+        read_packet_count = (cahute_ascii_hex_to_nibble(p_buf[0]) << 12)
+                            | (cahute_ascii_hex_to_nibble(p_buf[1]) << 8)
+                            | (cahute_ascii_hex_to_nibble(p_buf[2]) << 4)
+                            | cahute_ascii_hex_to_nibble(p_buf[3]);
         if (!read_packet_count) {
             msg(ll_info,
                 "Unexpected packet count %u in first packet.",
@@ -1759,20 +1632,20 @@ cahute_seven_receive_raw_data_into_buf(
             return CAHUTE_ERROR_UNKNOWN;
         }
 
-        if (!IS_ASCII_HEX_DIGIT(p_buf[0]) || !IS_ASCII_HEX_DIGIT(p_buf[1])
-            || !IS_ASCII_HEX_DIGIT(p_buf[2]) || !IS_ASCII_HEX_DIGIT(p_buf[3])
-            || !IS_ASCII_HEX_DIGIT(p_buf[4]) || !IS_ASCII_HEX_DIGIT(p_buf[5])
-            || !IS_ASCII_HEX_DIGIT(p_buf[6])
-            || !IS_ASCII_HEX_DIGIT(p_buf[7])) {
+        if (!cahute_is_ascii_hex(p_buf[0]) || !cahute_is_ascii_hex(p_buf[1])
+            || !cahute_is_ascii_hex(p_buf[2]) || !cahute_is_ascii_hex(p_buf[3])
+            || !cahute_is_ascii_hex(p_buf[4]) || !cahute_is_ascii_hex(p_buf[5])
+            || !cahute_is_ascii_hex(p_buf[6])
+            || !cahute_is_ascii_hex(p_buf[7])) {
             msg(ll_error, "Data packet has invalid format.");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         read_packet_i =
-            ((ASCII_HEX_TO_NIBBLE(p_buf[4]) << 12)
-             | (ASCII_HEX_TO_NIBBLE(p_buf[5]) << 8)
-             | (ASCII_HEX_TO_NIBBLE(p_buf[6]) << 4)
-             | ASCII_HEX_TO_NIBBLE(p_buf[7]));
+            ((cahute_ascii_hex_to_nibble(p_buf[4]) << 12)
+             | (cahute_ascii_hex_to_nibble(p_buf[5]) << 8)
+             | (cahute_ascii_hex_to_nibble(p_buf[6]) << 4)
+             | cahute_ascii_hex_to_nibble(p_buf[7]));
         if (read_packet_i != i) {
             msg(ll_error,
                 "Unexpected sequence number (expected %u, got %u)",
@@ -1782,10 +1655,10 @@ cahute_seven_receive_raw_data_into_buf(
         }
 
         read_packet_count =
-            ((ASCII_HEX_TO_NIBBLE(p_buf[0]) << 12)
-             | (ASCII_HEX_TO_NIBBLE(p_buf[1]) << 8)
-             | (ASCII_HEX_TO_NIBBLE(p_buf[2]) << 4)
-             | ASCII_HEX_TO_NIBBLE(p_buf[3]));
+            ((cahute_ascii_hex_to_nibble(p_buf[0]) << 12)
+             | (cahute_ascii_hex_to_nibble(p_buf[1]) << 8)
+             | (cahute_ascii_hex_to_nibble(p_buf[2]) << 4)
+             | cahute_ascii_hex_to_nibble(p_buf[3]));
         if (read_packet_count != packet_count) {
             msg(ll_error,
                 "Packet count was not consistent between packets "
@@ -1832,20 +1705,20 @@ cahute_seven_receive_raw_data_into_buf(
             return CAHUTE_ERROR_UNKNOWN;
         }
 
-        if (!IS_ASCII_HEX_DIGIT(p_buf[0]) || !IS_ASCII_HEX_DIGIT(p_buf[1])
-            || !IS_ASCII_HEX_DIGIT(p_buf[2]) || !IS_ASCII_HEX_DIGIT(p_buf[3])
-            || !IS_ASCII_HEX_DIGIT(p_buf[4]) || !IS_ASCII_HEX_DIGIT(p_buf[5])
-            || !IS_ASCII_HEX_DIGIT(p_buf[6])
-            || !IS_ASCII_HEX_DIGIT(p_buf[7])) {
+        if (!cahute_is_ascii_hex(p_buf[0]) || !cahute_is_ascii_hex(p_buf[1])
+            || !cahute_is_ascii_hex(p_buf[2]) || !cahute_is_ascii_hex(p_buf[3])
+            || !cahute_is_ascii_hex(p_buf[4]) || !cahute_is_ascii_hex(p_buf[5])
+            || !cahute_is_ascii_hex(p_buf[6])
+            || !cahute_is_ascii_hex(p_buf[7])) {
             msg(ll_error, "Data packet has invalid format.");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         read_packet_i =
-            ((ASCII_HEX_TO_NIBBLE(p_buf[4]) << 12)
-             | (ASCII_HEX_TO_NIBBLE(p_buf[5]) << 8)
-             | (ASCII_HEX_TO_NIBBLE(p_buf[6]) << 4)
-             | ASCII_HEX_TO_NIBBLE(p_buf[7]));
+            ((cahute_ascii_hex_to_nibble(p_buf[4]) << 12)
+             | (cahute_ascii_hex_to_nibble(p_buf[5]) << 8)
+             | (cahute_ascii_hex_to_nibble(p_buf[6]) << 4)
+             | cahute_ascii_hex_to_nibble(p_buf[7]));
         if (read_packet_i != packet_count - 1) {
             msg(ll_error,
                 "Unexpected sequence number (expected %u, got %u)",
@@ -1855,10 +1728,10 @@ cahute_seven_receive_raw_data_into_buf(
         }
 
         read_packet_count =
-            ((ASCII_HEX_TO_NIBBLE(p_buf[0]) << 12)
-             | (ASCII_HEX_TO_NIBBLE(p_buf[1]) << 8)
-             | (ASCII_HEX_TO_NIBBLE(p_buf[2]) << 4)
-             | ASCII_HEX_TO_NIBBLE(p_buf[3]));
+            ((cahute_ascii_hex_to_nibble(p_buf[0]) << 12)
+             | (cahute_ascii_hex_to_nibble(p_buf[1]) << 8)
+             | (cahute_ascii_hex_to_nibble(p_buf[2]) << 4)
+             | cahute_ascii_hex_to_nibble(p_buf[3]));
         if (read_packet_count != packet_count) {
             msg(ll_error,
                 "Packet count was not consistent between packets "
@@ -1909,20 +1782,20 @@ cahute_seven_receive_raw_data_into_buf(
             return CAHUTE_ERROR_UNKNOWN;
         }
 
-        if (!IS_ASCII_HEX_DIGIT(p_buf[0]) || !IS_ASCII_HEX_DIGIT(p_buf[1])
-            || !IS_ASCII_HEX_DIGIT(p_buf[2]) || !IS_ASCII_HEX_DIGIT(p_buf[3])
-            || !IS_ASCII_HEX_DIGIT(p_buf[4]) || !IS_ASCII_HEX_DIGIT(p_buf[5])
-            || !IS_ASCII_HEX_DIGIT(p_buf[6])
-            || !IS_ASCII_HEX_DIGIT(p_buf[7])) {
+        if (!cahute_is_ascii_hex(p_buf[0]) || !cahute_is_ascii_hex(p_buf[1])
+            || !cahute_is_ascii_hex(p_buf[2]) || !cahute_is_ascii_hex(p_buf[3])
+            || !cahute_is_ascii_hex(p_buf[4]) || !cahute_is_ascii_hex(p_buf[5])
+            || !cahute_is_ascii_hex(p_buf[6])
+            || !cahute_is_ascii_hex(p_buf[7])) {
             msg(ll_error, "Data packet has invalid format.");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         read_packet_i =
-            ((ASCII_HEX_TO_NIBBLE(p_buf[4]) << 12)
-             | (ASCII_HEX_TO_NIBBLE(p_buf[5]) << 8)
-             | (ASCII_HEX_TO_NIBBLE(p_buf[6]) << 4)
-             | ASCII_HEX_TO_NIBBLE(p_buf[7]));
+            ((cahute_ascii_hex_to_nibble(p_buf[4]) << 12)
+             | (cahute_ascii_hex_to_nibble(p_buf[5]) << 8)
+             | (cahute_ascii_hex_to_nibble(p_buf[6]) << 4)
+             | cahute_ascii_hex_to_nibble(p_buf[7]));
         if (read_packet_i != packet_count) {
             msg(ll_error,
                 "Unexpected sequence number (expected %u, got %u)",
@@ -1932,10 +1805,10 @@ cahute_seven_receive_raw_data_into_buf(
         }
 
         read_packet_count =
-            ((ASCII_HEX_TO_NIBBLE(p_buf[0]) << 12)
-             | (ASCII_HEX_TO_NIBBLE(p_buf[1]) << 8)
-             | (ASCII_HEX_TO_NIBBLE(p_buf[2]) << 4)
-             | ASCII_HEX_TO_NIBBLE(p_buf[3]));
+            ((cahute_ascii_hex_to_nibble(p_buf[0]) << 12)
+             | (cahute_ascii_hex_to_nibble(p_buf[1]) << 8)
+             | (cahute_ascii_hex_to_nibble(p_buf[2]) << 4)
+             | cahute_ascii_hex_to_nibble(p_buf[3]));
         if (read_packet_count != packet_count) {
             msg(ll_error,
                 "Packet count was not consistent between packets "
@@ -3471,33 +3344,18 @@ cahute_seven_upload_and_run_program(
     }
 
     /* Prepare the command payload. */
-    cahute_seven_set_ascii_hex(&command_payload[0], program_size >> 24);
-    cahute_seven_set_ascii_hex(
-        &command_payload[2],
-        (program_size >> 16) & 255
-    );
-    cahute_seven_set_ascii_hex(&command_payload[4], (program_size >> 8) & 255);
-    cahute_seven_set_ascii_hex(&command_payload[6], program_size & 255);
-    cahute_seven_set_ascii_hex(&command_payload[8], load_address >> 24);
-    cahute_seven_set_ascii_hex(
-        &command_payload[10],
-        (load_address >> 16) & 255
-    );
-    cahute_seven_set_ascii_hex(
-        &command_payload[12],
-        (load_address >> 8) & 255
-    );
-    cahute_seven_set_ascii_hex(&command_payload[14], load_address & 255);
-    cahute_seven_set_ascii_hex(&command_payload[16], start_address >> 24);
-    cahute_seven_set_ascii_hex(
-        &command_payload[18],
-        (start_address >> 16) & 255
-    );
-    cahute_seven_set_ascii_hex(
-        &command_payload[20],
-        (start_address >> 8) & 255
-    );
-    cahute_seven_set_ascii_hex(&command_payload[22], start_address & 255);
+    cahute_set_ascii_hex(&command_payload[0], program_size >> 24);
+    cahute_set_ascii_hex(&command_payload[2], (program_size >> 16) & 255);
+    cahute_set_ascii_hex(&command_payload[4], (program_size >> 8) & 255);
+    cahute_set_ascii_hex(&command_payload[6], program_size & 255);
+    cahute_set_ascii_hex(&command_payload[8], load_address >> 24);
+    cahute_set_ascii_hex(&command_payload[10], (load_address >> 16) & 255);
+    cahute_set_ascii_hex(&command_payload[12], (load_address >> 8) & 255);
+    cahute_set_ascii_hex(&command_payload[14], load_address & 255);
+    cahute_set_ascii_hex(&command_payload[16], start_address >> 24);
+    cahute_set_ascii_hex(&command_payload[18], (start_address >> 16) & 255);
+    cahute_set_ascii_hex(&command_payload[20], (start_address >> 8) & 255);
+    cahute_set_ascii_hex(&command_payload[22], start_address & 255);
 
     err = cahute_seven_send_extended(
         link,

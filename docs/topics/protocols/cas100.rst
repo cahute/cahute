@@ -9,11 +9,14 @@ AFX / Graph 100, used between 1999 and 2003.
 .. note::
 
     The term was coined by Thomas Touhey, as an evolution of CAS50 at
-    "double the speed", which was actually a mistake since the rendez-vous
-    baud speed of this protocol is 38400 bauds, and not 19200 (which
-    means it is actually quadruple the speed). The name was kept
-    however, because 100 also references Graph 100, the French
-    model variation implementing this protocol.
+    "double the speed", which was actually a mistake since:
+
+    * The rendez-vous baud speed of this protocol is 38400 bauds, and not
+      19200 (which means it is actually quadruple the speed);
+    * Headers are actually 40 bytes long, not 50.
+
+    The name was kept however, because 100 also references Graph 100,
+    the French model variation implementing this protocol.
 
 This protocol is usually present over :ref:`transport-serial`.
 Serial settings are always the same, and do not vary during the transfer:

@@ -323,25 +323,20 @@ cahute__log_win_error(
 #endif
 
 /* Protocol selection for 'initialize_link_protocol()'. */
-#define CAHUTE_LINK_PROTOCOL_SERIAL_AUTO      0
 #define CAHUTE_LINK_PROTOCOL_SERIAL_NONE      1
-#define CAHUTE_LINK_PROTOCOL_SERIAL_CASIOLINK 2
-#define CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN     3
-#define CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN_OHP 4
+#define CAHUTE_LINK_PROTOCOL_SERIAL_CAS       2 /* Generic. */
+#define CAHUTE_LINK_PROTOCOL_SERIAL_CAS40     3
+#define CAHUTE_LINK_PROTOCOL_SERIAL_CAS50     4
+#define CAHUTE_LINK_PROTOCOL_SERIAL_CAS100    5
+#define CAHUTE_LINK_PROTOCOL_SERIAL_CAS300    6
+#define CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN     7
+#define CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN_OHP 8
 
-#define CAHUTE_LINK_PROTOCOL_USB_AUTO         10
 #define CAHUTE_LINK_PROTOCOL_USB_NONE         11
-#define CAHUTE_LINK_PROTOCOL_USB_CASIOLINK    12
+#define CAHUTE_LINK_PROTOCOL_USB_CAS300       12
 #define CAHUTE_LINK_PROTOCOL_USB_SEVEN        13
 #define CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP    14
 #define CAHUTE_LINK_PROTOCOL_USB_MASS_STORAGE 15
-
-/* CASIOLINK variant selection for the same function. */
-#define CAHUTE_CASIOLINK_VARIANT_AUTO   0
-#define CAHUTE_CASIOLINK_VARIANT_CAS40  1
-#define CAHUTE_CASIOLINK_VARIANT_CAS50  2
-#define CAHUTE_CASIOLINK_VARIANT_CAS100 3
-#define CAHUTE_CASIOLINK_VARIANT_CAS300 4
 
 #if defined(CAHUTE_LINK_MEDIUM_POSIX_SERIAL)
 /**
@@ -482,6 +477,9 @@ struct cahute_link_medium {
 /* Absolute minimum buffer size for CASIOLINK. */
 #define CASIOLINK_MINIMUM_BUFFER_SIZE 50
 
+/* Raw device information size for CAS100. */
+#define CAS100_RAW_DEVICE_INFO_SIZE 33
+
 /* Raw device information size for CASIOLINK.
  * CAS100 device information is 33 bytes long.
  * CAS300 device information is 49 bytes long. */
@@ -493,6 +491,10 @@ struct cahute_link_medium {
 /* Flag to describe whether the obtained device info was of CAS300 type
  * (49 bytes long), or CAS100 type (33 bytes long). */
 #define CASIOLINK_FLAG_DEVICE_INFO_CAS300 0x00000002UL
+
+/* Flag to describe whether the calculator has provided an AL packet, to
+ * determine whether an END ends the communication or not. */
+#define CASIOLINK_FLAG_DEVICE_INFO_CAS40_AL 0x00000004UL
 
 /* Maximum size of raw data that can come from a CAS100 command or data packet.
  * Calculators have an obligatory 9 bytes of metadata (1 byte packet type,
@@ -506,9 +508,47 @@ struct cahute_link_medium {
  *       512 bytes or not. By security (mostly on reception), we consider that
  *       it does not, and therefore, the maximum packet size is 9 + 4 + 1024,
  *       resulting in 1037 bytes. */
-#define CASIOLINK_CAS300_MAX_PAYLOAD_SIZE         512U
-#define CASIOLINK_CAS300_MAX_ENCODED_PAYLOAD_SIZE 1024U
-#define CASIOLINK_CAS300_MAX_PACKET_SIZE          1037U
+#define CAS300_MAX_PAYLOAD_SIZE         512U
+#define CAS300_MAX_ENCODED_PAYLOAD_SIZE 1024U
+#define CAS300_MAX_PACKET_SIZE          1037U
+
+/* Timeouts common to all CASIOLINK variants. */
+#define CASIOLINK_TIMEOUT_PACKET_CONTENTS 2000
+
+/**
+ * Peer state for CAS300.
+ *
+ * @property next_id Next identifier to use on sent packets.
+ * @property packet_type Type of the last packet.
+ * @property packet_subtype Command number in the last received packet.
+ * @property packet_id Identifier of the last received packet.
+ * @property packet_payload Payload of the last received command or
+ *           data packet.
+ * @property packet_payload_size Payload size of the last received command or
+ *           data packet.
+ */
+struct cahute_cas300_state {
+    int next_id;
+    int packet_type;
+    unsigned int packet_subtype;
+    cahute_u8 packet_id[2];
+    size_t packet_payload_size;
+    cahute_u8 packet_payload[CAS300_MAX_PAYLOAD_SIZE];
+};
+
+/**
+ * Peer state for all CASIOLINK protocols.
+ *
+ * @property flags Flags for the CASIOLINK peer state.
+ * @property cas300 CAS300 peer state.
+ * @property raw_device_info Raw device information buffer, so that data
+ *           can be extracted later if actual device information is requested.
+ */
+struct cahute_casiolink_state {
+    unsigned long flags;
+    struct cahute_cas300_state cas300;
+    cahute_u8 raw_device_info[CASIOLINK_RAW_DEVICE_INFO_BUFFER_SIZE];
+};
 
 /* Maximum size of raw data that can come from an extended packet.
  * Calculators support data packets with up to 256 raw bytes (512 encoded
@@ -525,39 +565,6 @@ struct cahute_link_medium {
 
 /* Flag to describe whether device information has been requested. */
 #define SEVEN_FLAG_DEVICE_INFO_REQUESTED 0x00000001UL
-
-/**
- * CASIOLINK peer state.
- *
- * @property flags Flags for the CASIOLINK peer state.
- * @property variant Variant with which to force data frame interpretation.
- * @property last_variant Variant for the last data frame.
- * @property cas300_type Type of the last packet.
- * @property cas300_next_id Next identifier to use with CAS300 packets.
- * @property cas300_subtype Command number in the last received CAS300 packet.
- * @property cas300_payload_size Payload size of the last received CAS300
- *           command or data packet.
- * @property cas300_packet_id Packet identifier of the last received
- *           CAS300 packet.
- * @property cas300_payload Payload of the last received CAS300 packet.
- * @property raw_device_info Raw device information buffer, so that data
- *           can be extracted later if actual device information is requested.
- */
-struct cahute_casiolink_state {
-    unsigned long flags;
-
-    int variant;
-    int last_variant;
-    int cas300_type;
-    int cas300_next_id;
-
-    unsigned int cas300_subtype;
-    size_t cas300_payload_size;
-
-    cahute_u8 cas300_packet_id[2];
-    cahute_u8 cas300_payload[CASIOLINK_CAS300_MAX_PAYLOAD_SIZE];
-    cahute_u8 raw_device_info[CASIOLINK_RAW_DEVICE_INFO_BUFFER_SIZE];
-};
 
 /**
  * Protocol 7.00 peer state.
@@ -804,6 +811,88 @@ cahute_populate_file_from_memory(
 CAHUTE_EXTERN(int) cahute_sleep(unsigned long ms);
 CAHUTE_EXTERN(int) cahute_monotonic(unsigned long *msp);
 
+CAHUTE_EXTERN(int)
+cahute_pad_data(cahute_u8 *buf, cahute_u8 const *data, size_t data_size);
+
+CAHUTE_EXTERN(int)
+cahute_unpad_data(
+    cahute_u8 *buf,
+    size_t *buf_sizep,
+    cahute_u8 const *data,
+    size_t data_size
+);
+
+/**
+ * Compute an 2-byte ASCII-HEX number representation on a given buffer.
+ *
+ * @param buf Buffer on which to represent the number.
+ * @param number Number to represent.
+ */
+CAHUTE_INLINE(void)
+cahute_set_ascii_hex(cahute_u8 *buf, unsigned int number) {
+    buf[0] = "0123456789ABCDEF"[(number >> 4) & 15];
+    buf[1] = "0123456789ABCDEF"[number & 15];
+}
+
+/**
+ * Copy a string from a payload to a buffer, while null-terminating it
+ * and detecting 0xFF characters as end of strings.
+ *
+ * SECURITY: The destination buffer is expected to be at least
+ * ``max_size + 1`` long.
+ *
+ * @param bufp Pointer to the buffer pointer for where to copy the data.
+ *        This method will increment the pointer to after the end of the
+ *        copied string with the null terminator, so that other strings or
+ *        pieces of data can be copied after.
+ * @param raw Raw data from which to get the string.
+ * @param max_size Maximum size to read from raw data.
+ * @return Pointer to the obtained string.
+ */
+CAHUTE_INLINE(char *)
+cahute_copy_ff_string(char **bufp, cahute_u8 const *raw, size_t max_size) {
+    char *buf = *bufp, *result = buf;
+
+    for (; max_size--; raw++) {
+        int byte = *raw;
+
+        if (!byte || byte >= 128)
+            break;
+
+        *(unsigned char *)buf++ = byte;
+    }
+
+    *buf++ = '\0';
+    *bufp = buf;
+    return result;
+}
+
+#define cahute_is_ascii_hex(C) \
+    (((C) >= '0' && (C) <= '9') || ((C) >= 'A' && (C) <= 'F'))
+#define cahute_ascii_hex_to_nibble(C) ((C) >= 'A' ? (C) - 'A' + 10 : (C) - '0')
+
+/**
+ * Compute a checksub.
+ *
+ * @param data Buffer to read from.
+ * @param size Size of the buffer to read from.
+ * @return Computed checksum.
+ */
+CAHUTE_INLINE(unsigned int)
+cahute_checksum(cahute_u8 const *data, size_t size) {
+    unsigned int checksum = 0;
+
+    for (; size; size--)
+        checksum += *data++;
+
+    return checksum;
+}
+
+#define cahute_checksub(CAHUTE__BUF, CAHUTE__SIZE) \
+    ((~cahute_checksum((CAHUTE__BUF), (CAHUTE__SIZE)) + 1) & 255)
+#define cahute_checksub_from_checksum(CAHUTE__RESULT) \
+    ((~(CAHUTE__RESULT) + 1) & 255)
+
 /* ---
  * Link medium functions, defined in linkmedium.c
  * --- */
@@ -851,6 +940,48 @@ cahute_scsi_request_from_link_medium(
     int *statusp
 );
 
+/**
+ * Receive a byte on a link medium.
+ *
+ * NOTE: If an error occurs, *bytep is NOT set and keeps whatever value it
+ * had before the function call.
+ *
+ * @param medium Link medium on which to receive the byte.
+ * @param bytep Pointer to the byte to receive.
+ * @param timeout Timeout to receive the byte.
+ * @return Cahute error, or 0 if ok.
+ */
+CAHUTE_INLINE(int)
+cahute_receive_byte_on_link_medium(
+    cahute_link_medium *medium,
+    int *bytep,
+    unsigned long timeout
+) {
+    cahute_u8 buf[8];
+    int err;
+
+    err = cahute_receive_on_link_medium(medium, buf, 1, timeout, timeout);
+    if (!err && bytep)
+        *bytep = buf[0];
+
+    return err;
+}
+
+/**
+ * Send a byte on a link medium.
+ *
+ * @param medium Link medium on which to send the byte.
+ * @param byte Byte to send.
+ * @return Cahute error, or 0 if ok.
+ */
+CAHUTE_INLINE(int)
+cahute_send_byte_on_link_medium(cahute_link_medium *medium, int byte) {
+    cahute_u8 buf[8];
+
+    buf[0] = byte;
+    return cahute_send_on_link_medium(medium, buf, 1);
+}
+
 /* ---
  * File medium functions, defined in filemedium.c
  * --- */
@@ -870,6 +1001,60 @@ cahute_write_to_file_medium(
     void const *data,
     size_t size
 );
+
+/**
+ * Compute a checksum from a file starting at an offset.
+ *
+ * @param file File from which to read.
+ * @param offset Offset from which to read.
+ * @param size Size of the data region to read.
+ * @param checksum Checksum pointer.
+ * @return Error, or 0 if ok.
+ */
+CAHUTE_INLINE(int)
+cahute_checksum_from_file_medium(
+    cahute_file_medium *medium,
+    unsigned long offset,
+    size_t size,
+    unsigned int *checksump
+) {
+    cahute_u8 tmp_buf[1024];
+    unsigned int checksum = 0;
+    int err;
+
+    while (size > sizeof(tmp_buf)) {
+        err = cahute_read_from_file_medium(
+            medium,
+            offset,
+            tmp_buf,
+            sizeof(tmp_buf)
+        );
+        if (err)
+            return err;
+
+        checksum += cahute_checksum(tmp_buf, sizeof(tmp_buf));
+        offset += sizeof(tmp_buf);
+        size -= sizeof(tmp_buf);
+    }
+
+    if (size) {
+        err = cahute_read_from_file_medium(medium, offset, tmp_buf, size);
+        if (err)
+            return err;
+
+        checksum += cahute_checksum(tmp_buf, size);
+    }
+
+    *checksump = checksum & 255;
+    return CAHUTE_OK;
+}
+
+#define cahute_checksum_from_file(CAHUTE__FILE, CAHUTE__OFFSET, CAHUTE__SIZE) \
+    cahute_checksum_from_file_medium( \
+        (CAHUTE__FILE)->medium, \
+        (CAHUTE__OFFSET), \
+        (CAHUTE__SIZE) \
+    )
 
 /* ---
  * Data management, defined in data.c
@@ -939,34 +1124,264 @@ struct cahute_casiolink_data_description {
     size_t part_sizes[5];
 };
 
-CAHUTE_EXTERN(int)
-cahute_casiolink_determine_header_variant(cahute_u8 const *data);
+/**
+ * Compute the total size of a data description.
+ *
+ * @param desc Description of the data to receive.
+ * @return Computed size of the data description.
+ */
+CAHUTE_INLINE(size_t)
+cahute_casiolink_compute_data_description_size(
+    struct cahute_casiolink_data_description const *desc
+) {
+    size_t total_size = 0, part_i;
 
-CAHUTE_EXTERN(int)
-cahute_casiolink_determine_data_description(
-    cahute_u8 const *data,
-    int variant,
-    cahute_casiolink_data_description *desc
-);
+    if (!desc->part_count)
+        return 0;
+
+    for (part_i = desc->part_count - 1; part_i > 0; part_i--)
+        total_size += desc->part_sizes[part_i - 1] + 2;
+
+    total_size +=
+        (desc->part_sizes[desc->part_count - 1] + 2) * desc->last_part_repeat;
+    return total_size;
+}
+
+/**
+ * Check a file based on a data description.
+ *
+ * @param file File to check.
+ * @param offset Offset from which to check the file.
+ * @param desc Data description based on which to check the file.
+ * @return Cahute error, or 0 if ok.
+ */
+CAHUTE_INLINE(int)
+cahute_casiolink_check_file_data(
+    cahute_file *file,
+    unsigned long offset,
+    struct cahute_casiolink_data_description const *desc
+) {
+    cahute_u8 buf[4];
+    unsigned int checksum, checksum_alt;
+    size_t i, total_parts, part_size;
+    int err;
+
+    if (!desc->part_count)
+        return CAHUTE_OK;
+
+    total_parts = desc->part_count - 1 + desc->last_part_repeat;
+    for (i = 0; i < total_parts; i++) {
+        part_size =
+            desc->part_sizes[i >= desc->part_count ? desc->part_count - 1 : i];
+
+        err = cahute_read_from_file(file, offset++, buf, 2);
+        if (err)
+            return err;
+
+        if (buf[0] != desc->packet_type) {
+            msg(ll_error,
+                "In part %" CAHUTE_PRIuSIZE "/%" CAHUTE_PRIuSIZE
+                ": invalid "
+                "type 0x%02X (expected: 0x%02X)",
+                i + 1,
+                total_parts,
+                buf[0],
+                desc->packet_type);
+            return CAHUTE_ERROR_CORRUPT;
+        }
+
+        /* We apply the same checksum logics as in
+         * `cahute_casiolink_receive_packet()`, with the alt checksum
+         * for CAS40 screenshots. */
+        if (part_size > 1) {
+            err = cahute_checksum_from_file_medium(
+                &file->medium,
+                offset + 1,
+                part_size - 1,
+                &checksum_alt
+            );
+            if (err)
+                return err;
+
+            checksum = (checksum_alt + buf[1]) & 255;
+        } else if (part_size) {
+            checksum = buf[1];
+            checksum_alt = 0;
+        } else {
+            checksum = 0;
+            checksum_alt = 0;
+        }
+
+        checksum = cahute_checksub_from_checksum(checksum);
+        checksum_alt = cahute_checksub_from_checksum(checksum_alt);
+
+        if (err)
+            return err;
+
+        offset += part_size;
+        err = cahute_read_from_file(file, offset++, &buf[1], 1);
+        if (err)
+            return err;
+
+        if (buf[1] != checksum && buf[1] != checksum_alt) {
+            msg(ll_error,
+                "In part %" CAHUTE_PRIuSIZE "/%" CAHUTE_PRIuSIZE
+                ": invalid checksum (obtained: 0x%02X, computed: 0x%02X)",
+                i + 1,
+                total_parts,
+                buf[1],
+                checksum);
+            return CAHUTE_ERROR_CORRUPT;
+        }
+    }
+
+    return CAHUTE_OK;
+}
+
+/**
+ * Show a data description in a logging context.
+ *
+ * @param desc Data description to show.
+ */
+CAHUTE_INLINE(void)
+cahute_casiolink_log_data_description(
+    struct cahute_casiolink_data_description const *desc
+) {
+    msg(ll_info, "Data description was the following:");
+
+    {
+        char flags_buf[50], *p = flags_buf;
+
+        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_END) {
+            *p++ = ' ';
+            *p++ = '|';
+            *p++ = ' ';
+            *p++ = 'E';
+            *p++ = 'N';
+            *p++ = 'D';
+        }
+
+        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_FINAL) {
+            *p++ = ' ';
+            *p++ = '|';
+            *p++ = ' ';
+            *p++ = 'F';
+            *p++ = 'I';
+            *p++ = 'N';
+            *p++ = 'A';
+            *p++ = 'L';
+        }
+
+        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_AL) {
+            *p++ = ' ';
+            *p++ = '|';
+            *p++ = ' ';
+            *p++ = 'A';
+            *p++ = 'L';
+        }
+
+        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_AL_END) {
+            *p++ = ' ';
+            *p++ = '|';
+            *p++ = ' ';
+            *p++ = 'A';
+            *p++ = 'L';
+            *p++ = '_';
+            *p++ = 'E';
+            *p++ = 'N';
+            *p++ = 'D';
+        }
+
+        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_NO_LOG) {
+            *p++ = ' ';
+            *p++ = '|';
+            *p++ = ' ';
+            *p++ = 'N';
+            *p++ = 'O';
+            *p++ = '_';
+            *p++ = 'L';
+            *p++ = 'O';
+            *p++ = 'G';
+        }
+
+        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_MDL) {
+            *p++ = ' ';
+            *p++ = '|';
+            *p++ = ' ';
+            *p++ = 'M';
+            *p++ = 'D';
+            *p++ = 'L';
+        }
+
+        *p = '\0';
+
+        msg(ll_info, "  Flags: %s", flags_buf[0] ? &flags_buf[3] : "(none)");
+    }
+
+    {
+        size_t part_count = desc->part_count,
+               last_part_repeat = desc->last_part_repeat;
+
+        if (part_count && !last_part_repeat) {
+            part_count--;
+            last_part_repeat = 1;
+        }
+
+        if (!part_count)
+            msg(ll_info, "  Part count: 0");
+        else {
+            char sizes[60], *p = sizes;
+            size_t i;
+
+            for (i = 0; i < part_count - 1; i++) {
+                sprintf(p, "%" CAHUTE_PRIuSIZE "o, ", desc->part_sizes[i]);
+                for (; *p; p++)
+                    ;
+            }
+
+            if (last_part_repeat > 1)
+                sprintf(
+                    p,
+                    "%" CAHUTE_PRIuSIZE "o (x%" CAHUTE_PRIuSIZE ")",
+                    desc->part_sizes[i],
+                    last_part_repeat
+                );
+            else
+                sprintf(p, "%" CAHUTE_PRIuSIZE "o", desc->part_sizes[i]);
+
+            msg(ll_info, "  Part count: %" CAHUTE_PRIuSIZE, part_count);
+            msg(ll_info, "  Part sizes: %s", sizes);
+        }
+    }
+}
 
 CAHUTE_EXTERN(int)
 cahute_casiolink_decode_data(
     cahute_data **datap,
     cahute_file *file,
-    unsigned long *offsetp,
-    int variant,
-    int check_data
+    unsigned long *offsetp
 );
 
-/* ---
- * CASIOLINK protocol and file format functions, defined in casiolink.c
- * --- */
+CAHUTE_EXTERN(int)
+cahute_casiolink_receive_raw_data(
+    cahute_link *link,
+    struct cahute_casiolink_data_description const *desc,
+    cahute_u8 *buf,
+    size_t *buf_sizep
+);
 
-CAHUTE_EXTERN(int) cahute_casiolink_initiate(cahute_link *link);
+/* Make the CASIOLINK handshake only. */
+CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_receiver(cahute_link *link);
+CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link);
 
-CAHUTE_EXTERN(int) cahute_casiolink_discover(cahute_link *link);
-
-CAHUTE_EXTERN(int) cahute_casiolink_terminate(cahute_link *link);
+CAHUTE_EXTERN(int)
+cahute_casiolink_receive_packet(
+    cahute_link *link,
+    cahute_u8 *buf,
+    size_t size,
+    int expected_type,
+    unsigned long timeout
+);
 
 CAHUTE_EXTERN(int)
 cahute_casiolink_receive_data(
@@ -976,16 +1391,105 @@ cahute_casiolink_receive_data(
 );
 
 CAHUTE_EXTERN(int)
-cahute_casiolink_receive_screen(
+cahute_casiolink_make_device_info(
     cahute_link *link,
-    cahute_frame *frame,
+    cahute_device_info **infop
+);
+
+/* ---
+ * CAS40 protocol functions, defined in cas40.c
+ * --- */
+
+CAHUTE_EXTERN(int)
+cahute_cas40_decode_data(
+    cahute_data **final_datap,
+    cahute_file *file,
+    unsigned long *offsetp
+);
+
+CAHUTE_EXTERN(int)
+cahute_cas40_receive_data(
+    cahute_link *link,
+    cahute_data **datap,
+    cahute_u8 const *header,
     unsigned long timeout
 );
 
 CAHUTE_EXTERN(int)
-cahute_casiolink_make_device_info(
+cahute_cas40_receive_screen(
     cahute_link *link,
-    cahute_device_info **infop
+    cahute_frame *frame,
+    cahute_u8 const *header,
+    unsigned long timeout
+);
+
+CAHUTE_EXTERN(int) cahute_cas40_terminate(cahute_link *link);
+
+/* ---
+ * CAS50 protocol functions, defined in cas50.c
+ * --- */
+
+CAHUTE_EXTERN(int)
+cahute_cas50_decode_data(
+    cahute_data **final_datap,
+    cahute_file *file,
+    unsigned long *offsetp
+);
+
+CAHUTE_EXTERN(int)
+cahute_cas50_receive_data(
+    cahute_link *link,
+    cahute_data **datap,
+    cahute_u8 const *header,
+    unsigned long timeout
+);
+
+CAHUTE_EXTERN(int) cahute_cas50_terminate(cahute_link *link);
+
+/* ---
+ * CAS100 protocol functions, defined in cas100.c
+ * --- */
+
+CAHUTE_EXTERN(int)
+cahute_cas100_receive_data(
+    cahute_link *link,
+    cahute_data **datap,
+    cahute_u8 const *header,
+    unsigned long timeout
+);
+
+CAHUTE_EXTERN(int)
+cahute_cas100_make_device_info(
+    cahute_device_info **infop,
+    cahute_u8 const *raw_info
+);
+
+CAHUTE_EXTERN(int) cahute_cas100_exchange_model_information(cahute_link *link);
+CAHUTE_EXTERN(int)
+cahute_cas100_handle_mdl1(cahute_link *link, cahute_u8 const *header);
+
+CAHUTE_EXTERN(int) cahute_cas100_initiate(cahute_link *link);
+CAHUTE_EXTERN(int) cahute_cas100_terminate(cahute_link *link);
+
+/* ---
+ * CAS300 protocol functions, defined in cas300.c
+ * --- */
+
+CAHUTE_EXTERN(int)
+cahute_cas300_receive_data(
+    cahute_link *link,
+    cahute_data **datap,
+    int first_byte,
+    unsigned long timeout
+);
+
+CAHUTE_EXTERN(int) cahute_cas300_discover(cahute_link *link);
+CAHUTE_EXTERN(int) cahute_cas300_terminate(cahute_link *link);
+
+CAHUTE_EXTERN(int)
+cahute_cas300_make_device_info(
+    cahute_device_info **infop,
+    cahute_u8 const *raw_info
 );
 
 /* ---

@@ -235,9 +235,21 @@ cahute_receive_data(
         return err;
 
     switch (link->protocol) {
-    case CAHUTE_LINK_PROTOCOL_SERIAL_CASIOLINK:
-    case CAHUTE_LINK_PROTOCOL_USB_CASIOLINK:
+    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS:
         return cahute_casiolink_receive_data(link, datap, timeout);
+
+    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS40:
+        return cahute_cas40_receive_data(link, datap, NULL, timeout);
+
+    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS50:
+        return cahute_cas50_receive_data(link, datap, NULL, timeout);
+
+    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS100:
+        return cahute_cas100_receive_data(link, datap, NULL, timeout);
+
+    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS300:
+    case CAHUTE_LINK_PROTOCOL_USB_CAS300:
+        return cahute_cas300_receive_data(link, datap, -1, timeout);
 
     case CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN:
     case CAHUTE_LINK_PROTOCOL_USB_SEVEN:
@@ -272,9 +284,8 @@ cahute_receive_screen(
     *framep = frame;
 
     switch (link->protocol) {
-    case CAHUTE_LINK_PROTOCOL_SERIAL_CASIOLINK:
-    case CAHUTE_LINK_PROTOCOL_USB_CASIOLINK:
-        return cahute_casiolink_receive_screen(link, frame, timeout);
+    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS40:
+        return cahute_cas40_receive_screen(link, frame, NULL, timeout);
 
     case CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN_OHP:
     case CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP:
@@ -419,29 +430,34 @@ cahute_negotiate_serial_params(
  */
 CAHUTE_EXTERN(int)
 cahute_get_device_info(cahute_link *link, cahute_device_info **infop) {
-    int err;
+    int err = CAHUTE_OK;
 
     /* If the link already has cached device information, we return it.
      * NOTE: This is the reason why the user MUST NOT free the device
      * information, as indicated in the documentation!! */
     if (!link->cached_device_info) {
-        err = cahute_check_link(link, CHECK_SENDER);
-        if (err)
-            return err;
-
         switch (link->protocol) {
-        case CAHUTE_LINK_PROTOCOL_SERIAL_CASIOLINK:
-        case CAHUTE_LINK_PROTOCOL_USB_CASIOLINK:
-            /* With CASIOLINK, we may have received device information at
-             * some point. */
-            err = cahute_casiolink_make_device_info(
-                link,
-                &link->cached_device_info
-            );
-            if (err)
-                return err;
+        case CAHUTE_LINK_PROTOCOL_SERIAL_CAS:
+        case CAHUTE_LINK_PROTOCOL_SERIAL_CAS100:
+        case CAHUTE_LINK_PROTOCOL_SERIAL_CAS300:
+        case CAHUTE_LINK_PROTOCOL_USB_CAS300: {
+            unsigned long flags = link->protocol_state.casiolink.flags;
+            cahute_u8 const *raw =
+                link->protocol_state.casiolink.raw_device_info;
 
-            break;
+            if (~flags & CASIOLINK_FLAG_DEVICE_INFO_OBTAINED)
+                err = CAHUTE_ERROR_IMPL;
+            else if (flags & CASIOLINK_FLAG_DEVICE_INFO_CAS300)
+                err = cahute_cas300_make_device_info(
+                    &link->cached_device_info,
+                    raw
+                );
+            else
+                err = cahute_cas100_make_device_info(
+                    &link->cached_device_info,
+                    raw
+                );
+        } break;
 
         case CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN:
         case CAHUTE_LINK_PROTOCOL_USB_SEVEN:
@@ -450,9 +466,6 @@ cahute_get_device_info(cahute_link *link, cahute_device_info **infop) {
              * device information structure. */
             err =
                 cahute_seven_make_device_info(link, &link->cached_device_info);
-            if (err)
-                return err;
-
             break;
 
         default:
@@ -464,7 +477,7 @@ cahute_get_device_info(cahute_link *link, cahute_device_info **infop) {
     }
 
     *infop = link->cached_device_info;
-    return CAHUTE_OK;
+    return err;
 }
 
 /**

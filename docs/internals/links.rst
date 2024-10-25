@@ -291,14 +291,6 @@ which serves at storing raw data or screen data received using the protocol.
 
 Available protocols are:
 
-.. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_AUTO
-
-    Automatic protocol detection on a serial medium.
-
-    Note that this doesn't outlive link protocol initialization, and gets
-    replaced by the actual protocol afterwards; see
-    :ref:`internals-link-protocol-initialization` for more details.
-
 .. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_NONE
 
     No protocol on a serial medium.
@@ -307,14 +299,39 @@ Available protocols are:
     more directly, through the ones referenced in
     :ref:`header-cahute-link-medium`.
 
-.. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_CASIOLINK
+.. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_CAS
 
-    CASIOLINK protocol over a serial medium.
+    Generic CASIOLINK on a serial medium.
+
+    This can only be used when in receiver mode, i.e.
+    :c:macro:`CAHUTE_LINK_FLAG_RECEIVER` must be present for this protocol
+    to actually be useful.
 
     See :ref:`protocol-casiolink` for more information.
 
-    Note that in this case, the CASIOLINK variant is set in the
-    ``protocol_state.casiolink.variant`` property of the link.
+.. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_CAS40
+
+    CAS40 on a serial medium.
+
+    See :ref:`protocol-cas40` for more information.
+
+.. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_CAS50
+
+    CAS50 on a serial medium.
+
+    See :ref:`protocol-cas50` for more information.
+
+.. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_CAS100
+
+    CAS100 on a serial medium.
+
+    See :ref:`protocol-cas100` for more information.
+
+.. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_CAS300
+
+    CAS300 on a serial medium.
+
+    See :ref:`protocol-cas300` for more information.
 
 .. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN
 
@@ -331,14 +348,6 @@ Available protocols are:
 
     See :ref:`protocol-seven-ohp` for more information.
 
-.. c:macro:: CAHUTE_LINK_PROTOCOL_USB_AUTO
-
-    Automatic protocol detection on a USB serial medium.
-
-    Note that this doesn't outlive link protocol initialization, and gets
-    replaced by the actual protocol afterwards; see
-    :ref:`internals-link-protocol-initialization` for more details.
-
 .. c:macro:: CAHUTE_LINK_PROTOCOL_USB_NONE
 
     No protocol on a USB medium.
@@ -347,11 +356,11 @@ Available protocols are:
     more directly, through the ones referenced in
     :ref:`header-cahute-link-medium`.
 
-.. c:macro:: CAHUTE_LINK_PROTOCOL_USB_CASIOLINK
+.. c:macro:: CAHUTE_LINK_PROTOCOL_USB_CAS300
 
-    CASIOLINK over USB bulk transport.
+    CAS300 over USB bulk transport.
 
-    See :ref:`protocol-casiolink` for more information.
+    See :ref:`protocol-cas300` for more information.
 
 .. c:macro:: CAHUTE_LINK_PROTOCOL_USB_SEVEN
 
@@ -387,9 +396,12 @@ In this section, we will describe the behaviour of link opening functions.
         The protocol is selected, depending on the flags, to one of the
         following:
 
-        * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_AUTO`;
         * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_NONE`;
-        * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_CASIOLINK`;
+        * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_CAS`;
+        * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_CAS40`;
+        * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_CAS50`;
+        * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_CAS100`;
+        * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_CAS300`;
         * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN`;
         * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN_OHP`.
 
@@ -478,8 +490,7 @@ In this section, we will describe the behaviour of link opening functions.
           - absent
           - ``CAS300``
           - :c:macro:`CAHUTE_LINK_MEDIUM_LIBUSB`
-          - :c:macro:`CAHUTE_LINK_PROTOCOL_USB_CASIOLINK` w/
-            :c:macro:`CAHUTE_CASIOLINK_VARIANT_CAS300`
+          - :c:macro:`CAHUTE_LINK_PROTOCOL_USB_CAS300`
         * - 255
           - absent
           - ``SEVEN``
@@ -489,7 +500,9 @@ In this section, we will describe the behaviour of link opening functions.
           - absent
           - none
           - :c:macro:`CAHUTE_LINK_MEDIUM_LIBUSB`
-          - :c:macro:`CAHUTE_LINK_PROTOCOL_USB_AUTO`
+          - :c:macro:`CAHUTE_LINK_PROTOCOL_USB_CAS300`,
+            :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN` or
+            :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP`.
 
     See :ref:`usb-detection` for more information.
 
@@ -563,10 +576,9 @@ Protocol initialization
 The common protocol initialization procedure is defined by a function named
 ``init_link`` in ``link/open.c``.
 
-First of all, if the selected protocol is
-:c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_AUTO`
-or :c:macro:`CAHUTE_LINK_PROTOCOL_USB_AUTO`, the communication initialization
-is used to determine the protocol in which both devices should communicate.
+First of all, if the selected protocol is automatic detection,
+the communication initialization is used to determine the protocol in which
+both devices should communicate.
 
 .. note::
 

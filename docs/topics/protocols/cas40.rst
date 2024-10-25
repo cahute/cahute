@@ -21,7 +21,7 @@ are the following:
 
 * Speed: **1200**, **2400**, **4800** or **9600** bauds.
 * Parity: **even**, **odd** or **none**.
-* Stop bits: **1**.
+* Stop bits: **2**.
 
 See the following sections for more details regarding the protocol.
 

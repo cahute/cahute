@@ -194,6 +194,10 @@ add_custom_command(
 )
 
 add_library(${PROJECT_NAME} STATIC
+    lib/cas40.c
+    lib/cas50.c
+    lib/cas100.c
+    lib/cas300.c
     lib/casiolink.c
     lib/cdefs.c
     "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"

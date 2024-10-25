@@ -17,7 +17,7 @@ Serial settings are always the same, and do not vary during the transfer:
 
 * Speed: **9600** bauds.
 * Parity: **none**.
-* Stop bits: **1**.
+* Stop bits: **2**.
 
 See the following sections for more details regarding the protocol.
 

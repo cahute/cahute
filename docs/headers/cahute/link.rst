@@ -192,19 +192,15 @@ Link management related function declarations
     Since serial links do not offer any metadata, the protocol to use on the
     serial link is selected manually, amongst the following:
 
-    .. c:macro:: CAHUTE_SERIAL_PROTOCOL_AUTO
+    .. c:macro:: CAHUTE_SERIAL_PROTOCOL_DEFAULT
 
-        Use automatic protocol detection.
+        Depending on the other set flags:
 
-        .. note::
+        * Use :c:macro:`CAHUTE_SERIAL_PROTOCOL_AUTO` if
+          :c:macro:`CAHUTE_SERIAL_RECEIVER` is set;
+        * Otherwise, use :c:macro:`CAHUTE_SERIAL_PROTOCOL_AUTO_CAS50`.
 
-            This is the default value if no other protocol is specified.
-
-        .. warning::
-
-            This cannot be used if :c:macro:`CAHUTE_SERIAL_NOCHECK` is set,
-            as we tweak the checking flow to determine the protocol of the
-            other side.
+        This is the default value for the protocol.
 
     .. c:macro:: CAHUTE_SERIAL_PROTOCOL_NONE
 
@@ -213,59 +209,70 @@ Link management related function declarations
         This renders all of the functions from :ref:`header-cahute-link-medium`
         accessible on the created link.
 
-    .. c:macro:: CAHUTE_SERIAL_PROTOCOL_CASIOLINK
+    .. c:macro:: CAHUTE_SERIAL_PROTOCOL_CAS40
 
-        Use CASIOLINK protocol.
+        Use :ref:`protocol-cas40`.
 
-        See :ref:`protocol-casiolink` for more information.
+    .. c:macro:: CAHUTE_SERIAL_PROTOCOL_CAS50
+
+        Use :ref:`protocol-cas50`.
+
+    .. c:macro:: CAHUTE_SERIAL_PROTOCOL_CAS100
+
+        Use :ref:`protocol-cas100`.
+
+    .. c:macro:: CAHUTE_SERIAL_PROTOCOL_CAS300
+
+        Use :ref:`protocol-cas300`.
 
     .. c:macro:: CAHUTE_SERIAL_PROTOCOL_SEVEN
 
-        Use Protocol 7.00.
-
-        See :ref:`protocol-seven` for more information.
+        Use :ref:`protocol-seven`.
 
     .. c:macro:: CAHUTE_SERIAL_PROTOCOL_SEVEN_OHP
 
-        Use Protocol 7.00 Screenstreaming.
+        Use :ref:`protocol-seven-ohp`.
 
-        See :ref:`protocol-seven-ohp` for more information.
+    .. c:macro:: CAHUTE_SERIAL_PROTOCOL_AUTO
 
-    If the selected protocol is set or determined to be the CASIOLINK protocol,
-    the variant must be selected using one of the following macros:
+        Use automatic protocol detection on reception.
 
-    .. c:macro:: CAHUTE_SERIAL_CASIOLINK_VARIANT_AUTO
+        .. note::
 
-        Use automatic protocol variant detection.
+            This is the default value if :c:macro:`CAHUTE_SERIAL_RECEIVER`
+            is set. See :c:macro:`CAHUTE_SERIAL_PROTOCOL_DEFAULT` for
+            more information.
 
         .. warning::
 
-            This flag can only be used if :c:macro:`CAHUTE_SERIAL_RECEIVER`
-            is set.
+            This can only be used if:
 
-    .. c:macro:: CAHUTE_SERIAL_CASIOLINK_VARIANT_CAS40
+            * :c:macro:`CAHUTE_SERIAL_RECEIVER` is set;
+            * :c:macro:`CAHUTE_SERIAL_NOCHECK` is not set, since we are
+              tweaking the checking flow to determine the protocol on the
+              other side.
 
-        Use or expect CAS40 variant.
+    .. c:macro:: CAHUTE_SERIAL_PROTOCOL_AUTO_CAS40
 
-        See :ref:`protocol-cas40` for more information.
+        Use automatic protocol detection, and assume CAS40 if CASIOLINK.
 
-    .. c:macro:: CAHUTE_SERIAL_CASIOLINK_VARIANT_CAS50
+    .. c:macro:: CAHUTE_SERIAL_PROTOCOL_AUTO_CAS50
 
-        Use or expect CAS50 variant.
+        Use automatic protocol detection, and assume CAS50 if CASIOLINK.
 
-        See :ref:`protocol-cas50` for more information.
+        .. note::
 
-    .. c:macro:: CAHUTE_SERIAL_CASIOLINK_VARIANT_CAS100
+            This is the default value if :c:macro:`CAHUTE_SERIAL_RECEIVER`
+            is **not** set. See :c:macro:`CAHUTE_SERIAL_PROTOCOL_DEFAULT`
+            for more information.
 
-        Use or expect CAS100 variant.
+    .. c:macro:: CAHUTE_SERIAL_PROTOCOL_AUTO_CAS100
 
-        See :ref:`protocol-cas100` for more information.
+        Use automatic protocol detection, and assume CAS100 if CASIOLINK.
 
-    .. c:macro:: CAHUTE_SERIAL_CASIOLINK_VARIANT_CAS300
+    .. c:macro:: CAHUTE_SERIAL_PROTOCOL_AUTO_CAS300
 
-        Use or expect CAS300 variant.
-
-        See :ref:`protocol-cas300` for more information.
+        Use automatic protocol detection, and assume CAS300 if CASIOLINK.
 
     Since the number of stop bits may be selectable on the calculator, it
     can also be selected manually, amongst the following:
@@ -316,8 +323,7 @@ Link management related function declarations
 
         Enable XON/XOFF software control.
 
-    Default serial settings depend on the protocol and CASIOLINK variant you
-    select:
+    Default serial settings depend on the protocol you select:
 
     .. list-table::
         :header-rows: 1
@@ -327,47 +333,32 @@ Link management related function declarations
           - Parity
           - Stop bits
           - XON/XOFF
-        * - ``AUTO``
-          - 9600
-          - ``OFF``
-          - ``ONE``
-          - ``DISABLED``
         * - ``NONE``
           - 9600
           - ``OFF``
-          - ``ONE``
+          - ``TWO``
           - ``DISABLED``
-        * - ``CASIOLINK`` / ``AUTO``
-          - 9600
-          - ``OFF``
-          - ``ONE``
-          - ``DISABLED``
-        * - ``CASIOLINK`` / ``CAS40``
+        * - ``CAS40``, ``AUTO_CAS40``
           - 4800
-          - ``OFF``
-          - ``ONE``
+          - ``EVEN``
+          - ``TWO``
           - ``DISABLED``
-        * - ``CASIOLINK`` / ``CAS50``
+        * - ``CAS50``, ``AUTO_CAS50``
           - 9600
           - ``OFF``
-          - ``ONE``
+          - ``TWO``
           - ``DISABLED``
-        * - ``CASIOLINK`` / ``CAS100``
+        * - ``CAS100``, ``AUTO_CAS100``
           - 38400
           - ``OFF``
           - ``TWO``
           - ``DISABLED``
-        * - ``CASIOLINK`` / ``CAS300``
+        * - ``CAS300``, ``AUTO_CAS300``
           - 38400
           - ``OFF``
           - ``ONE``
           - ``ENABLED``
-        * - ``SEVEN``
-          - 9600
-          - ``OFF``
-          - ``TWO``
-          - ``DISABLED``
-        * - ``SEVEN_OHP``
+        * - ``SEVEN``, ``SEVEN_OHP``, ``AUTO``
           - 9600
           - ``OFF``
           - ``TWO``
@@ -440,17 +431,17 @@ Link management related function declarations
     .. c:macro:: CAHUTE_SERIAL_NODISC
 
         If this flag is provided, and :c:macro:`CAHUTE_SERIAL_RECEIVER` is
-        **not** provided, command :ref:`seven-command-01` is not issued once
+        **not** provided, device discovery is not run once
         the link is established to get the device information.
 
         This flag is mostly useful when dealing with bootcode or custom
         link implementations that may not have implemented this command.
-        It is not recommended when communicating with the LINK application
-        since it enables Cahute to predict which commands will be
-        unavailable without crashing the link.
+        It is not recommended when communicating with the LINK application,
+        since it prevents Cahute from being able to predict which commands
+        will be available without crashing the link.
 
-        It is only effective when using protocol 7.00.
-        See :ref:`protocol-seven` for more information.
+        It is only effective when :ref:`protocol-seven` or
+        :ref:`protocol-cas300` is used.
 
     .. c:macro:: CAHUTE_SERIAL_NOTERM
 
@@ -509,18 +500,18 @@ Link management related function declarations
 
     .. c:macro:: CAHUTE_USB_NODISC
 
-        If this flag is provided, and :c:macro:`CAHUTE_USB_RECEIVER` is
-        **not** provided, command :ref:`seven-command-01` is not issued once
+        If this flag is provided, and :c:macro:`CAHUTE_SERIAL_RECEIVER` is
+        **not** provided, device discovery is not run once
         the link is established to get the device information.
 
         This flag is mostly useful when dealing with bootcode or custom
         link implementations that may not have implemented this command.
-        It is not recommended when communicating with the LINK application
-        since it enables Cahute to predict which commands will be
-        unavailable without crashing the link.
+        It is not recommended when communicating with the LINK application,
+        since it prevents Cahute from being able to predict which commands
+        will be available without crashing the link.
 
-        It is only effective when using protocol 7.00.
-        See :ref:`protocol-seven` for more information.
+        It is only effective when :ref:`protocol-seven` or
+        :ref:`protocol-cas300` is used.
 
     .. c:macro:: CAHUTE_USB_NOTERM
 
@@ -621,10 +612,14 @@ Link management related function declarations
         Open devices identifying themselves as speaking an application protocol
         over USB bulk transfers.
 
+        See :ref:`transport-serial-over-usb-bulk` for more information.
+
     .. c:macro:: CAHUTE_USB_FILTER_UMS
 
         Open devices identifying themselves as speaking an application protocol
         over USB Mass Storage / SCSI.
+
+        See :ref:`transport-ums` for more information.
 
     .. warning::
 

@@ -29,10 +29,6 @@
 #include "internals.h"
 #define TIMEOUT_PACKET_CONTENTS 2000 /* Timeout for the rest of the packet. */
 
-#define IS_ASCII_HEX_DIGIT(C) \
-    (((C) >= '0' && (C) <= '9') || ((C) >= 'A' && (C) <= 'F'))
-#define ASCII_HEX_TO_NIBBLE(C) ((C) >= 'A' ? (C) - 'A' + 10 : (C) - '0')
-
 #define PACKET_TYPE_ACK   6  /* 0x06 */
 #define PACKET_TYPE_FRAME 11 /* 0x0B */
 #define PACKET_TYPE_CHECK 22 /* 0x16 */
@@ -48,38 +44,6 @@ alignment_sequences[] = {
 };
 CAHUTE_LOCAL_DATA(size_t const)
 alignment_sequence_count = sizeof(alignment_sequences) / sizeof(char const *);
-
-/**
- * Compute a Protocol 7.00 packet checksum.
- *
- * @param data Data to compute the checksum for.
- * @param size Size of the data to compute the checksum for.
- * @return Obtained checksum.
- */
-CAHUTE_INLINE(unsigned int)
-cahute_seven_checksum(cahute_u8 const *data, size_t size) {
-    int checksum = 0;
-    size_t i;
-
-    for (i = 0; i < size; i++)
-        checksum += data[i];
-
-    return (unsigned int)(~checksum + 1) & 255;
-}
-
-/**
- * Compute an 2-byte ASCII-HEX number representation on a given buffer.
- *
- * @param buf Buffer on which to represent the number.
- * @param number Number to represent.
- */
-CAHUTE_INLINE(void)
-cahute_seven_set_ascii_hex(cahute_u8 *buf, unsigned int number) {
-    unsigned int higher = (number >> 4) & 15, lower = number & 15;
-
-    buf[0] = higher > 9 ? 'A' + higher - 10 : '0' + higher;
-    buf[1] = lower > 9 ? 'A' + lower - 10 : '0' + lower;
-}
 
 /**
  * Receive and decode a Protocol 7.00 screenstreaming packet, and store it
@@ -194,21 +158,22 @@ sequence_found:
                 if (err)
                     return err;
 
-                if (!IS_ASCII_HEX_DIGIT(buf[6]) || !IS_ASCII_HEX_DIGIT(buf[7])
-                    || !IS_ASCII_HEX_DIGIT(buf[8])
-                    || !IS_ASCII_HEX_DIGIT(buf[9])
-                    || !IS_ASCII_HEX_DIGIT(buf[10])
-                    || !IS_ASCII_HEX_DIGIT(buf[11]))
+                if (!cahute_is_ascii_hex(buf[6])
+                    || !cahute_is_ascii_hex(buf[7])
+                    || !cahute_is_ascii_hex(buf[8])
+                    || !cahute_is_ascii_hex(buf[9])
+                    || !cahute_is_ascii_hex(buf[10])
+                    || !cahute_is_ascii_hex(buf[11]))
                     return CAHUTE_ERROR_CORRUPT;
 
                 packet_size += 18;
                 frame_length =
-                    ((ASCII_HEX_TO_NIBBLE(buf[6]) << 20)
-                     | (ASCII_HEX_TO_NIBBLE(buf[7]) << 16)
-                     | (ASCII_HEX_TO_NIBBLE(buf[8]) << 12)
-                     | (ASCII_HEX_TO_NIBBLE(buf[9]) << 8)
-                     | (ASCII_HEX_TO_NIBBLE(buf[10]) << 4)
-                     | ASCII_HEX_TO_NIBBLE(buf[11]));
+                    ((cahute_ascii_hex_to_nibble(buf[6]) << 20)
+                     | (cahute_ascii_hex_to_nibble(buf[7]) << 16)
+                     | (cahute_ascii_hex_to_nibble(buf[8]) << 12)
+                     | (cahute_ascii_hex_to_nibble(buf[9]) << 8)
+                     | (cahute_ascii_hex_to_nibble(buf[10]) << 4)
+                     | cahute_ascii_hex_to_nibble(buf[11]));
             } else {
                 /* The Frame Length (FL) field is 8 bytes long. */
                 err = cahute_receive_on_link_medium(
@@ -223,35 +188,36 @@ sequence_found:
                 if (err)
                     return err;
 
-                if (!IS_ASCII_HEX_DIGIT(buf[6]) || !IS_ASCII_HEX_DIGIT(buf[7])
-                    || !IS_ASCII_HEX_DIGIT(buf[8])
-                    || !IS_ASCII_HEX_DIGIT(buf[9])
-                    || !IS_ASCII_HEX_DIGIT(buf[10])
-                    || !IS_ASCII_HEX_DIGIT(buf[11])
-                    || !IS_ASCII_HEX_DIGIT(buf[12])
-                    || !IS_ASCII_HEX_DIGIT(buf[13]))
+                if (!cahute_is_ascii_hex(buf[6])
+                    || !cahute_is_ascii_hex(buf[7])
+                    || !cahute_is_ascii_hex(buf[8])
+                    || !cahute_is_ascii_hex(buf[9])
+                    || !cahute_is_ascii_hex(buf[10])
+                    || !cahute_is_ascii_hex(buf[11])
+                    || !cahute_is_ascii_hex(buf[12])
+                    || !cahute_is_ascii_hex(buf[13]))
                     return CAHUTE_ERROR_CORRUPT;
 
                 packet_size += 20;
                 frame_length =
-                    ((ASCII_HEX_TO_NIBBLE(buf[6]) << 28)
-                     | (ASCII_HEX_TO_NIBBLE(buf[7]) << 24)
-                     | (ASCII_HEX_TO_NIBBLE(buf[8]) << 20)
-                     | (ASCII_HEX_TO_NIBBLE(buf[9]) << 16)
-                     | (ASCII_HEX_TO_NIBBLE(buf[10]) << 12)
-                     | (ASCII_HEX_TO_NIBBLE(buf[11]) << 8)
-                     | (ASCII_HEX_TO_NIBBLE(buf[12]) << 4)
-                     | ASCII_HEX_TO_NIBBLE(buf[13]));
+                    ((cahute_ascii_hex_to_nibble(buf[6]) << 28)
+                     | (cahute_ascii_hex_to_nibble(buf[7]) << 24)
+                     | (cahute_ascii_hex_to_nibble(buf[8]) << 20)
+                     | (cahute_ascii_hex_to_nibble(buf[9]) << 16)
+                     | (cahute_ascii_hex_to_nibble(buf[10]) << 12)
+                     | (cahute_ascii_hex_to_nibble(buf[11]) << 8)
+                     | (cahute_ascii_hex_to_nibble(buf[12]) << 4)
+                     | cahute_ascii_hex_to_nibble(buf[13]));
             }
 
-            if (!IS_ASCII_HEX_DIGIT(buf[packet_size - 12])
-                || !IS_ASCII_HEX_DIGIT(buf[packet_size - 11])
-                || !IS_ASCII_HEX_DIGIT(buf[packet_size - 10])
-                || !IS_ASCII_HEX_DIGIT(buf[packet_size - 9])
-                || !IS_ASCII_HEX_DIGIT(buf[packet_size - 8])
-                || !IS_ASCII_HEX_DIGIT(buf[packet_size - 7])
-                || !IS_ASCII_HEX_DIGIT(buf[packet_size - 6])
-                || !IS_ASCII_HEX_DIGIT(buf[packet_size - 5])) {
+            if (!cahute_is_ascii_hex(buf[packet_size - 12])
+                || !cahute_is_ascii_hex(buf[packet_size - 11])
+                || !cahute_is_ascii_hex(buf[packet_size - 10])
+                || !cahute_is_ascii_hex(buf[packet_size - 9])
+                || !cahute_is_ascii_hex(buf[packet_size - 8])
+                || !cahute_is_ascii_hex(buf[packet_size - 7])
+                || !cahute_is_ascii_hex(buf[packet_size - 6])
+                || !cahute_is_ascii_hex(buf[packet_size - 5])) {
                 /* The header is corrupted.
                  * We however still want to skip the frame length and the
                  * checksum in order to fall back on our feet on next
@@ -272,15 +238,15 @@ sequence_found:
             }
 
             height =
-                ((ASCII_HEX_TO_NIBBLE(buf[packet_size - 12]) << 12)
-                 | (ASCII_HEX_TO_NIBBLE(buf[packet_size - 11]) << 8)
-                 | (ASCII_HEX_TO_NIBBLE(buf[packet_size - 10]) << 4)
-                 | ASCII_HEX_TO_NIBBLE(buf[packet_size - 9]));
+                ((cahute_ascii_hex_to_nibble(buf[packet_size - 12]) << 12)
+                 | (cahute_ascii_hex_to_nibble(buf[packet_size - 11]) << 8)
+                 | (cahute_ascii_hex_to_nibble(buf[packet_size - 10]) << 4)
+                 | cahute_ascii_hex_to_nibble(buf[packet_size - 9]));
             width =
-                ((ASCII_HEX_TO_NIBBLE(buf[packet_size - 8]) << 12)
-                 | (ASCII_HEX_TO_NIBBLE(buf[packet_size - 7]) << 8)
-                 | (ASCII_HEX_TO_NIBBLE(buf[packet_size - 6]) << 4)
-                 | ASCII_HEX_TO_NIBBLE(buf[packet_size - 5]));
+                ((cahute_ascii_hex_to_nibble(buf[packet_size - 8]) << 12)
+                 | (cahute_ascii_hex_to_nibble(buf[packet_size - 7]) << 8)
+                 | (cahute_ascii_hex_to_nibble(buf[packet_size - 6]) << 4)
+                 | cahute_ascii_hex_to_nibble(buf[packet_size - 5]));
 
             if (!memcmp(&buf[packet_size - 4], "1RC2", 4)) {
                 format = CAHUTE_PICTURE_FORMAT_16BIT_R5G6B5;
@@ -484,20 +450,20 @@ sequence_found:
     if (err)
         return err;
 
-    if (!IS_ASCII_HEX_DIGIT(buf[packet_size])
-        || !IS_ASCII_HEX_DIGIT(buf[packet_size + 1]))
+    if (!cahute_is_ascii_hex(buf[packet_size])
+        || !cahute_is_ascii_hex(buf[packet_size + 1]))
         return CAHUTE_ERROR_CORRUPT;
 
     {
         unsigned int obtained_checksum =
-            ((ASCII_HEX_TO_NIBBLE(buf[packet_size]) << 4)
-             | ASCII_HEX_TO_NIBBLE(buf[packet_size + 1]));
+            ((cahute_ascii_hex_to_nibble(buf[packet_size]) << 4)
+             | cahute_ascii_hex_to_nibble(buf[packet_size + 1]));
         unsigned int computed_checksum =
-            cahute_seven_checksum(&buf[1], packet_size - 1);
+            cahute_checksub(&buf[1], packet_size - 1);
 
         if (link->data_buffer_size) {
             computed_checksum +=
-                cahute_seven_checksum(state_data, link->data_buffer_size);
+                cahute_checksub(state_data, link->data_buffer_size);
             computed_checksum &= 255;
         }
 
@@ -533,7 +499,7 @@ cahute_seven_ohp_send_basic(
 
     buf[0] = type;
     memcpy(&buf[1], subtype, 5);
-    cahute_seven_set_ascii_hex(&buf[6], cahute_seven_checksum(&buf[1], 5));
+    cahute_set_ascii_hex(&buf[6], cahute_checksub(&buf[1], 5));
 
     msg(ll_info, "Sending the following packet:");
     mem(ll_info, buf, 8);

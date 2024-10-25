@@ -305,6 +305,14 @@ selected input or output format is a serial port.
         This is an extended option, that does not exist in the original
         CaS source.
 
+``9860``
+    If set, use Protocol 7.00.
+
+    .. warning::
+
+        This is an extended option, that does not exist in the original
+        CaS source.
+
 ``raw``
     If set, use the raw header and payload format.
 

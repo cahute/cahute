@@ -189,13 +189,7 @@ cahute_get_data_from_casiolink_file(
         return err;
 
     while (offset < file_size) {
-        err = cahute_casiolink_decode_data(
-            datap,
-            file,
-            &offset,
-            CAHUTE_CASIOLINK_VARIANT_AUTO,
-            1
-        );
+        err = cahute_casiolink_decode_data(datap, file, &offset);
         if (err && err != CAHUTE_ERROR_IMPL)
             goto fail;
 

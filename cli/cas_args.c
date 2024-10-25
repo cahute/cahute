@@ -459,26 +459,20 @@ static int parse_medium_params(
         if (get_casrc_setting_property(dstg, ostg, "7700")
             || get_casrc_setting_property(dstg, ostg, "9700")
             || get_casrc_setting_property(dstg, ostg, "9800"))
-            medium->data.com.serial_flags |=
-                CAHUTE_SERIAL_PROTOCOL_CASIOLINK
-                | CAHUTE_SERIAL_CASIOLINK_VARIANT_CAS40;
+            medium->data.com.serial_flags |= CAHUTE_SERIAL_PROTOCOL_CAS40;
         else if (get_casrc_setting_property(dstg, ostg, "9750")
          || get_casrc_setting_property(dstg, ostg, "9850")
          || get_casrc_setting_property(dstg, ostg, "9950"))
-            medium->data.com.serial_flags |=
-                CAHUTE_SERIAL_PROTOCOL_CASIOLINK
-                | CAHUTE_SERIAL_CASIOLINK_VARIANT_CAS50;
+            medium->data.com.serial_flags |= CAHUTE_SERIAL_PROTOCOL_CAS50;
         else if (get_casrc_setting_property(dstg, ostg, "afx")) /* Extended */
-            medium->data.com.serial_flags |=
-                CAHUTE_SERIAL_PROTOCOL_CASIOLINK
-                | CAHUTE_SERIAL_CASIOLINK_VARIANT_CAS100;
+            medium->data.com.serial_flags |= CAHUTE_SERIAL_PROTOCOL_CAS100;
         else if (get_casrc_setting_property(dstg, ostg, "cp") /* Extended */
          || get_casrc_setting_property(dstg, ostg, "cp300")
          || get_casrc_setting_property(dstg, ostg, "cp330")
          || get_casrc_setting_property(dstg, ostg, "cp330+"))
-            medium->data.com.serial_flags |=
-                CAHUTE_SERIAL_PROTOCOL_CASIOLINK
-                | CAHUTE_SERIAL_CASIOLINK_VARIANT_CAS300;
+            medium->data.com.serial_flags |= CAHUTE_SERIAL_PROTOCOL_CAS300;
+        else if (get_casrc_setting_property(dstg, ostg, "9860"))
+            medium->data.com.serial_flags |= CAHUTE_SERIAL_PROTOCOL_SEVEN;
 
         medium->data.com.pause =
             get_casrc_setting_property(dstg, ostg, "pause") != NULL;

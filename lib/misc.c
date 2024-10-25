@@ -248,3 +248,96 @@ CAHUTE_EXTERN(int) cahute_monotonic(unsigned long *msp) {
 }
 
 #endif
+
+/**
+ * Apply 0x5C padding to source data and write to a destination buffer.
+ *
+ * SECURITY: The destination buffer is assumed to have at least data_size*2
+ * bytes available. Assertions regarding the data size must be done in the
+ * caller.
+ *
+ * @param buf Destination buffer.
+ * @param data Source data to apply padding to.
+ * @param data_size Size of the source data to apply padding to.
+ * @return Size of the unpadded data.
+ */
+CAHUTE_EXTERN(int)
+cahute_pad_data(cahute_u8 *buf, cahute_u8 const *data, size_t data_size) {
+    cahute_u8 *orig = buf;
+    cahute_u8 const *p;
+
+    for (p = data; data_size--; p++) {
+        int byte = *p;
+
+        if (byte < 32) {
+            *buf++ = '\\';
+            *buf++ = 32 + byte;
+        } else if (byte == '\\') {
+            *buf++ = '\\';
+            *buf++ = '\\';
+        } else
+            *buf++ = byte;
+    }
+
+    return (size_t)(buf - orig);
+}
+
+/**
+ * Apply reverse 0x5C padding to source data and write to a destination buffer.
+ *
+ * This functions reads the original buffer size by using ``*buf_sizep``, and
+ * sets ``*buf_sizep`` to the number of actual bytes at the end.
+ *
+ * @param buf Destination buffer.
+ * @param buf_size Maximum capacity in the destination buffer.
+ * @param data Source data to apply reverse padding to.
+ * @param data_size Size of the source data to apply padding to.
+ * @return Error code, or 0 if ok.
+ */
+CAHUTE_EXTERN(int)
+cahute_unpad_data(
+    cahute_u8 *buf,
+    size_t *buf_sizep,
+    cahute_u8 const *data,
+    size_t data_size
+) {
+    cahute_u8 *orig = buf;
+    cahute_u8 const *p;
+    size_t buf_size = *buf_sizep;
+    size_t orig_data_size = data_size;
+
+    for (p = data; buf_size && data_size; p++, data_size--, buf_size--) {
+        int byte = *p;
+
+        if (byte == '\\') {
+            /* If we've arrived at the end, we ignore the char. */
+            if (data_size <= 1)
+                break;
+
+            byte = *++p;
+            data_size--;
+
+            *buf++ = byte == '\\' ? '\\' : byte - 32;
+        } else
+            *buf++ = byte;
+    }
+
+    if (data_size) {
+        /* ``data_size`` characters could not be converted because the
+         * destination buffer was full.
+         * Note that ``*buf_sizep`` does not need to be changed here, because
+         * it actually represents both the capacity and the actual used
+         * space in the destination buffer, since it's full. */
+        msg(ll_error,
+            "%" CAHUTE_PRIuSIZE "o/%" CAHUTE_PRIuSIZE
+            "o to unpad after "
+            "filling a buffer of %" CAHUTE_PRIuSIZE "o!",
+            data_size,
+            orig_data_size,
+            *buf_sizep);
+        return CAHUTE_ERROR_SIZE;
+    }
+
+    *buf_sizep = (size_t)(buf - orig);
+    return CAHUTE_OK;
+}
