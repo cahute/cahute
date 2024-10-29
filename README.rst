@@ -5,38 +5,48 @@ Cahute is a library and set of command-line utilities to handle serial
 and USB communication protocols and file formats related to CASIO calculators,
 dating from the 1990s to today.
 
+Cahute's officially supported features and systems list, as well as guides,
+topics and references oriented towards users, developers, packagers and
+contributors in general can be found in the documentation, depending on which
+version you're using:
+
+* `cahuteproject.org (latest release)`_;
+* `next.cahuteproject.org (develop branch)`_.
+
+Quick links to important guides to getting started with Cahute are the
+following:
+
+* `Installing Cahute`_;
+* `Building Cahute from source`_;
+* `Reporting a bug or vulnerability`_;
+* `Packaging Cahute`_;
+* `Contributing to Cahute`_.
+
+The project’s code and documentation contents are licensed under CeCILL
+version 2.1 as distributed by the CEA, CNRS and Inria on cecill.info.
+
 For more information, consult the following links:
 
-* `Cahute documentation`_, for more information on the project and its context;
-* `Cahute releases`_, for more information on the released versions of the
-  project;
-* `Issue tracker`_, and the `issue reporting guide`_;
-* `Pending contributions`_, and the related `contributing guide`_;
+* `Releases`_, to list all releases of the project and access a human-curated
+  changelog;
+* `Community feedback`_, including presence on other websites.
 
-The project is also talked about on the following communities:
+Happy Cahuting!
 
-* `Planète Casio <Planète Casio topic_>`_ (*in French*);
-* `TI-Planet <TI-Planet topic_>`_ (*in French*);
-* `Casiopeia <Casiopeia topic_>`_;
-* `Universal Casio Forum <UCF topic_>`_;
-* `Cemetech <Cemetech topic_>`_.
+.. _next.cahuteproject.org (develop branch): https://next.cahuteproject.org/
+.. _cahuteproject.org (latest release): https://cahuteproject.org/
 
-.. _Cahute documentation: https://cahuteproject.org/
-.. _Cahute releases: https://gitlab.com/cahuteproject/cahute/-/releases
-.. _Issue tracker: https://gitlab.com/cahuteproject/cahute/-/issues
-.. _Issue reporting guide: https://cahuteproject.org/guides/report.html
-.. _Pending contributions:
-    https://gitlab.com/cahuteproject/cahute/-/merge_requests
-.. _Contributing guide: https://cahuteproject.org/guides/contribute.html
-.. _Planète Casio topic:
-    https://www.planet-casio.com/Fr/forums/topic17699-1-cahute-pour-
-    communiquer-efficacement-avec-sa-calculatrice-casio-sous-linux.html
-.. _TI-Planet topic:
-    https://tiplanet.org/forum/viewtopic.php?t=26656
-.. _Casiopeia topic:
-    https://www.casiopeia.net/forum/viewtopic.php?f=19&t=8102
-.. _UCF topic:
-    https://community.casiocalc.org/topic/
-    8214-cahute-a-toolset-for-protocols-and-file-formats/
-.. _Cemetech topic:
-    https://www.cemetech.net/forum/viewtopic.php?p=307733
+.. _Installing Cahute: https://next.cahuteproject.org/guides/install.html
+.. _Building Cahute from source:
+    https://next.cahuteproject.org/guides/build.html
+.. _Reporting a bug or vulnerability:
+    https://next.cahuteproject.org/guides/report.html
+.. _Packaging Cahute: https://next.cahuteproject.org/guides/package.html
+.. _Contributing to Cahute:
+    https://next.cahuteproject.org/guides/contribute.html
+
+.. _CeCILL: http://www.cecill.info/licences.en.html
+.. _cecill.info: http://www.cecill.info/licences.en.html
+
+.. _Releases: https://gitlab.com/cahuteproject/cahute/-/releases
+.. _Community feedback: https://next.cahuteproject.org/project/community.html

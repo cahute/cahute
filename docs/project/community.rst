@@ -30,7 +30,8 @@ and is described in topics on forums of said communities:
 * `TI-Planet <TI-Planet topic_>`_ (*in French*);
 * `Casiopeia <Casiopeia topic_>`_;
 * `Universal Casio Forum <UCF topic_>`_;
-* `Cemetech <Cemetech topic_>`_.
+* `Cemetech <Cemetech topic_>`_;
+* `cnCalc <cnCalc topic_>`_ (*in Chinese*).
 
 The main instant messaging place for discussing Cahute, along with many other
 projects, is the `#projets shoutbox channel on Planète Casio
@@ -83,6 +84,8 @@ Here is a preview of what the maintainers can see through the
     8214-cahute-a-toolset-for-protocols-and-file-formats/
 .. _Cemetech topic:
     https://www.cemetech.net/forum/viewtopic.php?p=307733
+.. _cnCalc topic:
+    https://www.cncalc.org/forum.php?mod=viewthread&tid=25421
 .. _projets channel: https://www.planet-casio.com/Fr/shoutbox/projets
 .. _Creating a Planète Casio account:
     https://www.planet-casio.com/Fr/compte/creation_nouveau_compte.php
