@@ -44,8 +44,8 @@ Initialize the link
 There is no specific initialization within the application protocol.
 
 However, when used over USB links, some devices may freeze up until the
-receiver / host runs a special USB control flow; see :ref:`usb-device-enabling`
-for more information.
+receiver / host runs a special USB control flow; see
+:ref:`transport-serial-over-usb-bulk-enable-control-flow` for more information.
 
 .. _seven-ohp-acknowledge:
 

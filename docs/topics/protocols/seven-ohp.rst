@@ -7,20 +7,20 @@ Screenstreaming, also named "OverHead Projector" (OHP), "Projector", or
 "Screen Receiver"\ [#screenreceiver]_, is a mode in which the calculator
 shares its screen contents to another device.
 
-The protocol can be found over the following transports:
+The protocol is present over the following transports:
 
-* Over USB bulk transfers, using the ``07cf:6101`` VID/PID:
+* Over :ref:`transport-serial-over-usb-bulk`:
 
   - For fx-9860G and compatible, using any screenstreaming mode;
   - For fx-CG and compatible, using the ``ScreenRecv(XP)`` mode specifically.
-* Over USB Mass Storage as documented in :ref:`protocol-ums`, for fx-CG
-  and compatible using the ``ScreenRecv`` or ``Protocol`` mode.
+* Over :ref:`transport-ums`, for fx-CG and compatible using the ``ScreenRecv``
+  or ``Projector`` mode.
 
 .. note::
 
-    While it is theoretically possible to find this protocol over serial
-    communications as well, no way has been found to request the calculator
-    do this.
+    While it is theoretically possible to find this protocol over
+    :ref:`transport-serial` as well, no way has been found to request the
+    calculator do this.
 
 This protocol is analogous to Protocol 7.00, see :ref:`protocol-seven` for
 more information. It is used on the same calculator models and during the

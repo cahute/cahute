@@ -15,8 +15,8 @@ AFX / Graph 100, used between 1999 and 2003.
     however, because 100 also references Graph 100, the French
     model variation implementing this protocol.
 
-For this protocol, serial settings are always the same, and do not vary
-during the transfer:
+This protocol is usually present over :ref:`transport-serial`.
+Serial settings are always the same, and do not vary during the transfer:
 
 * Speed: **38400** bauds.
 * Parity: **none**.

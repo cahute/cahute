@@ -6,13 +6,9 @@ Protocol 7.00 -- Serial and USB protocol used by post fx-9860G calculators
 This protocol is used by calculators starting from the fx-9860G, published
 in 2004, up to the current day.
 
-.. note::
-
-    fx-CG calculators and derivatives still use a derivative from Protocol
-    7.00, although not directly, but hidden behind proprietary SCSI commands.
-    See :ref:`protocol-ums` for more information.
-
-For this protocol, serial settings are always the same at the beginning of
+This protocol can be found over :ref:`transport-serial` and
+:ref:`transport-serial-over-usb-bulk`.
+For serial links, serial settings are always the same at the beginning of
 the communication:
 
 * Speed: **9600** bauds;

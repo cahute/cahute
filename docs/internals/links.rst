@@ -111,7 +111,8 @@ of the serial link using the following function:
 
     Set the serial parameters to the medium.
 
-    Accepted flags are a subset of the flags for :c:func:`cahute_open_serial`:
+    Accepted flags are a subset of the flags for
+    :c:func:`cahute_open_serial_link`:
 
     * ``CAHUTE_SERIAL_STOP_*`` (stop bits);
     * ``CAHUTE_SERIAL_PARITY_*`` (parity);
@@ -175,7 +176,7 @@ Available mediums are the following:
 
 .. c:macro:: CAHUTE_LINK_MEDIUM_POSIX_SERIAL
 
-    Serial medium using the POSIX STREAMS API, with a file descriptor (*fd*):
+    :ref:`transport-serial` using the POSIX API, with a file descriptor (*fd*):
 
     * Closing using `close(2) <https://linux.die.net/man/2/close>`_;
     * Receiving uses `select(2) <https://linux.die.net/man/2/select>`_ and
@@ -191,30 +192,14 @@ Available mediums are the following:
     explicitely (since they do not define the ``__unix__`` constant like
     Linux does).
 
-    Available protocols on this medium are the following:
-
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_AUTO`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_NONE`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_CASIOLINK`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN_OHP`.
-
 .. c:macro:: CAHUTE_LINK_MEDIUM_AMIGAOS_SERIAL
 
-    Serial medium using AmigaOS serial I/O, as described in the
+    :ref:`transport-serial` using AmigaOS serial I/O, as described in the
     `AmigaOS Serial Device Guide`_.
-
-    Available protocols on this medium are the following:
-
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_AUTO`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_NONE`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_CASIOLINK`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN_OHP`.
 
 .. c:macro:: CAHUTE_LINK_MEDIUM_WIN32_SERIAL
 
-    Serial medium using the Windows API, with a |HANDLE|_ and
+    :ref:`transport-serial` using the Windows API, with a |HANDLE|_ and
     `Overlapped I/O`_:
 
     * Closing uses |CloseHandle|_;
@@ -230,20 +215,13 @@ Available mediums are the following:
 
     For more information, see `Serial Communications in Win32`_.
 
-    Available protocols on this medium are the following:
-
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_AUTO`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_NONE`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_CASIOLINK`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN_OHP`.
-
 .. c:macro:: CAHUTE_LINK_MEDIUM_WIN32_CESG
 
-    USB device used as a host through CASIO's CESG502 driver using the
-    Windows API.
+    :ref:`transport-serial-over-usb-bulk` or stream-only operations for
+    :ref:`transport-ums` using CASIO's CESG502 driver
+    through the Windows API.
 
-    As described in :ref:`usb-detection-windows`, we must detect if the
+    As described in :ref:`windows-usb-drivers`, we must detect if the
     device driver is CESG502 or a libusb-compatible driver by using
     SetupAPI_ or CfgMgr32_, and use this medium in the first case.
 
@@ -265,17 +243,9 @@ Available mediums are the following:
     directly, or USB Mass Storage, into a stream interface; this however
     does not allow you to make SCSI requests directly.
 
-    Available protocols on this medium are the following:
-
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_NONE`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_AUTO`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_CASIOLINK`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP`.
-
 .. c:macro:: CAHUTE_LINK_MEDIUM_WIN32_UMS
 
-    USB Mass Storage device used as a host using the Windows API.
+    :ref:`transport-ums` using the Windows API.
 
     It is used with a |HANDLE|_:
 
@@ -283,16 +253,9 @@ Available mediums are the following:
     * Requesting using SCSI uses |DeviceIoControl|_ with
       |IOCTL_SCSI_PASS_THROUGH_DIRECT|_.
 
-    Available protocols on this medium are the following:
-
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_NONE`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_AUTO`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_MASS_STORAGE`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP`.
-
 .. c:macro:: CAHUTE_LINK_MEDIUM_LIBUSB
 
-    USB device used as a host through libusb, with bulk transport.
+    :ref:`transport-serial-over-usb-bulk` using libusb.
 
     It is used with a |libusb_device_handle|_, opened using a
     |libusb_context|_:
@@ -301,18 +264,9 @@ Available mediums are the following:
       on the libusb context;
     * Receiving and sending uses |libusb_bulk_transfer|_.
 
-    Available protocols on this medium are the following:
-
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_NONE`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_AUTO`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_CASIOLINK`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP`.
-
 .. c:macro:: CAHUTE_LINK_MEDIUM_LIBUSB_UMS
 
-    USB device used as a host through libusb, implementing USB Mass Storage
-    (UMS) with Bulk-only transport.
+    :ref:`transport-ums` using libusb.
 
     As for :c:macro:`CAHUTE_LINK_MEDIUM_LIBUSB`, it is used with a
     |libusb_device_handle|_, opened using a |libusb_context|_:
@@ -325,13 +279,6 @@ Available mediums are the following:
 
     See `USB Mass Storage Class, Bulk-Only Transport`_ for more information
     on CBW and CSW format and protocol in general.
-
-    Available protocols on this medium are the following:
-
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_NONE`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_AUTO`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_MASS_STORAGE`;
-    * :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP`.
 
 Protocols
 ---------

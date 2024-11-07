@@ -9,6 +9,8 @@ device.
     :maxdepth: 2
 
     topics/protocols/rationales
+    topics/protocols/transport
+    topics/usb-detection
     topics/protocols/casiolink
     topics/protocols/cas40
     topics/protocols/cas50
@@ -17,4 +19,3 @@ device.
     topics/protocols/seven
     topics/protocols/seven-ohp
     topics/protocols/ums
-    topics/usb-detection

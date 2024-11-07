@@ -13,7 +13,8 @@ by CASIO calculators over serial links.
     from that time (see :ref:`cas`), and 40, the size in bytes of
     the headers used in the protocol.
 
-For this protocol, serial settings are selected manually on both the sender
+This protocol is usually present over :ref:`transport-serial`.
+Serial settings are selected manually on both the sender
 and the receiver, and stay the same until the communication ends.
 Available serial settings on the reference implementations of this protocol
 are the following:

@@ -120,7 +120,8 @@ the PC must initialize the link using this flow, which is the following:
 .. warning::
 
     Over USB, the device may not be able to send any data until a special
-    USB control flow is run; see :ref:`usb-device-enabling` for more
+    USB control flow is run; see
+    :ref:`transport-serial-over-usb-bulk-enable-control-flow` for more
     information.
 
 The initial check packet is a check packet of subtype ``00``; see
@@ -245,6 +246,8 @@ Data packets are described in :ref:`seven-data-packet`.
     * 512 bytes will be represented as 2 data packets (both of 256 bytes).
     * 1055 bytes will be represented as 5 data packets (four of 256 bytes,
       one of 31 bytes).
+
+.. _seven-packet-shifting:
 
 Packet shifting
 ~~~~~~~~~~~~~~~

@@ -12,7 +12,9 @@ between 2003 and 2013.
     The term was coined by Thomas Touhey, as an evolution of CAS50
     and CAS100 for the Classpad 300.
 
-For this protocol, the beginning of the communication always uses the same
+This protocol can be found over :ref:`transport-serial` and
+:ref:`transport-serial-over-usb-bulk`.
+For serial links, the beginning of the communication always uses the same
 serial settings are always the same:
 
 * Speed: **38400** bauds.
