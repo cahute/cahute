@@ -370,6 +370,7 @@ cahute__log_win_error(
 #define CAHUTE_LINK_PROTOCOL_USB_MASS_STORAGE 15
 
 #if defined(CAHUTE_LINK_MEDIUM_POSIX_SERIAL)
+
 /**
  * POSIX medium state.
  *

@@ -294,6 +294,7 @@ static int parse_medium_params(
         char const *raw_parity =
             get_casrc_setting_property(dstg, ostg, "parity");
         char const *raw_stop = get_casrc_setting_property(dstg, ostg, "stop");
+        char const *raw_rts = get_casrc_setting_property(dstg, ostg, "rts");
 
         medium->data.com.serial_speed = 0;
         medium->data.com.serial_flags = 0;
@@ -341,14 +342,16 @@ static int parse_medium_params(
         }
 
         if (get_casrc_setting_property(dstg, ostg, "dtr"))
-            medium->data.com.serial_flags |= CAHUTE_SERIAL_DTR_HANDSHAKE;
+            medium->data.com.serial_flags |= CAHUTE_SERIAL_DTR_ENABLE;
         else
             medium->data.com.serial_flags |= CAHUTE_SERIAL_DTR_DISABLE;
 
-        if (get_casrc_setting_property(dstg, ostg, "rts"))
+        if (!raw_rts)
+            medium->data.com.serial_flags |= CAHUTE_SERIAL_RTS_DISABLE;
+        else if (!strcmp(raw_rts, "handshake"))
             medium->data.com.serial_flags |= CAHUTE_SERIAL_RTS_HANDSHAKE;
         else
-            medium->data.com.serial_flags |= CAHUTE_SERIAL_RTS_DISABLE;
+            medium->data.com.serial_flags |= CAHUTE_SERIAL_RTS_ENABLE;
 
         if (get_casrc_setting_property(dstg, ostg, "7700")
             || get_casrc_setting_property(dstg, ostg, "9700")

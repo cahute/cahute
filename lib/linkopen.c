@@ -1750,14 +1750,35 @@ cahute_open_serial_link(
         CAHUTE_RETURN_IMPL(context, "Unsupported XON/XOFF mode.");
     }
 
-    if ((flags & CAHUTE_SERIAL_DTR_MASK) == 0) {
-        /* We disable DTR hardware control by default. */
-        flags |= CAHUTE_SERIAL_DTR_DISABLE;
+    switch (flags & CAHUTE_SERIAL_DTR_MASK) {
+    case 0:
+        flags |= CAHUTE_SERIAL_DTR_IGNORE;
+        break;
+
+    case CAHUTE_SERIAL_DTR_IGNORE:
+    case CAHUTE_SERIAL_DTR_DISABLE:
+    case CAHUTE_SERIAL_DTR_ENABLE:
+        /* Valid values! */
+        break;
+
+    default:
+        CAHUTE_RETURN_IMPL(context, "Unsupported DTR mode.");
     }
 
-    if ((flags & CAHUTE_SERIAL_RTS_MASK) == 0) {
-        /* We disable RTS hardware control by default. */
-        flags |= CAHUTE_SERIAL_RTS_DISABLE;
+    switch (flags & CAHUTE_SERIAL_RTS_MASK) {
+    case 0:
+        flags |= CAHUTE_SERIAL_RTS_IGNORE;
+        break;
+
+    case CAHUTE_SERIAL_RTS_IGNORE:
+    case CAHUTE_SERIAL_RTS_DISABLE:
+    case CAHUTE_SERIAL_RTS_ENABLE:
+    case CAHUTE_SERIAL_RTS_HANDSHAKE:
+        /* Valid values! */
+        break;
+
+    default:
+        CAHUTE_RETURN_IMPL(context, "Unsupported RTS mode.");
     }
 
     switch (speed) {

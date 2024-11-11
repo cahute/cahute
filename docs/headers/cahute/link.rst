@@ -372,35 +372,60 @@ Link management related function declarations
         CASIOLINK variants, both devices can negotiate different serial
         parameters and switch to them.
 
-    If the device uses DTR and the cable supports it, it can be selected
+    If the device uses DTR and the cable supports it, it can be set
     manually as well, amongst the following:
+
+    .. c:macro:: CAHUTE_SERIAL_DTR_IGNORE
+
+        Ignore the status of the DTR line (*by default*).
+
+        This is the most portable option, since the platform may not allow
+        Cahute to set the DTR line.
 
     .. c:macro:: CAHUTE_SERIAL_DTR_DISABLE
 
-        Disable DTR (*by default*).
+        Disable the DTR line when the link is opened, and leave it disabled.
+
+        This may cause a :c:macro:`CAHUTE_ERROR_IMPL` error if the platform
+        does not allow Cahute to set the DTR line.
 
     .. c:macro:: CAHUTE_SERIAL_DTR_ENABLE
 
-        Enable DTR.
+        Enable the DTR line when the link is opened, and leave it enabled.
 
-    .. c:macro:: CAHUTE_SERIAL_DTR_HANDSHAKE
-
-        Enable DTR, and require a handshake to be done.
+        This may cause a :c:macro:`CAHUTE_ERROR_IMPL` error if the platform
+        does not allow Cahute to set the DTR line.
 
     If the device uses RTS and the cable supports it, it can also be
-    selected manually, amongst the following:
+    set manually, amongst the following:
+
+    .. c:macro:: CAHUTE_SERIAL_RTS_IGNORE
+
+        Ignore the status of the RTS line (*by default*).
+
+        This is the most portable option, since the platform may not allow
+        Cahute to set the RTS line.
 
     .. c:macro:: CAHUTE_SERIAL_RTS_DISABLE
 
-        Disable RTS (*by default*).
+        Disable the RTS line when the link is opened, and leave it disabled.
+
+        This may cause a :c:macro:`CAHUTE_ERROR_IMPL` error if the platform
+        does not allow Cahute to set the RTS line.
 
     .. c:macro:: CAHUTE_SERIAL_RTS_ENABLE
 
-        Enable RTS.
+        Enable the RTS line when the link opened, and leave it enabled.
+
+        This may cause a :c:macro:`CAHUTE_ERROR_IMPL` error if the platform
+        does not allow Cahute to set the RTS line.
 
     .. c:macro:: CAHUTE_SERIAL_RTS_HANDSHAKE
 
-        Enable RTS, and require a handshake to be done.
+        Use RTS/CTS handshaking.
+
+        This may cause a :c:macro:`CAHUTE_ERROR_IMPL` error if the platform
+        does not support it, and does not allow the necessary pin interactions.
 
     Protocol-specific behaviour can be tweaked using the following flags:
 

@@ -194,11 +194,36 @@ cahute_set_serial_params_to_link(
         unsupported_flags |= flags & CAHUTE_SERIAL_XONXOFF_MASK;
     }
 
-    if (!(flags & CAHUTE_SERIAL_DTR_MASK))
+    switch (flags & CAHUTE_SERIAL_DTR_MASK) {
+    case 0:
         flags |= link->medium.serial_flags & CAHUTE_SERIAL_DTR_MASK;
+        break;
 
-    if (!(flags & CAHUTE_SERIAL_RTS_MASK))
+    case CAHUTE_SERIAL_DTR_IGNORE:
+    case CAHUTE_SERIAL_DTR_DISABLE:
+    case CAHUTE_SERIAL_DTR_ENABLE:
+        /* Valid values! */
+        break;
+
+    default:
+        unsupported_flags |= flags & CAHUTE_SERIAL_DTR_MASK;
+    }
+
+    switch (flags & CAHUTE_SERIAL_RTS_MASK) {
+    case 0:
         flags |= link->medium.serial_flags & CAHUTE_SERIAL_RTS_MASK;
+        break;
+
+    case CAHUTE_SERIAL_RTS_IGNORE:
+    case CAHUTE_SERIAL_RTS_DISABLE:
+    case CAHUTE_SERIAL_RTS_ENABLE:
+    case CAHUTE_SERIAL_RTS_HANDSHAKE:
+        /* Valid values! */
+        break;
+
+    default:
+        unsupported_flags |= flags & CAHUTE_SERIAL_RTS_MASK;
+    }
 
     if (unsupported_flags)
         CAHUTE_RETURN_IMPL(

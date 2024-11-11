@@ -167,6 +167,8 @@ if(SIZEOF_SIZE_T STREQUAL "")
 endif()
 check_type_size("void*" "SIZEOF_UINTPTR_T")
 
+check_include_file("linux/serial.h" "HAVE_LINUX_SERIAL_H")
+
 add_compile_definitions(
     SIZEOF_SIZE_T=${SIZEOF_SIZE_T}
     SIZEOF_UINTPTR_T=${SIZEOF_UINTPTR_T}

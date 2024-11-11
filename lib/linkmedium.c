@@ -31,6 +31,10 @@
 # include <ntddscsi.h>
 #endif
 
+#if defined(__linux__) && HAVE_LINUX_SERIAL_H
+# include <linux/serial.h>
+#endif
+
 /**
  * Read data synchronously from the medium associated with the link.
  *
@@ -881,6 +885,8 @@ cahute_set_serial_params_to_link_medium(
     case CAHUTE_LINK_MEDIUM_POSIX_SERIAL: {
         struct termios term;
         speed_t termios_speed;
+        int set_dtr = 0, dtr_value = 0;
+        int set_rts = 0, rts_value = 0;
 
         switch (speed) {
         case 300:
@@ -969,6 +975,18 @@ cahute_set_serial_params_to_link_medium(
         term.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
 
         term.c_cflag &= ~(PARENB | PARODD | CSTOPB | CSIZE);
+# ifdef CRTSCTS
+        if ((flags & CAHUTE_SERIAL_RTS_MASK) == CAHUTE_SERIAL_RTS_HANDSHAKE)
+            term.c_cflag |= CRTSCTS;
+        else
+            term.c_cflag &= ~CRTSCTS;
+# else
+        if ((flags & CAHUTE_SERIAL_RTS_MASK) == CAHUTE_SERIAL_RTS_HANDSHAKE)
+            CAHUTE_RETURN_IMPL(
+                medium->context,
+                "Platform did not define CRTSCTS."
+            );
+# endif
         term.c_cflag |= CREAD | CS8;
 
         switch (flags & CAHUTE_SERIAL_PARITY_MASK) {
@@ -993,45 +1011,49 @@ cahute_set_serial_params_to_link_medium(
             return CAHUTE_ERROR_UNKNOWN;
         }
 
-# if defined(TIOCM_DTR) || defined(TIOCM_RTS)
-        {
-            unsigned int status, original_status;
+        switch (flags & CAHUTE_SERIAL_DTR_MASK) {
+        case CAHUTE_SERIAL_DTR_DISABLE:
+            dtr_value = 1;
+            /* FALLTHRU */
+        case CAHUTE_SERIAL_DTR_ENABLE:
+            set_dtr = 1;
+        }
 
-            /* Also set the DTR/RTS mode. */
-            if (ioctl(medium->state.posix.fd, TIOCMGET, &status) >= 0)
-                status = 0;
+        switch (flags & CAHUTE_SERIAL_RTS_MASK) {
+        case CAHUTE_SERIAL_RTS_DISABLE:
+            rts_value = 1;
+            /* FALLTHRU */
+        case CAHUTE_SERIAL_RTS_ENABLE:
+            set_rts = 1;
+            break;
+        }
 
-            original_status = status;
+# if !defined(TIOCMGET)
+        if (set_dtr || set_rts)
+            CAHUTE_RETURN_IMPL("No mechanism available to set control bits.");
+# else
+        if (set_dtr || set_rts) {
+            int status;
 
-#  if defined(TIOCM_DTR)
-            switch (flags & CAHUTE_SERIAL_DTR_MASK) {
-            case CAHUTE_SERIAL_DTR_ENABLE:
-            case CAHUTE_SERIAL_DTR_HANDSHAKE:
-                status |= TIOCM_DTR;
-                break;
-
-            default:
-                status &= ~TIOCM_DTR;
-                break;
+            if (ioctl(medium->state.posix.fd, TIOCMGET, &status)) {
+                msg(medium->context,
+                    ll_error,
+                    "ioctl(TIOCMGET) failed: %s",
+                    strerror(errno));
+                return CAHUTE_ERROR_UNKNOWN;
             }
-#  endif
 
-#  if defined(TIOCM_RTS)
-            switch (flags & CAHUTE_SERIAL_RTS_MASK) {
-            case CAHUTE_SERIAL_RTS_ENABLE:
-            case CAHUTE_SERIAL_RTS_HANDSHAKE:
-                status |= TIOCM_RTS;
-                break;
+            if (set_dtr)
+                status = dtr_value ? status & ~TIOCM_DTR : status | TIOCM_DTR;
 
-            default:
-                status &= ~TIOCM_RTS;
-                break;
-            }
-#  endif
+            if (set_rts)
+                status = rts_value ? status & ~TIOCM_RTS : status | TIOCM_RTS;
 
-            if (status != original_status
-                && ioctl(medium->state.posix.fd, TIOCMSET, &status) < 0) {
-                msg(medium->context, ll_error, "Could not set DTR/RTS mode.");
+            if (ioctl(medium->state.posix.fd, TIOCMSET, &status)) {
+                msg(medium->context,
+                    ll_error,
+                    "ioctl(TIOCMSET) failed: %s",
+                    strerror(errno));
                 return CAHUTE_ERROR_UNKNOWN;
             }
         }
@@ -1142,29 +1164,25 @@ cahute_set_serial_params_to_link_medium(
         }
 
         switch (flags & CAHUTE_SERIAL_DTR_MASK) {
+        case CAHUTE_SERIAL_DTR_DISABLE:
+            dcb.fDtrControl = DTR_CONTROL_DISABLE;
+            break;
+
         case CAHUTE_SERIAL_DTR_ENABLE:
             dcb.fDtrControl = DTR_CONTROL_ENABLE;
-            break;
-
-        case CAHUTE_SERIAL_DTR_HANDSHAKE:
-            dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
-            break;
-
-        default:
-            dcb.fDtrControl = DTR_CONTROL_DISABLE;
         }
 
         switch (flags & CAHUTE_SERIAL_RTS_MASK) {
+        case CAHUTE_SERIAL_RTS_DISABLE:
+            dcb.fRtsControl = RTS_CONTROL_DISABLE;
+            break;
+
         case CAHUTE_SERIAL_RTS_ENABLE:
             dcb.fRtsControl = RTS_CONTROL_ENABLE;
             break;
 
         case CAHUTE_SERIAL_RTS_HANDSHAKE:
             dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
-            break;
-
-        default:
-            dcb.fRtsControl = RTS_CONTROL_DISABLE;
         }
 
         if (!SetCommState(medium->state.windows.handle, &dcb)) {
@@ -1216,8 +1234,21 @@ cahute_set_serial_params_to_link_medium(
             break;
         }
 
-        /* TODO: AmigaOS doesn't manage DTR/RTS directly, which means we
-         * may have to manage it here manually! */
+        if ((flags & CAHUTE_SERIAL_DTR_MASK) != CAHUTE_SERIAL_DTR_IGNORE) {
+            /* TODO */
+            CAHUTE_RETURN_IMPL(
+                medium->context,
+                "DTR line control not implemented yet."
+            );
+        }
+
+        if ((flags & CAHUTE_SERIAL_RTS_MASK) != CAHUTE_SERIAL_RTS_IGNORE) {
+            /* TODO */
+            CAHUTE_RETURN_IMPL(
+                medium->context,
+                "RTS line control not implemented yet."
+            );
+        }
 
         io->IOSer.io_Command = SDCMD_SETPARAMS;
         if (DoIO((struct IORequest *)io)) {

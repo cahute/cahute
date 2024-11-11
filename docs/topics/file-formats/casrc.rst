@@ -344,10 +344,21 @@ selected input or output format is a serial port.
         CaS source.
 
 ``dtr``
-    If set, enable DTR on the serial connection.
+    If set, enable the DTR line on the serial connection.
+    By default, the DTR line is disabled.
 
 ``rts``
-    If set, enable RTS on the serial connection.
+    If set, enable the RTS line on the serial connection.
+    By default, the RTS line is disabled.
+
+    If this is set to the special value ``handshake``, e.g. using
+    ``rts=handshake``, rather than enabling the RTS line, CaS will enable
+    RTS/CTS handshaking.
+
+    .. warning::
+
+        ``handshake`` is an extended option, that does not exist in the
+        original CaS source.
 
 ``pause``
     If set, require an interactive confirmation before initializing
