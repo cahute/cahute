@@ -35,6 +35,7 @@
 /**
  * Display cookie.
  *
+ * @property context Context in which to run the loop.
  * @property window Window that contains the surface.
  * @property renderer Renderer for the window.
  * @property texture Texture that covers the window.
@@ -43,6 +44,7 @@
  * @property zoom Zoom with which to draw the window.
  */
 struct display_cookie {
+    cahute_context *context;
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Texture *texture;
@@ -208,6 +210,7 @@ display_frame(struct display_cookie *cookie, cahute_frame const *frame) {
 
         /* TODO: Handle the error here? */
         cahute_convert_picture_from_frame(
+            cookie->context,
             texture_pixels,
             CAHUTE_PICTURE_FORMAT_32BIT_ARGB_HOST,
             frame
@@ -238,6 +241,7 @@ display_frame(struct display_cookie *cookie, cahute_frame const *frame) {
  * @return Exit status code.
  */
 int main(int ac, char **av) {
+    cahute_context *context = NULL;
     cahute_link *link = NULL;
     struct args args;
     struct display_cookie cookie;
@@ -247,6 +251,23 @@ int main(int ac, char **av) {
     if (!parse_args(ac, av, &args))
         return 0;
 
+    cookie.context = NULL;
+    cookie.window = NULL;
+    cookie.renderer = NULL;
+    cookie.texture = NULL;
+    cookie.saved_width = -1;
+    cookie.saved_height = -1;
+    cookie.zoom = args.zoom;
+
+    err = cahute_create_context(&context);
+    if (err)
+        goto end;
+
+    cookie.context = context;
+
+    if (args.loglevel)
+        set_log_level(context, args.loglevel);
+
     if (args.serial_name)
         /* The user has selected a serial link!
          * On serial links, we can either use automatic protocol detection
@@ -254,6 +275,7 @@ int main(int ac, char **av) {
          * specific protocol but not support both CASIOLINK screen captures
          * and Protocol 7.00 Screenstreaming. We choose the former. */
         err = cahute_open_serial_link(
+            context,
             &link,
             args.serial_flags | CAHUTE_SERIAL_RECEIVER,
             args.serial_name,
@@ -261,6 +283,7 @@ int main(int ac, char **av) {
         );
     else
         err = cahute_open_simple_usb_link(
+            context,
             &link,
             CAHUTE_USB_RECEIVER | CAHUTE_USB_SEVEN | CAHUTE_USB_OHP
         );
@@ -294,13 +317,6 @@ int main(int ac, char **av) {
         return 3;
     }
     sdl_initialized = 1;
-
-    cookie.window = NULL;
-    cookie.renderer = NULL;
-    cookie.texture = NULL;
-    cookie.saved_width = -1;
-    cookie.saved_height = -1;
-    cookie.zoom = args.zoom;
 
     while (1) {
         SDL_Event event;
@@ -338,6 +354,7 @@ int main(int ac, char **av) {
 
 end:
     cahute_close_link(link);
+    cahute_destroy_context(context);
 
     if (cookie.texture)
         SDL_DestroyTexture(cookie.texture);

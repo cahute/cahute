@@ -166,8 +166,9 @@ Type definitions
 Link management related function declarations
 ---------------------------------------------
 
-.. c:function:: int cahute_open_serial_link(cahute_link **linkp, \
-    unsigned long flags, char const *name, unsigned long speed)
+.. c:function:: int cahute_open_serial_link(cahute_context *context, \
+    cahute_link **linkp, unsigned long flags, char const *name, \
+    unsigned long speed)
 
     Open a link over a serial modem.
 
@@ -455,6 +456,7 @@ Link management related function declarations
         explicitely, it allows running multiple shell
         commands on the same connection.
 
+    :param context: Context in which to open the link.
     :param linkp: The pointer to set the opened link to.
     :param flags: The flags to set to the serial link.
     :param name: The name or path of the serial link to open.
@@ -463,8 +465,8 @@ Link management related function declarations
         variant.
     :return: The error, or 0 if the operation was successful.
 
-.. c:function:: int cahute_open_usb_link(cahute_link **linkp, \
-    unsigned long flags, int bus, int address)
+.. c:function:: int cahute_open_usb_link(cahute_context *context, \
+    cahute_link **linkp, unsigned long flags, int bus, int address)
 
     Open a link with a USB device.
 
@@ -569,14 +571,15 @@ Link management related function declarations
         This renders all of the functions from :ref:`header-cahute-link-medium`
         accessible on the created link.
 
+    :param context: Context in which to open the link.
     :param linkp: The pointer to set the opened link to.
     :param flags: The flags to set to the USB link.
     :param bus: The bus number of the USB calculator to open a link with.
     :param address: The device number of the calculator to open a link with.
     :return: The error, or 0 if the operation was successful.
 
-.. c:function:: int cahute_open_simple_usb_link(cahute_link **linkp, \
-    unsigned long flags)
+.. c:function:: int cahute_open_simple_usb_link(cahute_context *context, \
+    cahute_link **linkp, unsigned long flags)
 
     Open a link to a single USB device.
 
@@ -629,6 +632,7 @@ Link management related function declarations
         provided to determine what protocol to adopt if a serial USB
         calculator was picked.
 
+    :param context: Context in which to run the function.
     :param linkp: The pointer to set to the opened link.
     :param flags: The flags to set the USB link.
     :return: The error, or 0 if the operation was successful.

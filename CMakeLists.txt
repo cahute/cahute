@@ -201,6 +201,7 @@ add_library(${PROJECT_NAME} STATIC
     lib/casiolink.c
     lib/cdefs.c
     "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
+    lib/context.c
     lib/data.c
     lib/detection.c
     lib/file.c

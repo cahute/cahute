@@ -52,20 +52,22 @@ struct cahute_frame {
 
 CAHUTE_EXTERN(int)
 cahute_convert_picture(
+    cahute_context CAHUTE_NNPTR(cahute__context),
     void *cahute__dest,
     int cahute__dest_format,
     void const *cahute__src,
     int cahute__src_format,
     int cahute__width,
     int cahute__height
-);
+) CAHUTE_NONNULL((1));
 
 CAHUTE_EXTERN(int)
 cahute_convert_picture_from_frame(
+    cahute_context CAHUTE_NNPTR(cahute__context),
     void *cahute__dest,
     int cahute__dest_format,
     cahute_frame const *cahute__frame
-);
+) CAHUTE_NONNULL((1));
 
 CAHUTE_END_DECLS
 CAHUTE_END_NAMESPACE

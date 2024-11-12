@@ -93,7 +93,10 @@ cahute_receive_on_link(
         );
 
     default:
-        CAHUTE_RETURN_IMPL("Protocol does not support generic medium access.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Protocol does not support generic medium access."
+        );
     }
 }
 
@@ -111,7 +114,10 @@ cahute_send_on_link(cahute_link *link, cahute_u8 const *buf, size_t size) {
         return cahute_send_on_link_medium(&link->medium, buf, size);
 
     default:
-        CAHUTE_RETURN_IMPL("Protocol does not support generic medium access.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Protocol does not support generic medium access."
+        );
     }
 }
 
@@ -141,8 +147,14 @@ cahute_set_serial_params_to_link(
         break;
 
     default:
-        msg(ll_info, "Provided speed is %lu bauds.", speed);
-        CAHUTE_RETURN_IMPL("Unsupported baud rate for the serial link.");
+        msg(link->medium.context,
+            ll_info,
+            "Provided speed is %lu bauds.",
+            speed);
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Unsupported baud rate for the serial link."
+        );
     }
 
     unsupported_flags = flags
@@ -189,7 +201,10 @@ cahute_set_serial_params_to_link(
         flags |= link->medium.serial_flags & CAHUTE_SERIAL_RTS_MASK;
 
     if (unsupported_flags)
-        CAHUTE_RETURN_IMPL("At least one unsupported flag was present.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "At least one unsupported flag was present."
+        );
 
     err = cahute_check_link(link, 0);
     if (err)
@@ -205,6 +220,7 @@ cahute_set_serial_params_to_link(
 
     default:
         CAHUTE_RETURN_IMPL(
+            link->medium.context,
             "Protocol does not support generic serial medium access."
         );
     }
@@ -256,7 +272,10 @@ cahute_receive_data(
         return cahute_seven_receive_data(link, datap, timeout);
 
     default:
-        CAHUTE_RETURN_IMPL("No data reception method available.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "No data reception method available."
+        );
     }
 }
 
@@ -292,7 +311,10 @@ cahute_receive_screen(
         return cahute_seven_ohp_receive_screen(link, frame, timeout);
 
     default:
-        CAHUTE_RETURN_IMPL("No screen reception method available.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "No screen reception method available."
+        );
     }
 }
 
@@ -335,8 +357,14 @@ cahute_negotiate_serial_params(
         break;
 
     default:
-        msg(ll_info, "Provided speed is %lu bauds.", speed);
-        CAHUTE_RETURN_IMPL("Unsupported baud rate for the serial link.");
+        msg(link->medium.context,
+            ll_info,
+            "Provided speed is %lu bauds.",
+            speed);
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Unsupported baud rate for the serial link."
+        );
     }
 
     /* We want to check if there are unsupported flags, that is:
@@ -362,7 +390,10 @@ cahute_negotiate_serial_params(
     } /* No possible invalid value, 3+1 value in 2 bits. */
 
     if (unsupported_flags)
-        CAHUTE_RETURN_IMPL("At least one unsupported flag was present.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "At least one unsupported flag was present."
+        );
 
     err = cahute_check_link(link, CHECK_SENDER);
     if (err)
@@ -388,7 +419,10 @@ cahute_negotiate_serial_params(
         break;
 
     default:
-        CAHUTE_RETURN_IMPL("Operation not supported by the link protocol.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Operation not supported by the link protocol."
+        );
     }
 
     err = cahute_set_serial_params_to_link_medium(
@@ -402,7 +436,8 @@ cahute_negotiate_serial_params(
          * ourselves. We can no longer communicate with the device,
          * hence can no longer negotiate the serial settings back.
          * Therefore, we consider the link to be irrecoverable. */
-        msg(ll_error,
+        msg(link->medium.context,
+            ll_error,
             "Could not set the serial params; that makes our connection "
             "irrecoverable!");
         link->flags |= CAHUTE_LINK_FLAG_IRRECOVERABLE;
@@ -410,7 +445,7 @@ cahute_negotiate_serial_params(
     }
 
     /* Wait until the new serial parameters have been applied by the device. */
-    err = cahute_sleep(50);
+    err = cahute_sleep(link->medium.context, 50);
     if (err)
         return err;
 
@@ -449,6 +484,7 @@ cahute_get_device_info(cahute_link *link, cahute_device_info **infop) {
                 err = CAHUTE_ERROR_IMPL;
             else if (flags & CASIOLINK_FLAG_DEVICE_INFO_CAS300)
                 err = cahute_cas300_make_device_info(
+                    link->medium.context,
                     &link->cached_device_info,
                     raw
                 );
@@ -471,7 +507,9 @@ cahute_get_device_info(cahute_link *link, cahute_device_info **infop) {
         default:
             /* With other protocols, we don't have a way to get device
              * information as of today. */
-            CAHUTE_RETURN_IMPL("Operation not supported by the link protocol."
+            CAHUTE_RETURN_IMPL(
+                link->medium.context,
+                "Operation not supported by the link protocol."
             );
         }
     }
@@ -506,7 +544,10 @@ cahute_request_storage_capacity(
         return cahute_seven_request_storage_capacity(link, storage, capacityp);
 
     default:
-        CAHUTE_RETURN_IMPL("Operation not supported by the link protocol.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Operation not supported by the link protocol."
+        );
     }
 }
 
@@ -547,7 +588,10 @@ cahute_send_file_to_storage(
     int err;
 
     if (unsupported_flags) {
-        msg(ll_error, "Unsupported flags: 0x%08lX", unsupported_flags);
+        msg(link->medium.context,
+            ll_error,
+            "Unsupported flags: 0x%08lX",
+            unsupported_flags);
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -573,7 +617,10 @@ cahute_send_file_to_storage(
         );
 
     default:
-        CAHUTE_RETURN_IMPL("Operation not supported by the link protocol.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Operation not supported by the link protocol."
+        );
     }
 }
 
@@ -622,7 +669,10 @@ cahute_request_file_from_storage(
         );
 
     default:
-        CAHUTE_RETURN_IMPL("Operation not supported by the link protocol.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Operation not supported by the link protocol."
+        );
     }
 }
 
@@ -665,7 +715,10 @@ cahute_copy_file_on_storage(
         );
 
     default:
-        CAHUTE_RETURN_IMPL("Operation not supported by the link protocol.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Operation not supported by the link protocol."
+        );
     }
 }
 
@@ -702,7 +755,10 @@ cahute_delete_file_from_storage(
         );
 
     default:
-        CAHUTE_RETURN_IMPL("Operation not supported by the link protocol.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Operation not supported by the link protocol."
+        );
     }
 }
 
@@ -739,7 +795,10 @@ cahute_list_storage_entries(
         );
 
     default:
-        CAHUTE_RETURN_IMPL("Operation not supported by the link protocol.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Operation not supported by the link protocol."
+        );
     }
 }
 
@@ -764,7 +823,10 @@ cahute_reset_storage(cahute_link *link, char const *storage) {
         return cahute_seven_reset_storage(link, storage);
 
     default:
-        CAHUTE_RETURN_IMPL("Operation not supported by the link protocol.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Operation not supported by the link protocol."
+        );
     }
 }
 
@@ -789,7 +851,10 @@ cahute_optimize_storage(cahute_link *link, char const *storage) {
         return cahute_seven_optimize_storage(link, storage);
 
     default:
-        CAHUTE_RETURN_IMPL("Operation not supported by the link protocol.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Operation not supported by the link protocol."
+        );
     }
 }
 
@@ -829,7 +894,10 @@ cahute_backup_rom(
         );
 
     default:
-        CAHUTE_RETURN_IMPL("Operation not supported by the link protocol.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Operation not supported by the link protocol."
+        );
     }
 }
 
@@ -875,7 +943,10 @@ cahute_upload_and_run_program(
         );
 
     default:
-        CAHUTE_RETURN_IMPL("Operation not supported by the link protocol.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Operation not supported by the link protocol."
+        );
     }
 }
 
@@ -911,6 +982,9 @@ cahute_flash_system_using_fxremote_method(
         );
 
     default:
-        CAHUTE_RETURN_IMPL("Operation not supported by the link protocol.");
+        CAHUTE_RETURN_IMPL(
+            link->medium.context,
+            "Operation not supported by the link protocol."
+        );
     }
 }

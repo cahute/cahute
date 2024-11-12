@@ -1,9 +1,10 @@
 /* Compile using: gcc convert-simple.c `pkg-config cahute --cflags --libs`. */
 
+#include <stdint.h>
 #include <cahute.h>
 
 /* Example buffer to convert. */
-static cahute_u16 example[] = {
+static uint16_t example[] = {
     '\\',
     '\\',
     'f',
@@ -22,14 +23,26 @@ static cahute_u16 example[] = {
 };
 
 int main(void) {
+    cahute_context *context;
     char buf[128];
     cahute_u8 *dest = buf;
     size_t dest_size = sizeof(buf);
     void const *source = example;
     size_t source_size = sizeof(example);
-    int err;
+    int err, ret = 1;
+
+    err = cahute_create_context(&context);
+    if (err) {
+        fprintf(
+            stderr,
+            "cahute_create_context() has returned error %s.\n",
+            cahute_get_error_name(err)
+        );
+        return 1;
+    }
 
     err = cahute_convert_text(
+        context,
         (void **)&dest,
         &dest_size,
         &source,
@@ -44,11 +57,15 @@ int main(void) {
 
     if (err) {
         printf("Conversion has failed: error 0x%04X has occurred.\n", err);
-        return 1;
+        goto fail;
     }
 
     *dest = 0;
 
     printf("Result: %s\n", buf);
+    ret = 0;
+
+fail:
+    cahute_destroy_context(context);
     return 0;
 }

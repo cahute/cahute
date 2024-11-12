@@ -48,11 +48,12 @@ CAHUTE_BEGIN_DECLS
 
 CAHUTE_EXTERN(int)
 cahute_find_path_extension(
+    cahute_context CAHUTE_NNPTR(cahute__context),
     char *cahute__buf,
     size_t cahute__buf_size,
     void const *cahute__path,
     int cahute__path_type
-);
+) CAHUTE_NONNULL((1));
 
 CAHUTE_END_DECLS
 CAHUTE_END_NAMESPACE

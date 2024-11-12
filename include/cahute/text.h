@@ -53,22 +53,24 @@ CAHUTE_BEGIN_DECLS
 
 CAHUTE_EXTERN(int)
 cahute_convert_text(
+    cahute_context CAHUTE_NNPTR(cahute__context),
     void **cahute__bufp,
     size_t *cahute__buf_sizep,
     void const **cahute__datap,
     size_t *cahute__data_sizep,
     int cahute__dest_encoding,
     int cahute__source_encoding
-);
+) CAHUTE_NONNULL((1));
 
 CAHUTE_EXTERN(int)
 cahute_convert_to_utf8(
+    cahute_context CAHUTE_NNPTR(cahute__context),
     char *cahute__buf,
     size_t cahute__buf_size,
     void const *cahute__data,
     size_t cahute__data_size,
     int cahute__encoding
-);
+) CAHUTE_NONNULL((1));
 
 CAHUTE_END_DECLS
 CAHUTE_END_NAMESPACE

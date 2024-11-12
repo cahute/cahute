@@ -501,7 +501,7 @@ def get_sequence_parsing_tree_lines(
         for i, (sequence, subtree) in enumerate(tree.subtrees.items()):
             yield from explore_tree(symbol + f"_{i}", subtree)
             yield ""
-            yield f"CAHUTE_LOCAL_DATA(struct {match_type} const) {symbol}_m{i} = " + "{"
+            yield f"CAHUTE_LOCAL_DATA(struct {match_type}) {symbol}_m{i} = " + "{"
 
             if i == 0:  # Next node.
                 yield "    NULL,"
@@ -524,7 +524,7 @@ def get_sequence_parsing_tree_lines(
             yield ""
 
         if is_local:
-            yield f"CAHUTE_LOCAL_DATA(struct {tree_type} const) {symbol} = " + "{"
+            yield f"CAHUTE_LOCAL_DATA(struct {tree_type}) {symbol} = " + "{"
         else:
             yield f"struct {tree_type} const {symbol} = " + "{"
 
@@ -566,7 +566,7 @@ def get_chars_c_lines(*, ref: CharacterReference) -> Iterator[str]:
     for symbol, char in sorted(chars_per_symbol.items()):
         # See ``cahute_char_entry`` in ``lib/chars.h`` for more information.
 
-        yield f"CAHUTE_LOCAL_DATA(struct cahute_char_entry const) {symbol} = " + "{"
+        yield f"CAHUTE_LOCAL_DATA(struct cahute_char_entry) {symbol} = " + "{"
 
         # Legacy character code.
         if char.table is None or char.table == "legacy":

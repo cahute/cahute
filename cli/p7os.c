@@ -85,18 +85,23 @@ display_progress(int *initp, unsigned long step, unsigned long total) {
  * This function also takes care of changing the serial attributes, if the
  * opened link is on a serial medium.
  *
+ * @param context Context in which to open the link.
  * @param linkp Pointer to the link to initialize.
  * @param args Parsed parameters to base ourselves on.
  * @return Cahute error, or CAHUTE_OK if everything is ok.
  */
-static int open_link(cahute_link **linkp, struct args const *args) {
+static int open_link(
+    cahute_context *context,
+    cahute_link **linkp,
+    struct args const *args
+) {
     cahute_link *link = NULL;
     unsigned long flags;
     int err;
 
     (void)args;
     flags = CAHUTE_USB_FILTER_SERIAL | CAHUTE_USB_SEVEN;
-    if ((err = cahute_open_simple_usb_link(&link, flags)))
+    if ((err = cahute_open_simple_usb_link(context, &link, flags)))
         return err;
 
     *linkp = link;
@@ -109,11 +114,16 @@ static int open_link(cahute_link **linkp, struct args const *args) {
  * This function also takes care of changing the serial attributes, if the
  * opened link is on a serial medium.
  *
+ * @param context Context in which to open the link.
  * @param linkp Pointer to the link to initialize.
  * @param args Parsed parameters to base ourselves on.
  * @return Cahute error, or CAHUTE_OK if everything is ok.
  */
-static int open_fxremote_link(cahute_link **linkp, struct args const *args) {
+static int open_fxremote_link(
+    cahute_context *context,
+    cahute_link **linkp,
+    struct args const *args
+) {
     cahute_link *link = NULL;
     unsigned long flags;
     int err;
@@ -121,7 +131,7 @@ static int open_fxremote_link(cahute_link **linkp, struct args const *args) {
     (void)args;
     flags = CAHUTE_USB_NOCHECK | CAHUTE_USB_NODISC | CAHUTE_USB_NOTERM
             | CAHUTE_USB_FILTER_SERIAL | CAHUTE_USB_SEVEN;
-    if ((err = cahute_open_simple_usb_link(&link, flags)))
+    if ((err = cahute_open_simple_usb_link(context, &link, flags)))
         return err;
 
     *linkp = link;
@@ -136,6 +146,7 @@ static int open_fxremote_link(cahute_link **linkp, struct args const *args) {
  */
 int main(int ac, char **av) {
     struct args args;
+    cahute_context *context;
     cahute_link *link = NULL;
     cahute_u8 *rom = NULL;
     size_t rom_size;
@@ -145,8 +156,15 @@ int main(int ac, char **av) {
     if (!parse_args(ac, av, &args))
         return 0;
 
+    err = cahute_create_context(&context);
+    if (err)
+        goto end;
+
+    if (args.loglevel)
+        set_log_level(context, args.loglevel);
+
     if (args.upload_uexe) {
-        err = open_link(&link, &args);
+        err = open_link(context, &link, &args);
         if (err)
             goto end;
 
@@ -191,7 +209,7 @@ int main(int ac, char **av) {
         break;
 
     case COMMAND_BACKUP:
-        err = open_link(&link, &args);
+        err = open_link(context, &link, &args);
         if (err)
             goto end;
 
@@ -222,7 +240,7 @@ int main(int ac, char **av) {
         if (!confirm_flash())
             goto end;
 
-        err = open_fxremote_link(&link, &args);
+        err = open_fxremote_link(context, &link, &args);
         if (err)
             goto end;
 
@@ -252,6 +270,8 @@ end:
         free(rom);
     if (link)
         cahute_close_link(link);
+    if (context)
+        cahute_destroy_context(context);
 
     if (err) {
         if (err != CAHUTE_ERROR_ABORT)

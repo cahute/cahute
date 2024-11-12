@@ -48,7 +48,10 @@
 CAHUTE_EXTERN(int)
 cahute_get_file_size(cahute_file *file, unsigned long *sizep) {
     if (~file->medium.flags & CAHUTE_FILE_MEDIUM_FLAG_SIZE)
-        CAHUTE_RETURN_IMPL("File does not support size computation.");
+        CAHUTE_RETURN_IMPL(
+            file->medium.context,
+            "File does not support size computation."
+        );
 
     *sizep = file->medium.file_size;
     return CAHUTE_OK;
@@ -249,8 +252,11 @@ cahute_get_data_from_mainmem_file(
         group_count = (group_header[16] << 24) | (group_header[17] << 16)
                       | (group_header[18] << 8) | group_header[19];
 
-        msg(ll_info, "(0x%04lX) Group header:", offset - sizeof(group_header));
-        mem(ll_info, group_header, sizeof(group_header));
+        msg(file->medium.context,
+            ll_info,
+            "(0x%04lX) Group header:",
+            offset - sizeof(group_header));
+        mem(file->medium.context, ll_info, group_header, sizeof(group_header));
 
         for (; group_count; group_count--) {
             unsigned long data_size;
@@ -268,11 +274,16 @@ cahute_get_data_from_mainmem_file(
             data_size = (file_header[17] << 24) | (file_header[18] << 16)
                         | (file_header[19] << 8) | file_header[20];
 
-            msg(ll_info, "File header:");
-            mem(ll_info, file_header, sizeof(file_header));
-            msg(ll_info, "  Data size: %" CAHUTE_PRIuSIZE, data_size);
+            msg(file->medium.context, ll_info, "File header:");
+            mem(file->medium.context, ll_info, file_header, sizeof(file_header)
+            );
+            msg(file->medium.context,
+                ll_info,
+                "  Data size: %" CAHUTE_PRIuSIZE,
+                data_size);
 
             err = cahute_mcs_decode_data(
+                file->medium.context,
                 datap,
                 group_header,
                 16,
@@ -340,7 +351,8 @@ cahute_get_data_from_file(cahute_file *file, cahute_data **datap) {
         break;
 
     default:
-        msg(ll_error,
+        msg(file->medium.context,
+            ll_error,
             "Invalid file type 0x%02X for extracting data from the file.",
             file->type);
         return CAHUTE_ERROR_INVALID;

@@ -7,6 +7,7 @@ its library's public API.
 .. toctree::
     :maxdepth: 2
 
+    topics/contexts
     topics/links
     topics/files
     topics/data

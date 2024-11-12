@@ -31,10 +31,10 @@
 #include <cahute.h>
 #include <compat.h>
 
-extern char const *get_current_log_level(void);
-extern void set_log_level(char const *loglevel);
+extern void set_log_level(cahute_context *context, char const *loglevel);
 
 extern void print_content(
+    cahute_context *context,
     void const *data,
     size_t data_size,
     int encoding,

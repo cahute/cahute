@@ -29,6 +29,7 @@
 #ifndef CAHUTE_FILE_H
 #define CAHUTE_FILE_H 1
 #include "cdefs.h"
+#include "context.h"
 #include "data.h"
 #include "path.h"
 
@@ -56,21 +57,27 @@ CAHUTE_DECLARE_TYPE(cahute_file)
 
 CAHUTE_EXTERN(int)
 cahute_open_file(
+    cahute_context CAHUTE_NNPTR(cahute__context),
     cahute_file **cahute__filep,
     unsigned long cahute__flags,
     void const *cahute__path,
     int cahute__path_type
-);
+) CAHUTE_NONNULL((1));
 
 CAHUTE_EXTERN(int)
 cahute_create_file(
+    cahute_context CAHUTE_NNPTR(cahute__context),
     cahute_file **cahute__filep,
     unsigned long cahute__size,
     void const *cahute__path,
     int cahute__path_type
-);
+) CAHUTE_NONNULL((1));
 
-CAHUTE_EXTERN(int) cahute_open_stdout(cahute_file **cahute__filep);
+CAHUTE_EXTERN(int)
+cahute_open_stdout(
+    cahute_context CAHUTE_NNPTR(cahute__context),
+    cahute_file **cahute__filep
+) CAHUTE_NONNULL((1));
 
 CAHUTE_EXTERN(int)
 cahute_get_file_size(cahute_file *cahute__file, unsigned long *cahute__sizep);

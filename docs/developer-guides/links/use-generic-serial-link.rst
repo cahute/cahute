@@ -10,10 +10,12 @@ system-specific complexities Cahute has already implemented.
 In order to open a link to a calculator plugged in over serial in order to
 use the link medium access functions, the steps are the following:
 
-1. Call :c:func:`cahute_open_serial_link` with the
+#. Create a context using :c:func:`cahute_create_context`.
+#. Open the link using :c:func:`cahute_open_serial_link` with the
    :c:macro:`CAHUTE_SERIAL_PROTOCOL_NONE` flag.
-2. *Profit!*
-3. Call :c:func:`cahute_close_link` to close the link.
+#. *Profit!*
+#. Call :c:func:`cahute_close_link` to close the link.
+#. Call :c:func:`cahute_destroy_context` to destroy the context.
 
 The functions you can use with generic links are described
 in :ref:`header-cahute-link-medium`.

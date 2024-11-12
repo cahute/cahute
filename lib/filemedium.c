@@ -30,7 +30,7 @@
 #define CAHUTE_FILE_MEDIUM_WRITE_CHUNK_SIZE 4096
 
 /* NUL bytes to write when skipping a stream that does not support seeking. */
-CAHUTE_LOCAL_DATA(cahute_u8 const) null_buffer[1024] = {0};
+CAHUTE_LOCAL_DATA(cahute_u8) null_buffer[1024] = {0};
 
 /**
  * Read from the current offset in the file, using the medium specific
@@ -66,7 +66,8 @@ read_from_current_offset_in_medium(cahute_file_medium *medium) {
         if (ret < 0)
             switch (errno) {
             default:
-                msg(ll_error,
+                msg(medium->context,
+                    ll_error,
                     "An error occurred while calling read(): %s (%d)",
                     strerror(errno),
                     errno);
@@ -90,7 +91,7 @@ read_from_current_offset_in_medium(cahute_file_medium *medium) {
             NULL
         );
         if (!ret) {
-            log_windows_error("ReadFile", GetLastError());
+            log_windows_error(medium->context, "ReadFile", GetLastError());
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -99,7 +100,10 @@ read_from_current_offset_in_medium(cahute_file_medium *medium) {
 #endif
 
     default:
-        CAHUTE_RETURN_IMPL("No method available for reading the file.");
+        CAHUTE_RETURN_IMPL(
+            medium->context,
+            "No method available for reading the file."
+        );
     }
 
     /* If we have arrived here, we consider the read offset to have been
@@ -110,7 +114,7 @@ read_from_current_offset_in_medium(cahute_file_medium *medium) {
 
     if (!bytes_read) {
         /* An EOF was signalled, but should not have occurred! */
-        msg(ll_error, "EOF signalled too early!");
+        msg(medium->context, ll_error, "EOF signalled too early!");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -164,7 +168,8 @@ write_to_current_offset_in_medium(
         if (ret < 0)
             switch (errno) {
             default:
-                msg(ll_error,
+                msg(medium->context,
+                    ll_error,
                     "An error occurred while calling write(): %s (%d)",
                     strerror(errno),
                     errno);
@@ -188,7 +193,7 @@ write_to_current_offset_in_medium(
             NULL
         );
         if (!ret) {
-            log_windows_error("WriteFile", GetLastError());
+            log_windows_error(medium->context, "WriteFile", GetLastError());
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -197,7 +202,10 @@ write_to_current_offset_in_medium(
 #endif
 
     default:
-        CAHUTE_RETURN_IMPL("No method available for writing into the file.");
+        CAHUTE_RETURN_IMPL(
+            medium->context,
+            "No method available for writing into the file."
+        );
     }
 
     if (!bytes_written || bytes_written > write_size) {
@@ -272,7 +280,8 @@ move_to_offset(
     if (off > CAHUTE_MAX_FILE_OFFSET - size) {
         /* Offsets above CAHUTE_MAX_FILE_OFFSET are not supported, therefore
          * we prefer to fail explicitely here. */
-        msg(ll_error,
+        msg(medium->context,
+            ll_error,
             "Cannot %s %" CAHUTE_PRIuSIZE
             " bytes %s offset %lu, since it would "
             "cause the file offset to reach undefined values.",
@@ -286,7 +295,8 @@ move_to_offset(
         && (size > medium->file_size || off > medium->file_size - size)) {
         /* Our file interface requires setting the file size explicitely
          * if writing further than the current file size. */
-        msg(ll_error,
+        msg(medium->context,
+            ll_error,
             "Cannot %s %" CAHUTE_PRIuSIZE
             " bytes %s offset %lu, since it would "
             "cause the file offset to go %lu bytes past the file size"
@@ -312,7 +322,7 @@ move_to_offset(
          * NOTE: Cursorless mediums are expected to have this flag set,
          * and have their type be a no-op later in this function. */
         if (off < medium->offset) {
-            msg(ll_error, "Medium does not support seeking.");
+            msg(medium->context, ll_error, "Medium does not support seeking.");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -370,7 +380,8 @@ move_to_offset(
                 break;
 
             default:
-                msg(ll_error,
+                msg(medium->context,
+                    ll_error,
                     "An error occurred while calling lseek(): %s (%d)",
                     strerror(errno),
                     errno);
@@ -392,7 +403,11 @@ move_to_offset(
         );
 
         if (dwnewoff == INVALID_SET_FILE_POINTER) {
-            log_windows_error("SetFilePointer", GetLastError());
+            log_windows_error(
+                medium->context,
+                "SetFilePointer",
+                GetLastError()
+            );
             return CAHUTE_ERROR_UNKNOWN;
         } else
             new_off = dwnewoff;
@@ -400,7 +415,10 @@ move_to_offset(
 #endif
 
     default:
-        CAHUTE_RETURN_IMPL("No method available for seeking in the file.");
+        CAHUTE_RETURN_IMPL(
+            medium->context,
+            "No method available for seeking in the file."
+        );
     }
 
     /* The offset may have been automatically been adjusted to the end of
@@ -429,7 +447,7 @@ cahute_read_from_file_medium(
     int err;
 
     if (~medium->flags & CAHUTE_FILE_MEDIUM_FLAG_READ) {
-        msg(ll_error, "File is not readable.");
+        msg(medium->context, ll_error, "File is not readable.");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -441,7 +459,8 @@ cahute_read_from_file_medium(
          * not support "skipping", as it takes an "off" parameter to do
          * exactly that. This may however cause some confusion, so we want
          * to catch this explicitely. */
-        msg(ll_error,
+        msg(medium->context,
+            ll_error,
             "cahute_read_from_file_medium() requires a non-NULL buffer!");
         return CAHUTE_ERROR_UNKNOWN;
     }
@@ -515,7 +534,7 @@ cahute_write_to_file_medium(
     int err;
 
     if (~medium->flags & CAHUTE_FILE_MEDIUM_FLAG_WRITE) {
-        msg(ll_error, "File is not writable.");
+        msg(medium->context, ll_error, "File is not writable.");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -537,5 +556,53 @@ cahute_write_to_file_medium(
         size -= write_size;
     }
 
+    return CAHUTE_OK;
+}
+
+
+/**
+ * Compute a checksum from a file starting at an offset.
+ *
+ * @param file File from which to read.
+ * @param offset Offset from which to read.
+ * @param size Size of the data region to read.
+ * @param checksum Checksum pointer.
+ * @return Error, or 0 if ok.
+ */
+CAHUTE_EXTERN(int)
+cahute_checksum_from_file_medium(
+    cahute_file_medium *medium,
+    unsigned long offset,
+    size_t size,
+    unsigned int *checksump
+) {
+    cahute_u8 tmp_buf[1024];
+    unsigned int checksum = 0;
+    int err;
+
+    while (size > sizeof(tmp_buf)) {
+        err = cahute_read_from_file_medium(
+            medium,
+            offset,
+            tmp_buf,
+            sizeof(tmp_buf)
+        );
+        if (err)
+            return err;
+
+        checksum += cahute_checksum(tmp_buf, sizeof(tmp_buf));
+        offset += sizeof(tmp_buf);
+        size -= sizeof(tmp_buf);
+    }
+
+    if (size) {
+        err = cahute_read_from_file_medium(medium, offset, tmp_buf, size);
+        if (err)
+            return err;
+
+        checksum += cahute_checksum(tmp_buf, size);
+    }
+
+    *checksump = checksum & 255;
     return CAHUTE_OK;
 }

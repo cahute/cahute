@@ -39,6 +39,7 @@
  */
 CAHUTE_EXTERN(int)
 cahute_find_path_extension(
+    cahute_context *context,
     char *buf,
     size_t buf_size,
     void const *path,
@@ -109,7 +110,7 @@ cahute_find_path_extension(
     } break;
 
     default:
-        CAHUTE_RETURN_IMPL("Could not get extension for path type.");
+        CAHUTE_RETURN_IMPL(context, "Could not get extension for path type.");
     }
 
     return CAHUTE_OK;

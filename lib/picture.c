@@ -28,9 +28,9 @@
 
 #include "internals.h"
 
-CAHUTE_LOCAL_DATA(cahute_u32 const)
+CAHUTE_LOCAL_DATA(cahute_u32)
 dual_pixels[] = {0xFFFFFF, 0xAAAAAA, 0x777777, 0x000000};
-CAHUTE_LOCAL_DATA(cahute_u32 const)
+CAHUTE_LOCAL_DATA(cahute_u32)
 multiple_cas50_colors[] = {
     0x000000, /* Unused. */
     0x000080,
@@ -42,6 +42,7 @@ multiple_cas50_colors[] = {
 /**
  * Convert a picture from a source to a destination format.
  *
+ * @param context Context in which the function is run.
  * @param dest_uncasted Destination picture data, uncasted.
  * @param dest_format Format to use when writing picture data to the
  *        destination.
@@ -53,6 +54,7 @@ multiple_cas50_colors[] = {
  */
 CAHUTE_EXTERN(int)
 cahute_convert_picture(
+    cahute_context *context,
     void *dest_uncasted,
     int dest_format,
     void const *src_uncasted,
@@ -69,6 +71,7 @@ cahute_convert_picture(
 
     if (dest_format != CAHUTE_PICTURE_FORMAT_32BIT_ARGB_HOST)
         CAHUTE_RETURN_IMPL(
+            context,
             "This function does not support converting to anything other "
             "than 32-bit ARGB in host endianness for now."
         );
@@ -235,8 +238,11 @@ cahute_convert_picture(
         break;
 
     default:
-        msg(ll_info, "Picture format identifier was: %d", src_format);
-        CAHUTE_RETURN_IMPL("Unhandled picture format for conversion.");
+        msg(context, ll_info, "Picture format identifier was: %d", src_format);
+        CAHUTE_RETURN_IMPL(
+            context,
+            "Unhandled picture format for conversion."
+        );
     }
 
     return CAHUTE_OK;
@@ -245,6 +251,7 @@ cahute_convert_picture(
 /**
  * Convert a frame to a picture format.
  *
+ * @param context Context in which the function is run.
  * @param dest Destination picture data.
  * @param dest_format Format to write with in the destination picture data.
  * @param frame Source frame.
@@ -252,11 +259,13 @@ cahute_convert_picture(
  */
 CAHUTE_EXTERN(int)
 cahute_convert_picture_from_frame(
+    cahute_context *context,
     void *dest,
     int dest_format,
     cahute_frame const *frame
 ) {
     return cahute_convert_picture(
+        context,
         dest,
         dest_format,
         frame->cahute_frame_data,

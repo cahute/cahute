@@ -3,9 +3,12 @@ Opening a link to a calculator connected by USB
 
 In order to open the link to the calculator, the steps are the following:
 
-1. Call :c:func:`cahute_open_simple_usb_link` with the device address.
-2. *Profit!*
-3. Call :c:func:`cahute_close_link` to close the link.
+#. Create a context using :c:func:`cahute_create_context`.
+#. Open a link using :c:func:`cahute_open_simple_usb_link` with the
+   device address.
+#. *Profit!*
+#. Call :c:func:`cahute_close_link` to close the link.
+#. Call :c:func:`cahute_destroy_context` to destroy the context.
 
 .. note::
 

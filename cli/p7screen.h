@@ -41,6 +41,7 @@
  */
 struct args {
     int zoom;
+    char const *loglevel;
 
     /* Connection-related parameters. */
     unsigned long serial_flags;

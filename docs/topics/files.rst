@@ -10,7 +10,8 @@ support all file formats surrounding CASIO calculators, documented in
 
 All files are represented by the :c:type:`cahute_file` type. They are opened
 and used differently depending on the situations, but must always be closed
-after usage using :c:func:`cahute_close_file`.
+after usage using :c:func:`cahute_close_file`. They always exist within a
+context; see :ref:`topic-contexts` for more information.
 
 .. note::
 

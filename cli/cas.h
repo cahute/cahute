@@ -113,7 +113,7 @@ struct gif_file_medium_options {
  * @property bmp Bitmap file options.
  * @property gif GIF file options.
  */
-union file_medium_options {
+struct file_medium_options {
     struct ctf_file_medium_options ctf;
     struct cas_file_medium_options cas;
     struct bmp_file_medium_options bmp;
@@ -123,14 +123,12 @@ union file_medium_options {
 /**
  * Additional data for the file medium.
  *
- * @property file File object.
  * @property type File type.
  * @property options Options.
  */
 struct file_medium {
-    cahute_file *file;
     unsigned long type;
-    union file_medium_options options;
+    struct file_medium_options options;
 };
 
 /**
@@ -245,6 +243,7 @@ struct conversion {
  * @property verbose Whether verbose mode has been enabled.
  * @property should_output Whether we should output the file.
  * @property pager Whether a terminal pager should be used.
+ * @property log_level Logging level to set.
  * @property in_type Input medium type.
  * @property out_type Output medium type.
  * @property debug_fp File pointer to the debug file.
@@ -256,6 +255,7 @@ struct args {
     int verbose;
     int should_output;
     int pager;
+    int log_level;
     struct medium in;
     struct medium out;
     struct list_formats list;

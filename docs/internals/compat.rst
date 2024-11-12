@@ -54,14 +54,14 @@ Macro definitions
 
 .. c:macro:: CAHUTE_LOCAL_DATA(TYPE)
 
-    Macro to use in local data in Cahute source files, surrounding the
-    variable type, for example::
+    Macro to use in local immutable data in Cahute source files, surrounding
+    the variable type, for example::
 
         CAHUTE_LOCAL_DATA(char const *) my_string = "hello, world";
 
     For now, this only produces the following output::
 
-        static char const * my_string = "hello, world";
+        static char const * const my_string = "hello, world";
 
 .. c:macro:: CAHUTE_SSIZE_MAX
 

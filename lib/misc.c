@@ -86,24 +86,26 @@ CAHUTE_EXTERN(char const *) cahute_get_error_name(int code) {
 #if WIN32_ENABLED
 # include <windows.h>
 
-CAHUTE_EXTERN(int) cahute_sleep(unsigned long ms) {
+CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms) {
     Sleep(ms);
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int) cahute_monotonic(unsigned long *msp) {
+CAHUTE_EXTERN(int)
+cahute_monotonic(cahute_context *context, unsigned long *msp) {
     *msp = GetTickCount();
     return CAHUTE_OK;
 }
 
 #elif POSIX_ENABLED
 
-CAHUTE_EXTERN(int) cahute_sleep(unsigned long ms) {
+CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms) {
     usleep(ms * 1000);
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int) cahute_monotonic(unsigned long *msp) {
+CAHUTE_EXTERN(int)
+cahute_monotonic(cahute_context *context, unsigned long *msp) {
 # if DJGPP_ENABLED
     /* DJGPP does not define 'clock_gettime()', however it defines 'uclock()'
      * which is not present on Linux and other POSIX systems.
@@ -124,7 +126,8 @@ CAHUTE_EXTERN(int) cahute_monotonic(unsigned long *msp) {
     );
 
     if (ret) {
-        msg(ll_error,
+        msg(context,
+            ll_error,
             "An error occurred while calling clock_gettime(): %s (%d)",
             strerror(errno),
             errno);
@@ -139,78 +142,11 @@ CAHUTE_EXTERN(int) cahute_monotonic(unsigned long *msp) {
 
 #elif AMIGAOS_ENABLED
 
-struct cahute_amiga_timer {
-    struct MsgPort *msg_port;
-    struct timerequest *timer_io;
-};
-
-CAHUTE_LOCAL_DATA(struct cahute_amiga_timer) cahute_amiga_timer = {0};
-
-CAHUTE_LOCAL(void) close_amiga_timer() {
-    AbortIO((struct IORequest *)cahute_amiga_timer.timer_io);
-    WaitIO((struct IORequest *)cahute_amiga_timer.timer_io);
-    CloseDevice((struct IORequest *)cahute_amiga_timer.timer_io);
-    DeleteIORequest(cahute_amiga_timer.timer_io);
-    DeleteMsgPort(cahute_amiga_timer.msg_port);
-}
-
-CAHUTE_EXTERN(int)
-cahute_get_amiga_timer(
-    struct MsgPort **msg_portp,
-    struct timerequest **timerp
-) {
-    struct MsgPort *msg_port;
-    struct timerequest *timer_io;
-    int ret;
-
-    if (cahute_amiga_timer.timer_io)
-        goto end;
-
-    msg_port = CreateMsgPort();
-    if (!msg_port) {
-        msg(ll_error,
-            "An error has occurred while creating the port for the timer.");
-        return CAHUTE_ERROR_UNKNOWN;
-    }
-
-    timer_io = CreateIORequest(msg_port, sizeof(struct timerequest));
-    if (!timer_io) {
-        msg(ll_error, "An error has occurred while creating the timer I/O.");
-        DeleteMsgPort(msg_port);
-        return CAHUTE_ERROR_UNKNOWN;
-    }
-
-    ret = OpenDevice(
-        (CONST_STRPTR)TIMERNAME,
-        UNIT_VBLANK,
-        (struct IORequest *)timer_io,
-        0L
-    );
-    if (ret) {
-        msg(ll_error, "An error has occurred while creating the timer I/O.");
-        DeleteIORequest(timer_io);
-        DeleteMsgPort(msg_port);
-        return CAHUTE_ERROR_UNKNOWN;
-    }
-
-    atexit(close_amiga_timer);
-
-    cahute_amiga_timer.msg_port = msg_port;
-    cahute_amiga_timer.timer_io = timer_io;
-
-end:
-    if (msg_portp)
-        *msg_portp = cahute_amiga_timer.msg_port;
-    if (timerp)
-        *timerp = cahute_amiga_timer.timer_io;
-    return CAHUTE_OK;
-}
-
-CAHUTE_EXTERN(int) cahute_sleep(unsigned long ms) {
+CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms) {
     struct timerequest *timer;
     int err;
 
-    err = cahute_get_amiga_timer(NULL, &timer);
+    err = cahute_get_amiga_timer(context, NULL, &timer);
     if (err)
         return err;
 
@@ -222,11 +158,12 @@ CAHUTE_EXTERN(int) cahute_sleep(unsigned long ms) {
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int) cahute_monotonic(unsigned long *msp) {
+CAHUTE_EXTERN(int)
+cahute_monotonic(cahute_context *context, unsigned long *msp) {
     struct timerequest *timer;
     int err;
 
-    err = cahute_get_amiga_timer(NULL, &timer);
+    err = cahute_get_amiga_timer(context, NULL, &timer);
     if (err)
         return err;
 
@@ -239,12 +176,16 @@ CAHUTE_EXTERN(int) cahute_monotonic(unsigned long *msp) {
 
 #else
 
-CAHUTE_EXTERN(int) cahute_sleep(unsigned long ms) {
-    CAHUTE_RETURN_IMPL("No method available for sleeping.");
+CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms) {
+    CAHUTE_RETURN_IMPL(context, "No method available for sleeping.");
 }
 
-CAHUTE_EXTERN(int) cahute_monotonic(unsigned long *msp) {
-    CAHUTE_RETURN_IMPL("No method available for getting monotonic time.");
+CAHUTE_EXTERN(int)
+cahute_monotonic(cahute_context *context, unsigned long *msp) {
+    CAHUTE_RETURN_IMPL(
+        context,
+        "No method available for getting monotonic time."
+    );
 }
 
 #endif
@@ -304,7 +245,6 @@ cahute_unpad_data(
     cahute_u8 *orig = buf;
     cahute_u8 const *p;
     size_t buf_size = *buf_sizep;
-    size_t orig_data_size = data_size;
 
     for (p = data; buf_size && data_size; p++, data_size--, buf_size--) {
         int byte = *p;
@@ -328,13 +268,6 @@ cahute_unpad_data(
          * Note that ``*buf_sizep`` does not need to be changed here, because
          * it actually represents both the capacity and the actual used
          * space in the destination buffer, since it's full. */
-        msg(ll_error,
-            "%" CAHUTE_PRIuSIZE "o/%" CAHUTE_PRIuSIZE
-            "o to unpad after "
-            "filling a buffer of %" CAHUTE_PRIuSIZE "o!",
-            data_size,
-            orig_data_size,
-            *buf_sizep);
         return CAHUTE_ERROR_SIZE;
     }
 

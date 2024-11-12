@@ -29,6 +29,9 @@
 #include "internals.h"
 #include <stdarg.h>
 
+CAHUTE_LOCAL_DATA(char const *)
+hexadecimal_alphabet = "0123456789ABCDEF";
+
 /**
  * Default logging callback for Cahute.
  *
@@ -102,14 +105,6 @@ cahute_log_to_file(
     fprintf(stderr, "%s\n", message);
 }
 
-CAHUTE_LOCAL_DATA(char const * const)
-hexadecimal_alphabet = "0123456789ABCDEF";
-CAHUTE_LOCAL_DATA(int) current_log_level = CAHUTE_DEFAULT_LOGLEVEL;
-
-/* Callback configuration. */
-CAHUTE_LOCAL_DATA(cahute_log_func *) log_callback = &cahute_log_to_file;
-CAHUTE_LOCAL_DATA(void *) log_callback_cookie = NULL;
-
 /**
  * Get the current log level.
  *
@@ -118,8 +113,8 @@ CAHUTE_LOCAL_DATA(void *) log_callback_cookie = NULL;
  *
  * @return Current log level.
  */
-CAHUTE_EXTERN(int) cahute_get_log_level(void) {
-    return current_log_level;
+CAHUTE_EXTERN(int) cahute_get_log_level(cahute_context *context) {
+    return context->log_level;
 }
 
 /**
@@ -130,8 +125,9 @@ CAHUTE_EXTERN(int) cahute_get_log_level(void) {
  *
  * @param loglevel Log level to set.
  */
-CAHUTE_EXTERN(void) cahute_set_log_level(int loglevel) {
-    current_log_level = loglevel;
+CAHUTE_EXTERN(void)
+cahute_set_log_level(cahute_context *context, int loglevel) {
+    context->log_level = loglevel;
 }
 
 /**
@@ -141,23 +137,29 @@ CAHUTE_EXTERN(void) cahute_set_log_level(int loglevel) {
  * @param cookie Cookie to define.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int) cahute_set_log_func(cahute_log_func *func, void *cookie) {
+CAHUTE_EXTERN(int)
+cahute_set_log_func(
+    cahute_context *context,
+    cahute_log_func *func,
+    void *cookie
+) {
     if (!func)
         CAHUTE_RETURN_IMPL(
+            context,
             "Setting the logging function to NULL is not supported."
         );
 
-    log_callback = func;
-    log_callback_cookie = cookie;
+    context->log_callback = func;
+    context->log_callback_cookie = cookie;
     return CAHUTE_OK;
 }
 
 /**
  * Reset the current logging function.
  */
-CAHUTE_EXTERN(void) cahute_reset_log_func(void) {
-    log_callback = &cahute_log_to_file;
-    log_callback_cookie = NULL;
+CAHUTE_EXTERN(void) cahute_reset_log_func(cahute_context *context) {
+    context->log_callback = &cahute_log_to_file;
+    context->log_callback_cookie = NULL;
 }
 
 /**
@@ -166,20 +168,27 @@ CAHUTE_EXTERN(void) cahute_reset_log_func(void) {
  * This is the function called behind the "msg(ll_*, fmt, ...)" macro defined
  * in the common internals for the library.
  *
+ * @param context Context in which to output the log message.
  * @param loglevel Logging level at which to emit the message.
  * @param func Optional function name for which to emit the message.
  * @param format Format string to evaluate with the parameters.
  * @param ... Optional parameters for formatting.
  */
 CAHUTE_EXTERN(void)
-cahute_log_message(int loglevel, char const *func, char const *format, ...) {
+cahute_log_message(
+    cahute_context *context,
+    int loglevel,
+    char const *func,
+    char const *format,
+    ...
+) {
     char buf[512];
     char const *msg;
     va_list va;
     int ret;
 
     va_start(va, format);
-    if (current_log_level <= loglevel) {
+    if (context->log_level <= loglevel) {
         ret = vsnprintf(buf, sizeof(buf), format, va);
 
         if (ret >= 0 && (size_t)ret <= sizeof(buf) - 1)
@@ -187,7 +196,12 @@ cahute_log_message(int loglevel, char const *func, char const *format, ...) {
         else
             msg = "(message too large)";
 
-        (*log_callback)(log_callback_cookie, loglevel, func, msg);
+        (*context->log_callback)(
+            context->log_callback_cookie,
+            loglevel,
+            func,
+            msg
+        );
     }
     va_end(va);
 }
@@ -198,6 +212,7 @@ cahute_log_message(int loglevel, char const *func, char const *format, ...) {
  * This is the function called behind the "mem((data, data_size))" macro
  * defined in the common internals for the library.
  *
+ * @param context Context in which to output the memory messages.
  * @param loglevel Logging level at which to emit the messages.
  * @param func Optional function name for which to emit the message.
  * @param mem Pointer to the memory area to present in the messages.
@@ -205,6 +220,7 @@ cahute_log_message(int loglevel, char const *func, char const *format, ...) {
  */
 CAHUTE_EXTERN(void)
 cahute_log_memory(
+    cahute_context *context,
     int loglevel,
     char const *func,
     void const *mem,
@@ -214,11 +230,16 @@ cahute_log_memory(
     cahute_u8 const *p;
     size_t offset = 0;
 
-    if (current_log_level > loglevel)
+    if (context->log_level > loglevel)
         return;
 
     if (!size) {
-        (*log_callback)(log_callback_cookie, loglevel, func, "(nothing)");
+        (*context->log_callback)(
+            context->log_callback_cookie,
+            loglevel,
+            func,
+            "(nothing)"
+        );
         return;
     }
 
@@ -274,6 +295,11 @@ cahute_log_memory(
 
         *s = '\0';
 
-        (*log_callback)(log_callback_cookie, loglevel, func, linebuf);
+        (*context->log_callback)(
+            context->log_callback_cookie,
+            loglevel,
+            func,
+            linebuf
+        );
     }
 }

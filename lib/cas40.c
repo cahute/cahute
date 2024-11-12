@@ -31,6 +31,51 @@
 #define PACKET_TYPE_ACK  0x06
 #define PACKET_TYPE_DATA 0x3A
 
+/* CAS40 end packet. */
+CAHUTE_LOCAL_DATA(cahute_u8)
+end_packet[] = {
+    PACKET_TYPE_DATA,
+    0x17,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0x0E,
+};
+
 /* 1-character program names for the PZ CAS40 data.
  * \xCD is ro and \xCE is theta. */
 CAHUTE_LOCAL_DATA(cahute_u8 const *)
@@ -40,12 +85,14 @@ pz_program_names =
 /**
  * Determine the data description for a provided CAS40 header.
  *
+ * @param context Context in which the function is run.
  * @param data CAS40 header (40B).
  * @param desc Data description to fill.
  * @return Error, or 0 if successful.
  */
 CAHUTE_LOCAL(int)
 cahute_cas40_determine_data_description(
+    cahute_context *context,
     cahute_u8 const *data,
     cahute_casiolink_data_description *desc
 ) {
@@ -55,8 +102,8 @@ cahute_cas40_determine_data_description(
     desc->last_part_repeat = 1;
     desc->part_sizes[0] = 0;
 
-    msg(ll_info, "Raw CAS40 header is the following:");
-    mem(ll_info, data, 40);
+    msg(context, ll_info, "Raw CAS40 header is the following:");
+    mem(context, ll_info, data, 40);
 
     if (!memcmp(&data[1], "\x17\x17", 2)) {
         /* CAS40 AL End */
@@ -254,11 +301,11 @@ cahute_cas40_determine_data_description(
         /* 'part_count' and 'part_sizes[0]' were left to their default values
          * of 1 and 0 respectively, which means they have not been set to
          * a found type. */
-        msg(ll_error, "Could not determine a data description.");
+        msg(context, ll_error, "Could not determine a data description.");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
-    cahute_casiolink_log_data_description(desc);
+    cahute_casiolink_log_data_description(context, desc);
     return CAHUTE_OK;
 }
 
@@ -349,7 +396,8 @@ cahute_cas40_decode_data_direct(
     }
 
 fail:
-    msg(ll_error,
+    msg(file->medium.context,
+        ll_error,
         "Failed to decode data: %s (%d)",
         cahute_get_error_name(err),
         err);
@@ -395,7 +443,8 @@ cahute_cas40_decode_data(
         return err;
 
     if (header_buf[0] != PACKET_TYPE_DATA) {
-        msg(ll_error,
+        msg(file->medium.context,
+            ll_error,
             "Header type 0x%02X is not the expected 0x%02X.",
             header_buf[0],
             PACKET_TYPE_DATA);
@@ -405,7 +454,8 @@ cahute_cas40_decode_data(
     obtained_checksum = header_buf[39];
     expected_checksum = cahute_checksub(&header_buf[1], 38);
     if (obtained_checksum != expected_checksum) {
-        msg(ll_error,
+        msg(file->medium.context,
+            ll_error,
             "Invalid checksum in header (obtained: 0x%02X, computed: 0x%02X)",
             obtained_checksum,
             expected_checksum);
@@ -420,7 +470,11 @@ cahute_cas40_decode_data(
      * NOTE: We only update ``*offsetp`` here and NOT ``offset``, because
      * ``offset`` is actually used in data decoding later on in the
      * function. */
-    err = cahute_cas40_determine_data_description(header_buf, &desc);
+    err = cahute_cas40_determine_data_description(
+        file->medium.context,
+        header_buf,
+        &desc
+    );
     if (err)
         return err;
 
@@ -466,7 +520,9 @@ cahute_cas40_receive_raw_data(
     int err;
 
     if (data_capacity < 40) {
-        msg(ll_error, "Data capacity was expected to be at least 40 bytes.");
+        msg(link->medium.context,
+            ll_error,
+            "Data capacity was expected to be at least 40 bytes.");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -485,7 +541,11 @@ cahute_cas40_receive_raw_data(
                 return err;
         }
 
-        err = cahute_cas40_determine_data_description(data, desc);
+        err = cahute_cas40_determine_data_description(
+            link->medium.context,
+            data,
+            desc
+        );
         if (err)
             return err;
 
@@ -497,27 +557,33 @@ cahute_cas40_receive_raw_data(
         if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_AL) {
             if (link->protocol_state.casiolink.flags
                 & CASIOLINK_FLAG_DEVICE_INFO_CAS40_AL) {
-                msg(ll_error,
+                msg(link->medium.context,
+                    ll_error,
                     "Calculator sends us an AL header when already in AL "
                     "mode; there are shenanigans happening here.");
                 return CAHUTE_ERROR_UNKNOWN;
             }
 
-            msg(ll_info, "Calculator has started CAS40 AL mode.");
+            msg(link->medium.context,
+                ll_info,
+                "Calculator has started CAS40 AL mode.");
             link->protocol_state.casiolink.flags |=
                 CASIOLINK_FLAG_DEVICE_INFO_CAS40_AL;
             continue;
         } else if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_AL_END) {
             if (~link->protocol_state.casiolink.flags
                 & CASIOLINK_FLAG_DEVICE_INFO_CAS40_AL) {
-                msg(ll_error,
+                msg(link->medium.context,
+                    ll_error,
                     "Calculator sends us an AL END header when not already in "
                     "AL mode; there are shenanigans happening here.");
                 return CAHUTE_ERROR_UNKNOWN;
             }
 
             /* The communication is ending. */
-            msg(ll_info, "Calculator has terminated CAS40 AL mode.");
+            msg(link->medium.context,
+                ll_info,
+                "Calculator has terminated CAS40 AL mode.");
             link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
             return CAHUTE_ERROR_TERMINATED;
         } else if (~link->protocol_state.casiolink.flags & CASIOLINK_FLAG_DEVICE_INFO_CAS40_AL) {
@@ -525,13 +591,16 @@ cahute_cas40_receive_raw_data(
              * active, hence the condition. */
             if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_END) {
                 /* The communication is ending. */
-                msg(ll_info, "CAS40 data type is an END packet.");
+                msg(link->medium.context,
+                    ll_info,
+                    "CAS40 data type is an END packet.");
                 link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
                 return CAHUTE_ERROR_TERMINATED;
             } else if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_FINAL) {
                 /* Communication will end after reception of current data.
                  * Note that we still want to receive data. */
-                msg(ll_info, "CAS40 data type is final.");
+                msg(link->medium.context, ll_info, "CAS40 data type is final."
+                );
                 link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
             }
         }
@@ -579,6 +648,7 @@ cahute_cas40_receive_data(
 
         cahute_populate_file_from_memory(
             &memory_file,
+            link->medium.context,
             link->data_buffer,
             link->data_buffer_size
         );
@@ -625,7 +695,9 @@ cahute_cas40_receive_screen(
     do {
         err = cahute_cas40_receive_raw_data(link, header, timeout, &desc);
         if (err == CAHUTE_ERROR_TIMEOUT_START) {
-            msg(ll_error, "No data received in a timely matter, exiting.");
+            msg(link->medium.context,
+                ll_error,
+                "No data received in a timely matter, exiting.");
             break;
         }
 
@@ -649,21 +721,24 @@ cahute_cas40_receive_screen(
                 /* Check that the color codes are all known, i.e. that
                  * they all are between 1 and 4 included. */
                 if (buf[40] < 1 || buf[40] > 4) {
-                    msg(ll_warn,
+                    msg(link->medium.context,
+                        ll_warn,
                         "Unknown color code 0x%02X for sheet 1, skipping.",
                         buf[40]);
                     continue;
                 }
                 if (buf[40 + sheet_size + 1] < 1
                     || buf[40 + sheet_size + 1] > 4) {
-                    msg(ll_warn,
+                    msg(link->medium.context,
+                        ll_warn,
                         "Unknown color code 0x%02X for sheet 2, skipping.",
                         buf[40 + sheet_size + 1]);
                     continue;
                 }
                 if (buf[40 + sheet_size + sheet_size + 2] < 1
                     || buf[40 + sheet_size + sheet_size + 2] > 4) {
-                    msg(ll_warn,
+                    msg(link->medium.context,
+                        ll_warn,
                         "Unknown color code 0x%02X for sheet 3, skipping.",
                         buf[40 + sheet_size + sheet_size + 1]);
                     continue;
@@ -695,51 +770,6 @@ cahute_cas40_receive_screen(
  * Send and control.
  * --- */
 
-/* CAS40 end packet. */
-CAHUTE_LOCAL_DATA(cahute_u8 const)
-end_packet[] = {
-    PACKET_TYPE_DATA,
-    0x17,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0xFF,
-    0x0E,
-};
-
 /**
  * Terminate the connection, for CAS40 variant.
  *
@@ -754,8 +784,8 @@ CAHUTE_EXTERN(int) cahute_cas40_terminate(cahute_link *link) {
     if (link->flags & CAHUTE_LINK_FLAG_TERMINATED)
         return CAHUTE_OK;
 
-    msg(ll_info, "Sending the following end packet:");
-    mem(ll_info, end_packet, 40);
+    msg(link->medium.context, ll_info, "Sending the following end packet:");
+    mem(link->medium.context, ll_info, end_packet, 40);
 
     err = cahute_send_on_link_medium(&link->medium, end_packet, 40);
     if (err)

@@ -29,6 +29,7 @@
 #ifndef CAHUTE_DETECTION_H
 #define CAHUTE_DETECTION_H 1
 #include "cdefs.h"
+#include "context.h"
 
 CAHUTE_BEGIN_NAMESPACE
 CAHUTE_BEGIN_DECLS
@@ -65,15 +66,17 @@ typedef int(cahute_detect_usb_entry_func)(
 
 CAHUTE_EXTERN(int)
 cahute_detect_serial(
+    cahute_context CAHUTE_NNPTR(cahute__context),
     cahute_detect_serial_entry_func CAHUTE_NNPTR(cahute__func),
     void *cahute__cookie
-) CAHUTE_NONNULL(1);
+) CAHUTE_NONNULL((1, 2));
 
 CAHUTE_EXTERN(int)
 cahute_detect_usb(
+    cahute_context CAHUTE_NNPTR(cahute__context),
     cahute_detect_usb_entry_func CAHUTE_NNPTR(cahute__func),
     void *cahute__cookie
-) CAHUTE_NONNULL(1);
+) CAHUTE_NONNULL((1, 2));
 
 CAHUTE_END_DECLS
 CAHUTE_END_NAMESPACE

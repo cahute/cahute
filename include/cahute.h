@@ -29,6 +29,7 @@
 #ifndef CAHUTE_H
 #define CAHUTE_H 1
 #include <cahute/cdefs.h>
+#include <cahute/context.h>
 #include <cahute/data.h>
 #include <cahute/detection.h>
 #include <cahute/error.h>

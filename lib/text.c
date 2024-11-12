@@ -461,6 +461,7 @@ cahute_get_variable_size_9860_char(
  * conversion, please also update the table in the
  * :c:func:`cahute_convert_text` function documentation.
  *
+ * @param context Context in which the conversion is operated.
  * @param bufp Pointer to the destination pointer.
  * @param buf_sizep Pointer to the destination size.
  * @param datap Pointer to the source data pointer.
@@ -471,6 +472,7 @@ cahute_get_variable_size_9860_char(
  */
 CAHUTE_EXTERN(int)
 cahute_convert_text(
+    cahute_context *context,
     void **bufp,
     size_t *buf_sizep,
     void const **datap,
@@ -557,7 +559,7 @@ cahute_convert_text(
             break;
 
         default:
-            CAHUTE_RETURN_IMPL("Unimplemented conversion.");
+            CAHUTE_RETURN_IMPL(context, "Unimplemented conversion.");
         }
         break;
 
@@ -580,7 +582,7 @@ cahute_convert_text(
             break;
 
         default:
-            CAHUTE_RETURN_IMPL("Unimplemented conversion.");
+            CAHUTE_RETURN_IMPL(context, "Unimplemented conversion.");
         }
         break;
 
@@ -601,13 +603,13 @@ cahute_convert_text(
             break;
 
         default:
-            CAHUTE_RETURN_IMPL("Unimplemented conversion.");
+            CAHUTE_RETURN_IMPL(context, "Unimplemented conversion.");
         }
         break;
 
 
     default:
-        CAHUTE_RETURN_IMPL("Unimplemented conversion.");
+        CAHUTE_RETURN_IMPL(context, "Unimplemented conversion.");
     }
 
     /* The conversion loop and parameters have been chosen in the above switch,
@@ -762,7 +764,9 @@ cahute_convert_text(
                 break;
 
             default:
-                CAHUTE_RETURN_IMPL("Unimplemented reading for CASIO conv loop."
+                CAHUTE_RETURN_IMPL(
+                    context,
+                    "Unimplemented reading for CASIO conv loop."
                 );
             }
 
@@ -819,6 +823,7 @@ cahute_convert_text(
 
             default:
                 CAHUTE_RETURN_IMPL(
+                    context,
                     "Unimplemented writing for CASIO conv. loop."
                 );
             }
@@ -1030,6 +1035,7 @@ cahute_convert_text(
 
             default:
                 CAHUTE_RETURN_IMPL(
+                    context,
                     "Unimplemented reading for Unicode conv loop."
                 );
             }
@@ -1085,6 +1091,7 @@ cahute_convert_text(
 
             default:
                 CAHUTE_RETURN_IMPL(
+                    context,
                     "Unimplemented writing for Unicode conv. loop."
                 );
             }
@@ -1092,16 +1099,17 @@ cahute_convert_text(
     } break;
 
     default:
-        CAHUTE_RETURN_IMPL("Unimplemented conversion loop.");
+        CAHUTE_RETURN_IMPL(context, "Unimplemented conversion loop.");
     }
 
     err = CAHUTE_OK;
 end:
     if (err && err == CAHUTE_ERROR_INVALID) {
-        msg(ll_info,
+        msg(context,
+            ll_info,
             "Unable to parse from encoding %d, starting from:",
             source_encoding);
-        mem(ll_info, data, data_size > 20 ? 20 : data_size);
+        mem(context, ll_info, data, data_size > 20 ? 20 : data_size);
     }
 
     *bufp = buf;
@@ -1116,6 +1124,7 @@ end:
  *
  * This is a shortcut to calling ``cahute_convert_text`` directly.
  *
+ * @param context Context in which the conversion is operated.
  * @param buf Buffer in which to write.
  * @param buf_size Size of the buffer in which to write.
  * @param data Data from which to read.
@@ -1125,6 +1134,7 @@ end:
  */
 CAHUTE_EXTERN(int)
 cahute_convert_to_utf8(
+    cahute_context *context,
     char *buf,
     size_t buf_size,
     void const *data,
@@ -1134,6 +1144,7 @@ cahute_convert_to_utf8(
     int err;
 
     err = cahute_convert_text(
+        context,
         (void **)&buf,
         &buf_size,
         &data,

@@ -40,12 +40,26 @@ typedef void(cahute_log_func)(
     char const *cahute__message
 );
 
-CAHUTE_EXTERN(int) cahute_get_log_level(void);
-CAHUTE_EXTERN(void) cahute_set_log_level(int cahute__level);
+CAHUTE_EXTERN(int)
+cahute_get_log_level(cahute_context CAHUTE_NNPTR(cahute__context))
+    CAHUTE_NONNULL((1));
+
+CAHUTE_EXTERN(void)
+cahute_set_log_level(
+    cahute_context CAHUTE_NNPTR(cahute__context),
+    int cahute__level
+) CAHUTE_NONNULL((1));
 
 CAHUTE_EXTERN(int)
-cahute_set_log_func(cahute_log_func *cahute__func, void *cahute__cookie);
-CAHUTE_EXTERN(void) cahute_reset_log_func(void);
+cahute_set_log_func(
+    cahute_context CAHUTE_NNPTR(cahute__context),
+    cahute_log_func *cahute__func,
+    void *cahute__cookie
+) CAHUTE_NONNULL((1));
+
+CAHUTE_EXTERN(void)
+cahute_reset_log_func(cahute_context CAHUTE_NNPTR(cahute__context))
+    CAHUTE_NONNULL((1));
 
 CAHUTE_END_DECLS
 CAHUTE_END_NAMESPACE

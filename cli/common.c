@@ -44,33 +44,12 @@
 #define REASONABLE_FILE_CONTENT_LIMIT 134217728 /* 128 MiB */
 
 /**
- * Get the current logging level as a string.
- *
- * @return Logging level name.
- */
-extern char const *get_current_log_level(void) {
-    int loglevel = cahute_get_log_level();
-
-    switch (loglevel) {
-    case CAHUTE_LOGLEVEL_INFO:
-        return "info";
-    case CAHUTE_LOGLEVEL_WARNING:
-        return "warning";
-    case CAHUTE_LOGLEVEL_ERROR:
-        return "error";
-    case CAHUTE_LOGLEVEL_FATAL:
-        return "fatal";
-    default:
-        return "(none)";
-    }
-}
-
-/**
  * Set the current logging level as a string.
  *
+ * @param context Context on which to set the logging level.
  * @param loglevel Name of the loglevel to set.
  */
-extern void set_log_level(char const *loglevel) {
+extern void set_log_level(cahute_context *context, char const *loglevel) {
     int value = CAHUTE_LOGLEVEL_NONE;
 
     if (!strcmp(loglevel, "info"))
@@ -82,18 +61,20 @@ extern void set_log_level(char const *loglevel) {
     else if (!strcmp(loglevel, "fatal"))
         value = CAHUTE_LOGLEVEL_FATAL;
 
-    cahute_set_log_level(value);
+    cahute_set_log_level(context, value);
 }
 
 /**
  * Print content from an encoding into a destination one.
  *
+ * @param context Context in which to make the character conversion.
  * @param data Data to convert on-the-fly.
  * @param data_size Size of the data to convert.
  * @param encoding Encoding of the data.
  * @param dest_encoding Encoding to display the data as.
  */
 extern void print_content(
+    cahute_context *context,
     void const *data,
     size_t data_size,
     int encoding,
@@ -107,6 +88,7 @@ extern void print_content(
         p = buf;
         p_size = sizeof(buf);
         err = cahute_convert_text(
+            context,
             (void **)&p,
             &p_size,
             &data,

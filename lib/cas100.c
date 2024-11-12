@@ -110,12 +110,14 @@ cahute_cas100_handle_mdl1(cahute_link *link, cahute_u8 const *header) {
             return err;
 
         header = buf;
-        msg(ll_info, "Received the following header:");
-        mem(ll_info, header, 40);
+        msg(link->medium.context, ll_info, "Received the following header:");
+        mem(link->medium.context, ll_info, header, 40);
     }
 
     if (memcmp(header, "\x3AMDL1", 5)) {
-        msg(ll_error, "Did not receive an MDL1 header as expected.");
+        msg(link->medium.context,
+            ll_error,
+            "Did not receive an MDL1 header as expected.");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -162,12 +164,14 @@ cahute_cas100_handle_mdl1(cahute_link *link, cahute_u8 const *header) {
 /**
  * Determine the data description for a provided CAS100 header.
  *
+ * @param context Context in which the function is run.
  * @param data CAS100 header (40B).
  * @param desc Data description to fill.
  * @return Error, or 0 if successful.
  */
 CAHUTE_LOCAL(int)
 cahute_cas100_determine_data_description(
+    cahute_context *context,
     cahute_u8 const *data,
     cahute_casiolink_data_description *desc
 ) {
@@ -177,8 +181,8 @@ cahute_cas100_determine_data_description(
     desc->last_part_repeat = 1;
     desc->part_sizes[0] = 0;
 
-    msg(ll_info, "Raw CAS100 header is the following:");
-    mem(ll_info, data, 40);
+    msg(context, ll_info, "Raw CAS100 header is the following:");
+    mem(context, ll_info, data, 40);
 
     if (!memcmp(&data[1], "BKU1", 4)) {
         /* Backup packet for CAS100. */
@@ -207,7 +211,7 @@ cahute_cas100_determine_data_description(
         /* 'part_count' and 'part_sizes[0]' were left to their default values
          * of 1 and 0 respectively, which means they have not been set to
          * a found type. */
-        msg(ll_error, "Could not determine a data description.");
+        msg(context, ll_error, "Could not determine a data description.");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -259,6 +263,7 @@ cahute_cas100_decode_data_direct(
         size_t size = ((size_t)header[8] << 8) | header[9];
 
         err = cahute_mcs_decode_data(
+            file->medium.context,
             datap,
             &header[19],
             8,
@@ -277,8 +282,10 @@ cahute_cas100_decode_data_direct(
         goto data_ready;
     }
 
-    msg(ll_error, "Unhandled data with the following header:");
-    mem(ll_error, header, 40);
+    msg(file->medium.context,
+        ll_error,
+        "Unhandled data with the following header:");
+    mem(file->medium.context, ll_error, header, 40);
 
 fail:
     cahute_destroy_data(data);
@@ -316,7 +323,9 @@ cahute_cas100_receive_raw_data(
     int err;
 
     if (data_capacity < 40) {
-        msg(ll_error, "Data capacity was expected to be at least 40 bytes.");
+        msg(link->medium.context,
+            ll_error,
+            "Data capacity was expected to be at least 40 bytes.");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -335,12 +344,18 @@ cahute_cas100_receive_raw_data(
                 return err;
         }
 
-        err = cahute_cas100_determine_data_description(data, desc);
+        err = cahute_cas100_determine_data_description(
+            link->medium.context,
+            data,
+            desc
+        );
         if (err)
             return err;
 
         if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_END) {
-            msg(ll_info, "CAS100 data type is an END packet.");
+            msg(link->medium.context,
+                ll_info,
+                "CAS100 data type is an END packet.");
             link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
             return CAHUTE_ERROR_TERMINATED;
         } else if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_MDL) {
@@ -393,6 +408,7 @@ cahute_cas100_receive_data(
 
     cahute_populate_file_from_memory(
         &memory_file,
+        link->medium.context,
         link->data_buffer,
         link->data_buffer_size
     );
@@ -429,8 +445,8 @@ CAHUTE_EXTERN(int) cahute_cas100_terminate(cahute_link *link) {
     buf[4] = '1';
     buf[39] = cahute_checksub(&buf[1], 38);
 
-    msg(ll_info, "Sending the following end packet:");
-    mem(ll_info, buf, 40);
+    msg(link->medium.context, ll_info, "Sending the following end packet:");
+    mem(link->medium.context, ll_info, buf, 40);
 
     err = cahute_send_on_link_medium(&link->medium, buf, 40);
     if (err)
@@ -465,13 +481,15 @@ cahute_cas100_exchange_model_information(cahute_link *link) {
     if (err)
         return err;
 
-    msg(ll_info, "Received the following header:");
-    mem(ll_info, buf, 40);
+    msg(link->medium.context, ll_info, "Received the following header:");
+    mem(link->medium.context, ll_info, buf, 40);
 
     if (memcmp(buf, "\x3AMDL1", 5)) {
         int sub_err;
 
-        msg(ll_error, "Did not receive an MDL1 header as expected.");
+        msg(link->medium.context,
+            ll_error,
+            "Did not receive an MDL1 header as expected.");
         sub_err = cahute_send_byte_on_link_medium(
             &link->medium,
             PACKET_TYPE_CORRUPTED

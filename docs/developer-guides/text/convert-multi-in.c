@@ -46,6 +46,7 @@ static cahute_u8 const example[] =
     "\"GOLDORAK\"\x0D\xF7\x02\x0D\"INVALIDE\"\x0D\xF7\x03\x00";
 
 int main(void) {
+    cahute_context *context;
     char final_buf[1024];
     cahute_u8 read_buf[32];
     size_t read_offset = 0;
@@ -54,7 +55,17 @@ int main(void) {
     void const *src;
     size_t src_size;
     size_t present = 0;
-    int i, err;
+    int i, err, ret = 1;
+
+    err = cahute_create_context(&context);
+    if (err) {
+        fprintf(
+            stderr,
+            "cahute_create_context() has returned error %s.\n",
+            cahute_get_error_name(err)
+        );
+        return 1;
+    }
 
     for (i = 0;; i++) {
         size_t read_size;
@@ -85,6 +96,7 @@ int main(void) {
         /* We now have an ``src`` buffer of ``src_size`` bytes to read,
          * we can operate the conversion. */
         err = cahute_convert_text(
+            context,
             &dest,
             &dest_size,
             &src,
@@ -111,7 +123,7 @@ int main(void) {
             /* Truncated input, we must check that at least one byte has
              * been read from the source data to avoid an infinite loop. */
             if (src_size == present)
-                return 1;
+                goto fail;
 
             /* Otherwise, we want to copy the leftover bytes at
              * the beginning and complete.
@@ -124,12 +136,17 @@ int main(void) {
         }
 
         /* Other failure, we must stop! */
-        return 1;
+        goto fail;
     }
 
     /* Print the result of the conversion. */
     printf("---\n");
     fwrite(final_buf, 1, sizeof(final_buf) - dest_size, stdout);
     printf("\n---\n");
-    return 0;
+
+    ret = 0;
+
+fail:
+    cahute_destroy_context(context);
+    return ret;
 }

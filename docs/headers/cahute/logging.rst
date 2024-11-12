@@ -1,3 +1,5 @@
+.. _header-cahute-logging:
+
 ``<cahute/logging.h>`` -- Logging control for Cahute
 ====================================================
 
@@ -55,27 +57,35 @@ Type definitions
 Function declarations
 ---------------------
 
-.. c:function:: int cahute_get_log_level()
+.. c:function:: int cahute_get_log_level(cahute_context *context)
 
-    Get the current logging level, i.e. threshold of emitted messages.
+    Get the current logging level, i.e. threshold of emitted messages,
+    in the provided context.
 
+    :param context: Context from which to get the current logging level.
     :return: The current logging level.
 
-.. c:function:: void cahute_set_log_level(int level)
+.. c:function:: void cahute_set_log_level(cahute_context *context, int level)
 
-    Set the current logging level, i.e. threshold of emitted message.
+    Set the current logging level, i.e. threshold of emitted message,
+    in the provided context.
 
+    :param context: Context in which to set the current logging level.
     :param level: The logging level to set as the current one.
 
-.. c:function:: int cahute_set_log_func(cahute_log_func *func, void *cookie)
+.. c:function:: int cahute_set_log_func(cahute_context *context, \
+    cahute_log_func *func, void *cookie)
 
     Set the function and related cookie used to emit logging messages.
 
+    :param context: Context in which to set the logging function.
     :param func: Pointer to the function to use.
     :param cookie: Cookie to pass to the function on every call.
     :return: Cahute error.
 
-.. c:function:: int cahute_reset_log_func(void)
+.. c:function:: int cahute_reset_log_func(cahute_context *context)
 
     Reset the function and related cookie used to emit logging messages
     to the default one.
+
+    :param context: Context in which to reset the logging function.

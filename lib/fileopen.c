@@ -52,11 +52,16 @@ CAHUTE_LOCAL(char const *) get_medium_name(int medium) {
 /**
  * Close a file medium.
  *
+ * @param context Context in which the function is called.
  * @param type Medium type.
  * @param state Medium state.
  */
 CAHUTE_LOCAL(void)
-close_medium(int type, union cahute_file_medium_state *state) {
+close_medium(
+    cahute_context *context,
+    int type,
+    union cahute_file_medium_state *state
+) {
     switch (type) {
 #ifdef CAHUTE_FILE_MEDIUM_POSIX
     case CAHUTE_FILE_MEDIUM_POSIX:
@@ -69,7 +74,8 @@ close_medium(int type, union cahute_file_medium_state *state) {
         break;
 #endif
     default:
-        msg(ll_warn,
+        msg(context,
+            ll_warn,
             "No closing method for %s (%d) file medium.",
             get_medium_name(type),
             type);
@@ -79,6 +85,7 @@ close_medium(int type, union cahute_file_medium_state *state) {
 /**
  * Create a file out of a medium type and state.
  *
+ * @param context Context within which to create the file.
  * @param filep Pointer to the file to initialize.
  * @param medium_type Medium type.
  * @param medium_state Medium state.
@@ -90,6 +97,7 @@ close_medium(int type, union cahute_file_medium_state *state) {
  */
 CAHUTE_LOCAL(int)
 open_file_from_medium(
+    cahute_context *context,
     cahute_file **filep,
     int medium_type,
     union cahute_file_medium_state *medium_state,
@@ -102,7 +110,7 @@ open_file_from_medium(
     int err = CAHUTE_ERROR_UNKNOWN;
 
     if (!medium_type) {
-        msg(ll_error, "Undefined medium type, this is a bug!");
+        msg(context, ll_error, "Undefined medium type, this is a bug!");
         goto fail;
     }
 
@@ -114,6 +122,7 @@ open_file_from_medium(
     }
 
     /* Initialize medium properties. */
+    file->medium.context = context;
     file->medium.type = medium_type;
     file->medium.flags = medium_flags;
     memcpy(&file->medium.state, medium_state, sizeof(*medium_state));
@@ -143,7 +152,7 @@ fail:
     if (file)
         free(file);
 
-    close_medium(medium_type, medium_state);
+    close_medium(context, medium_type, medium_state);
     return err;
 }
 
@@ -155,6 +164,7 @@ fail:
  * WARNING: cahute_close_file() MUST NOT be called with such a resource.
  *
  * @param file File structure to populate.
+ * @param context Context to provide the file with.
  * @param buf Buffer to read or write from.
  * @param size Size of the buffer.
  * @return Error, or 0 if successful.
@@ -162,12 +172,14 @@ fail:
 CAHUTE_EXTERN(void)
 cahute_populate_file_from_memory(
     cahute_file *file,
+    cahute_context *context,
     cahute_u8 *buf,
     size_t size
 ) {
     file->flags = 0;
     file->type = 0;
     file->extension[0] = 0;
+    file->medium.context = context;
     file->medium.type = CAHUTE_FILE_MEDIUM_NONE;
     file->medium.flags =
         (CAHUTE_FILE_MEDIUM_FLAG_WRITE | CAHUTE_FILE_MEDIUM_FLAG_READ
@@ -182,6 +194,7 @@ cahute_populate_file_from_memory(
 /**
  * Open a file on the current system, for reading.
  *
+ * @param context Context within which to create the file.
  * @param filep Pointer to the file to open.
  * @param flags Flags for opening the file.
  * @param path Path to the file to open.
@@ -190,6 +203,7 @@ cahute_populate_file_from_memory(
  */
 CAHUTE_EXTERN(int)
 cahute_open_file(
+    cahute_context CAHUTE_NNPTR(context),
     cahute_file **filep,
     unsigned long flags,
     void const *path,
@@ -208,21 +222,27 @@ cahute_open_file(
         off_t off;
 
         if (path_type != CAHUTE_PATH_TYPE_POSIX)
-            CAHUTE_RETURN_IMPL("Path type must be POSIX.");
+            CAHUTE_RETURN_IMPL(context, "Path type must be POSIX.");
 
         fd = open(path, O_RDONLY | O_NOCTTY);
         if (fd < 0) {
             switch (errno) {
             case ENOENT:
-                msg(ll_error, "Could not open file: %s", strerror(errno));
+                msg(context,
+                    ll_error,
+                    "Could not open file: %s",
+                    strerror(errno));
                 return CAHUTE_ERROR_NOT_FOUND;
 
             case EACCES:
                 return CAHUTE_ERROR_PRIV;
 
             default:
-                msg(ll_error, "Unknown error: %s (%d)", strerror(errno), errno
-                );
+                msg(context,
+                    ll_error,
+                    "Unknown error: %s (%d)",
+                    strerror(errno),
+                    errno);
                 return CAHUTE_ERROR_UNKNOWN;
             }
         }
@@ -233,7 +253,8 @@ cahute_open_file(
             close(fd);
             switch (errno) {
             default:
-                msg(ll_error,
+                msg(context,
+                    ll_error,
                     "An error occurred while calling lseek(): %s (%d)",
                     strerror(errno),
                     errno);
@@ -242,7 +263,8 @@ cahute_open_file(
         }
 
         if (off > CAHUTE_MAX_FILE_OFFSET) {
-            msg(ll_warn,
+            msg(context,
+                ll_warn,
                 "File size %lu is longer than maximum offset %lu",
                 (unsigned long)off,
                 CAHUTE_MAX_FILE_OFFSET);
@@ -257,7 +279,8 @@ cahute_open_file(
             close(fd);
             switch (errno) {
             default:
-                msg(ll_error,
+                msg(context,
+                    ll_error,
                     "An error occurred while calling lseek(): %s (%d)",
                     strerror(errno),
                     errno);
@@ -295,7 +318,10 @@ cahute_open_file(
                 NULL
             );
         else
-            CAHUTE_RETURN_IMPL("Path type must be Win32 or DOS compatible.");
+            CAHUTE_RETURN_IMPL(
+                context,
+                "Path type must be Win32 or DOS compatible."
+            );
 
         if (handle == INVALID_HANDLE_VALUE) {
             switch (werr = GetLastError()) {
@@ -306,20 +332,21 @@ cahute_open_file(
                 return CAHUTE_ERROR_PRIV;
 
             default:
-                log_windows_error("CreateFile", werr);
+                log_windows_error(context, "CreateFile", werr);
                 return CAHUTE_ERROR_UNKNOWN;
             }
         }
 
         dwoff = SetFilePointer(handle, 0, NULL, FILE_END);
         if (dwoff == INVALID_SET_FILE_POINTER) {
-            log_windows_error("SetFilePointer", GetLastError());
+            log_windows_error(context, "SetFilePointer", GetLastError());
             CloseHandle(handle);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         if (dwoff > CAHUTE_MAX_FILE_OFFSET) {
-            msg(ll_warn,
+            msg(context,
+                ll_warn,
                 "File size %lu is longer than maximum offset %lu",
                 (unsigned long)dwoff,
                 CAHUTE_MAX_FILE_OFFSET);
@@ -331,7 +358,7 @@ cahute_open_file(
 
         dwoff = SetFilePointer(handle, 0, NULL, FILE_BEGIN);
         if (dwoff == INVALID_SET_FILE_POINTER) {
-            log_windows_error("SetFilePointer", GetLastError());
+            log_windows_error(context, "SetFilePointer", GetLastError());
             CloseHandle(handle);
             return CAHUTE_ERROR_UNKNOWN;
         }
@@ -340,14 +367,21 @@ cahute_open_file(
         medium_state.windows.handle = handle;
     }
 #else
-    CAHUTE_RETURN_IMPL("No file opening method available.");
+    CAHUTE_RETURN_IMPL(context, "No file opening method available.");
 #endif
 
     /* Try to find the path extension.
      * If this method fails, the error is just ignored. */
-    cahute_find_path_extension(extension, sizeof(extension), path, path_type);
+    cahute_find_path_extension(
+        context,
+        extension,
+        sizeof(extension),
+        path,
+        path_type
+    );
 
     return open_file_from_medium(
+        context,
         filep,
         medium_type,
         &medium_state,
@@ -362,6 +396,7 @@ cahute_open_file(
 /**
  * Open a file on the current system, for exporting.
  *
+ * @param context Context within which to create the file.
  * @param filep Pointer to the file to open.
  * @param file_size File size to set to the file, if creating.
  * @param path Path to the file to open.
@@ -370,6 +405,7 @@ cahute_open_file(
  */
 CAHUTE_EXTERN(int)
 cahute_create_file(
+    cahute_context CAHUTE_NNPTR(context),
     cahute_file **filep,
     unsigned long file_size,
     void const *path,
@@ -380,7 +416,8 @@ cahute_create_file(
     union cahute_file_medium_state medium_state;
 
     if (file_size > CAHUTE_MAX_FILE_OFFSET) {
-        msg(ll_error,
+        msg(context,
+            ll_error,
             "Provided size %lu is more than the maximum file size %lu",
             file_size,
             CAHUTE_MAX_FILE_OFFSET);
@@ -394,7 +431,7 @@ cahute_create_file(
         int fd;
 
         if (path_type != CAHUTE_PATH_TYPE_POSIX)
-            CAHUTE_RETURN_IMPL("Path type must be POSIX.");
+            CAHUTE_RETURN_IMPL(context, "Path type must be POSIX.");
 
         fd = open(
             path,
@@ -404,15 +441,21 @@ cahute_create_file(
         if (fd < 0) {
             switch (errno) {
             case ENOENT:
-                msg(ll_error, "Could not open file: %s", strerror(errno));
+                msg(context,
+                    ll_error,
+                    "Could not open file: %s",
+                    strerror(errno));
                 return CAHUTE_ERROR_NOT_FOUND;
 
             case EACCES:
                 return CAHUTE_ERROR_PRIV;
 
             default:
-                msg(ll_error, "Unknown error: %s (%d)", strerror(errno), errno
-                );
+                msg(context,
+                    ll_error,
+                    "Unknown error: %s (%d)",
+                    strerror(errno),
+                    errno);
                 return CAHUTE_ERROR_UNKNOWN;
             }
         }
@@ -421,7 +464,8 @@ cahute_create_file(
             close(fd);
             switch (errno) {
             default:
-                msg(ll_error,
+                msg(context,
+                    ll_error,
                     "An error occurred while calling lseek(): %s (%d)",
                     strerror(errno),
                     errno);
@@ -459,7 +503,10 @@ cahute_create_file(
                 NULL
             );
         else
-            CAHUTE_RETURN_IMPL("Path type must be Win32 or DOS compatible.");
+            CAHUTE_RETURN_IMPL(
+                context,
+                "Path type must be Win32 or DOS compatible."
+            );
 
         if (handle == INVALID_HANDLE_VALUE)
             switch (werr = GetLastError()) {
@@ -470,26 +517,26 @@ cahute_create_file(
                 return CAHUTE_ERROR_PRIV;
 
             default:
-                log_windows_error("CreateFile", werr);
+                log_windows_error(context, "CreateFile", werr);
                 return CAHUTE_ERROR_UNKNOWN;
             }
 
         dwoff = SetFilePointer(handle, file_size, NULL, FILE_BEGIN);
         if (dwoff == INVALID_SET_FILE_POINTER) {
-            log_windows_error("SetFilePointer", GetLastError());
+            log_windows_error(context, "SetFilePointer", GetLastError());
             CloseHandle(handle);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         if (!SetEndOfFile(handle)) {
-            log_windows_error("SetEndOfFile", GetLastError());
+            log_windows_error(context, "SetEndOfFile", GetLastError());
             CloseHandle(handle);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         dwoff = SetFilePointer(handle, 0, NULL, FILE_BEGIN);
         if (dwoff == INVALID_SET_FILE_POINTER) {
-            log_windows_error("SetFilePointer", GetLastError());
+            log_windows_error(context, "SetFilePointer", GetLastError());
             CloseHandle(handle);
             return CAHUTE_ERROR_UNKNOWN;
         }
@@ -498,14 +545,21 @@ cahute_create_file(
         medium_state.windows.handle = handle;
     }
 #else
-    CAHUTE_RETURN_IMPL("No file opening method available.");
+    CAHUTE_RETURN_IMPL(context, "No file opening method available.");
 #endif
 
     /* Try to find the path extension.
      * If this method fails, the error is just ignored. */
-    cahute_find_path_extension(extension, sizeof(extension), path, path_type);
+    cahute_find_path_extension(
+        context,
+        extension,
+        sizeof(extension),
+        path,
+        path_type
+    );
 
     return open_file_from_medium(
+        context,
         filep,
         medium_type,
         &medium_state,
@@ -520,10 +574,12 @@ cahute_create_file(
 /**
  * Open standard output as a file.
  *
+ * @param context Context within which to open the standard output.
  * @param filep Pointer to the file to create.
  * @return Error, or 0 if successful.
  */
-CAHUTE_EXTERN(int) cahute_open_stdout(cahute_file **filep) {
+CAHUTE_EXTERN(int)
+cahute_open_stdout(cahute_context CAHUTE_NNPTR(context), cahute_file **filep) {
     int medium_type;
     union cahute_file_medium_state medium_state;
     unsigned long file_flags = 0; /* By default, do not close the medium. */
@@ -536,7 +592,7 @@ CAHUTE_EXTERN(int) cahute_open_stdout(cahute_file **filep) {
         HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
         if (handle == INVALID_HANDLE_VALUE) {
-            log_windows_error("GetStdHandle", GetLastError());
+            log_windows_error(context, "GetStdHandle", GetLastError());
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -544,10 +600,11 @@ CAHUTE_EXTERN(int) cahute_open_stdout(cahute_file **filep) {
         medium_state.windows.handle = handle;
     }
 #else
-    CAHUTE_RETURN_IMPL("No file opening method available.");
+    CAHUTE_RETURN_IMPL(context, "No file opening method available.");
 #endif
 
     return open_file_from_medium(
+        context,
         filep,
         medium_type,
         &medium_state,
@@ -567,9 +624,13 @@ CAHUTE_EXTERN(void) cahute_close_file(cahute_file *file) {
     if (!file)
         return;
 
-    msg(ll_info, "Closing the file.");
+    msg(file->medium.context, ll_info, "Closing the file.");
     if (file->flags & CAHUTE_FILE_FLAG_CLOSE_MEDIUM)
-        close_medium(file->medium.type, &file->medium.state);
+        close_medium(
+            file->medium.context,
+            file->medium.type,
+            &file->medium.state
+        );
 
     free(file);
 }

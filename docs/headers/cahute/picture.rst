@@ -64,11 +64,13 @@ Type definitions
 Function declarations
 ---------------------
 
-.. c:function:: int cahute_convert_picture(void *dest, int dest_format, \
-    void const *src, int src_format, int width, int height)
+.. c:function:: int cahute_convert_picture(cahute_context *context, \
+    void *dest, int dest_format, void const *src, int src_format, \
+    int width, int height)
 
     Convert picture data from a source to a destination format.
 
+    :param context: Context in which to run the function.
     :param dest: Destination picture data.
     :param dest_format: Format to write picture data in on the destination.
     :param src: Source picture data.
@@ -77,11 +79,13 @@ Function declarations
     :param height: Picture height.
     :return: Error, or 0 if the operation was successful.
 
-.. c:function:: int cahute_convert_picture_from_frame(void *dest, \
+.. c:function:: int cahute_convert_picture_from_frame( \
+    cahute_context *context, void *dest, \
     int dest_format, cahute_frame const *frame)
 
     Convert picture data from a frame to a destination format.
 
+    :param context: Context in which to run the function.
     :param dest: Destination picture data.
     :param dest_format: Format to write picture data in on the destination.
     :param frame: Frame to get source picture data and metadata from.

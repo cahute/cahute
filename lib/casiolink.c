@@ -37,6 +37,103 @@
 #define PACKET_TYPE_INVALID_DATA 0x24
 
 /* ---
+ * Utilities.
+ * --- */
+
+/**
+ * Check a file based on a data description.
+ *
+ * @param file File to check.
+ * @param offset Offset from which to check the file.
+ * @param desc Data description based on which to check the file.
+ * @return Cahute error, or 0 if ok.
+ */
+CAHUTE_EXTERN(int)
+cahute_casiolink_check_file_data(
+    cahute_file *file,
+    unsigned long offset,
+    struct cahute_casiolink_data_description const *desc
+) {
+    cahute_u8 buf[4];
+    unsigned int checksum, checksum_alt;
+    size_t i, total_parts, part_size;
+    int err;
+
+    if (!desc->part_count)
+        return CAHUTE_OK;
+
+    total_parts = desc->part_count - 1 + desc->last_part_repeat;
+    for (i = 0; i < total_parts; i++) {
+        part_size =
+            desc->part_sizes[i >= desc->part_count ? desc->part_count - 1 : i];
+
+        err = cahute_read_from_file(file, offset++, buf, 2);
+        if (err)
+            return err;
+
+        if (buf[0] != desc->packet_type) {
+            msg(file->medium.context,
+                ll_error,
+                "In part %" CAHUTE_PRIuSIZE "/%" CAHUTE_PRIuSIZE
+                ": invalid "
+                "type 0x%02X (expected: 0x%02X)",
+                i + 1,
+                total_parts,
+                buf[0],
+                desc->packet_type);
+            return CAHUTE_ERROR_CORRUPT;
+        }
+
+        /* We apply the same checksum logics as in
+         * `cahute_casiolink_receive_packet()`, with the alt checksum
+         * for CAS40 screenshots. */
+        if (part_size > 1) {
+            err = cahute_checksum_from_file_medium(
+                &file->medium,
+                offset + 1,
+                part_size - 1,
+                &checksum_alt
+            );
+            if (err)
+                return err;
+
+            checksum = (checksum_alt + buf[1]) & 255;
+        } else if (part_size) {
+            checksum = buf[1];
+            checksum_alt = 0;
+        } else {
+            checksum = 0;
+            checksum_alt = 0;
+        }
+
+        checksum = cahute_checksub_from_checksum(checksum);
+        checksum_alt = cahute_checksub_from_checksum(checksum_alt);
+
+        if (err)
+            return err;
+
+        offset += part_size;
+        err = cahute_read_from_file(file, offset++, &buf[1], 1);
+        if (err)
+            return err;
+
+        if (buf[1] != checksum && buf[1] != checksum_alt) {
+            msg(file->medium.context,
+                ll_error,
+                "In part %" CAHUTE_PRIuSIZE "/%" CAHUTE_PRIuSIZE
+                ": invalid checksum (obtained: 0x%02X, computed: 0x%02X)",
+                i + 1,
+                total_parts,
+                buf[1],
+                checksum);
+            return CAHUTE_ERROR_CORRUPT;
+        }
+    }
+
+    return CAHUTE_OK;
+}
+
+/* ---
  * Reception.
  * --- */
 
@@ -153,13 +250,16 @@ cahute_casiolink_receive_packet(
 
     err = cahute_casiolink_receive_first_byte(link, &first_byte, timeout);
     if (err == CAHUTE_ERROR_TIMEOUT_START) {
-        msg(ll_error, "Timeout received while reading the packet type.");
+        msg(link->medium.context,
+            ll_error,
+            "Timeout received while reading the packet type.");
         return CAHUTE_ERROR_TIMEOUT;
     } else if (err)
         return err;
 
     if (first_byte != expected_type) {
-        msg(ll_error,
+        msg(link->medium.context,
+            ll_error,
             "Expected 0x%02X packet type, got 0x%02X.",
             expected_type,
             first_byte);
@@ -205,12 +305,13 @@ cahute_casiolink_receive_packet(
 
     /* Check the checksum. */
     if (checksum != buf[1 + size] && checksum_alt != buf[1 + size]) {
-        msg(ll_warn,
+        msg(link->medium.context,
+            ll_warn,
             "Invalid checksum (obtained: 0x%02X, computed: "
             "0x%02X).",
             buf[1 + size],
             checksum);
-        mem(ll_info, buf, size);
+        mem(link->medium.context, ll_info, buf, size);
 
         return CAHUTE_ERROR_CORRUPT;
     }
@@ -237,7 +338,10 @@ cahute_casiolink_decode_data(
     int err;
 
     /* Read the header start. */
-    msg(ll_info, "Reading new header at offset %lu.", *offsetp);
+    msg(file->medium.context,
+        ll_info,
+        "Reading new header at offset %lu.",
+        *offsetp);
     err = cahute_read_from_file(file, *offsetp, header_buf, 40);
     if (err)
         return err;
@@ -250,7 +354,132 @@ cahute_casiolink_decode_data(
         return cahute_cas40_decode_data(datap, file, offsetp);
     }
 
-    CAHUTE_RETURN_IMPL("Cannot decode CAS100 data from a CASIOLINK file.");
+    CAHUTE_RETURN_IMPL(
+        file->medium.context,
+        "Cannot decode CAS100 data from a CASIOLINK file."
+    );
+}
+
+/**
+ * Show a data description in a logging context.
+ *
+ * @param desc Data description to show.
+ */
+CAHUTE_EXTERN(void)
+cahute_casiolink_log_data_description(
+    cahute_context *context,
+    struct cahute_casiolink_data_description const *desc
+) {
+    msg(context, ll_info, "Data description was the following:");
+
+    {
+        char flags_buf[50], *p = flags_buf;
+
+        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_END) {
+            *p++ = ' ';
+            *p++ = '|';
+            *p++ = ' ';
+            *p++ = 'E';
+            *p++ = 'N';
+            *p++ = 'D';
+        }
+
+        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_FINAL) {
+            *p++ = ' ';
+            *p++ = '|';
+            *p++ = ' ';
+            *p++ = 'F';
+            *p++ = 'I';
+            *p++ = 'N';
+            *p++ = 'A';
+            *p++ = 'L';
+        }
+
+        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_AL) {
+            *p++ = ' ';
+            *p++ = '|';
+            *p++ = ' ';
+            *p++ = 'A';
+            *p++ = 'L';
+        }
+
+        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_AL_END) {
+            *p++ = ' ';
+            *p++ = '|';
+            *p++ = ' ';
+            *p++ = 'A';
+            *p++ = 'L';
+            *p++ = '_';
+            *p++ = 'E';
+            *p++ = 'N';
+            *p++ = 'D';
+        }
+
+        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_NO_LOG) {
+            *p++ = ' ';
+            *p++ = '|';
+            *p++ = ' ';
+            *p++ = 'N';
+            *p++ = 'O';
+            *p++ = '_';
+            *p++ = 'L';
+            *p++ = 'O';
+            *p++ = 'G';
+        }
+
+        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_MDL) {
+            *p++ = ' ';
+            *p++ = '|';
+            *p++ = ' ';
+            *p++ = 'M';
+            *p++ = 'D';
+            *p++ = 'L';
+        }
+
+        *p = '\0';
+
+        msg(context,
+            ll_info,
+            "  Flags: %s",
+            flags_buf[0] ? &flags_buf[3] : "(none)");
+    }
+
+    {
+        size_t part_count = desc->part_count,
+               last_part_repeat = desc->last_part_repeat;
+
+        if (part_count && !last_part_repeat) {
+            part_count--;
+            last_part_repeat = 1;
+        }
+
+        if (!part_count)
+            msg(context, ll_info, "  Part count: 0");
+        else {
+            char sizes[60], *p = sizes;
+            size_t i;
+
+            for (i = 0; i < part_count - 1; i++) {
+                sprintf(p, "%" CAHUTE_PRIuSIZE "o, ", desc->part_sizes[i]);
+                for (; *p; p++)
+                    ;
+            }
+
+            if (last_part_repeat > 1)
+                sprintf(
+                    p,
+                    "%" CAHUTE_PRIuSIZE "o (x%" CAHUTE_PRIuSIZE ")",
+                    desc->part_sizes[i],
+                    last_part_repeat
+                );
+            else
+                sprintf(p, "%" CAHUTE_PRIuSIZE "o", desc->part_sizes[i]);
+
+            msg(context, ll_info, "  Part count: %" CAHUTE_PRIuSIZE, part_count
+            );
+            msg(context, ll_info, "  Part sizes: %s", sizes);
+        }
+    }
 }
 
 /**
@@ -287,7 +516,8 @@ cahute_casiolink_receive_raw_data(
             cahute_casiolink_compute_data_description_size(desc);
 
         if (total_size > *buf_sizep) {
-            msg(ll_error,
+            msg(link->medium.context,
+                ll_error,
                 "Cannot get %" CAHUTE_PRIuSIZE "o into a %" CAHUTE_PRIuSIZE
                 "o data buffer.",
                 total_size,
@@ -316,7 +546,8 @@ cahute_casiolink_receive_raw_data(
         size_t part_size =
             desc->part_sizes[i >= desc->part_count ? desc->part_count - 1 : i];
 
-        msg(ll_info,
+        msg(link->medium.context,
+            ll_info,
             "Reading data part %d/%d (%" CAHUTE_PRIuSIZE "o).",
             i + 1,
             nparts,
@@ -332,7 +563,7 @@ cahute_casiolink_receive_raw_data(
         if (err == CAHUTE_ERROR_CORRUPT) {
             int sub_err;
 
-            msg(ll_error, "Transfer will abort.");
+            msg(link->medium.context, ll_error, "Transfer will abort.");
             link->flags |= CAHUTE_LINK_FLAG_IRRECOVERABLE;
 
             sub_err = cahute_send_byte_on_link_medium(
@@ -351,13 +582,14 @@ cahute_casiolink_receive_raw_data(
         if (err)
             return err;
 
-        msg(ll_info,
+        msg(link->medium.context,
+            ll_info,
             "Data part %d/%d received and acknowledged.",
             i + 1,
             nparts);
         if ((~desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_NO_LOG)
             && part_size <= 4096) /* Let's not flood the terminal. */
-            mem(ll_info, buf, part_size);
+            mem(link->medium.context, ll_info, buf, part_size);
 
         buf += part_size + 2;
         received += part_size + 2;
@@ -398,7 +630,10 @@ cahute_casiolink_receive_data(
         }
 
         if (byte != 0x3A) {
-            msg(ll_error, "Unknown packet type 0x%02X.", byte);
+            msg(link->medium.context,
+                ll_error,
+                "Unknown packet type 0x%02X.",
+                byte);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -466,7 +701,8 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_receiver(cahute_link *link) {
     }
 
     if (byte != PACKET_TYPE_START) {
-        msg(ll_error,
+        msg(link->medium.context,
+            ll_error,
             "Expected START packet (0x%02X), got 0x%02X.",
             PACKET_TYPE_START,
             byte);
@@ -481,7 +717,9 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_receiver(cahute_link *link) {
     if (err)
         return err;
 
-    msg(ll_info, "CASIOLINK initiation successful as receiver!");
+    msg(link->medium.context,
+        ll_info,
+        "CASIOLINK initiation successful as receiver!");
     return CAHUTE_OK;
 }
 
@@ -495,14 +733,17 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link) {
     cahute_u8 *buf = link->data_buffer;
     int initial_attempts = 6, attempts, err;
 
-    msg(ll_info,
+    msg(link->medium.context,
+        ll_info,
         "Making the initial handshake (%d attempts, %lums for each).",
         initial_attempts,
         TIMEOUT_INIT);
     for (attempts = initial_attempts; attempts > 0; attempts--) {
         buf[0] = PACKET_TYPE_START;
-        msg(ll_info, "Sending the following start packet:");
-        mem(ll_info, buf, 1);
+        msg(link->medium.context,
+            ll_info,
+            "Sending the following start packet:");
+        mem(link->medium.context, ll_info, buf, 1);
 
         err = cahute_send_on_link_medium(&link->medium, buf, 1);
         if (err)
@@ -522,7 +763,8 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link) {
             return err;
 
         if (buf[0] != PACKET_TYPE_ESTABLISHED) {
-            msg(ll_error,
+            msg(link->medium.context,
+                ll_error,
                 "Expected ESTABLISHED packet (0x%02X), got 0x%02X.",
                 PACKET_TYPE_ESTABLISHED,
                 buf[0]);
@@ -534,7 +776,7 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link) {
     }
 
     if (attempts <= 0) {
-        msg(ll_error, "No response after %d attempts.");
+        msg(link->medium.context, ll_error, "No response after %d attempts.");
         return CAHUTE_ERROR_TIMEOUT_START;
     }
 

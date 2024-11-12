@@ -37,7 +37,7 @@
 #define CAHUTE_INLINE(TYPE) static inline TYPE
 
 /* Make some data local. */
-#define CAHUTE_LOCAL_DATA(TYPE) static TYPE
+#define CAHUTE_LOCAL_DATA(TYPE) static TYPE const
 
 #if CAHUTE_MSC_PREREQ(12, 0)
 # include <BaseTsd.h>

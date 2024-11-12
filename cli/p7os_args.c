@@ -67,7 +67,7 @@ static char const help_main[] =
     "  -h, --help        Display the help page of the (sub)command and quit.\n"
     "  -v, --version     Display the version message and quit.\n"
     "  -l <level>, --log <level>\n"
-    "                    The library log level (default: %s).\n"
+    "                    Logging level to use, instead of the default one.\n"
     "                    One of: info, warning, error, fatal, none.\n"
     "  -#                Display a nice progress bar.\n"
     "  --no-prepare      Use the current environment, instead of uploading "
@@ -158,6 +158,7 @@ int parse_args(int argc, char **argv, struct args *args) {
     args->upload_uexe = 1;
     args->erase_flash = 0;
     args->display_progress = 0;
+    args->loglevel = NULL;
     args->uexe_data = cahute_fxremote_update_exe;
     args->uexe_allocated_data = NULL;
     args->uexe_size = cahute_fxremote_update_exe_size;
@@ -189,7 +190,7 @@ int parse_args(int argc, char **argv, struct args *args) {
 
         case 'l':
             /* -l, --log: set the logging level. */
-            set_log_level(optarg);
+            args->loglevel = optarg;
             break;
 
         case 'n':
@@ -240,7 +241,7 @@ int parse_args(int argc, char **argv, struct args *args) {
 
     update_positional_parameters(&state, &argc, &argv);
     if (!argc || !strcmp(argv[0], "help")) {
-        printf(help_main, command, get_current_log_level(), command);
+        printf(help_main, command, command);
         return 0;
     }
 
@@ -294,7 +295,7 @@ int parse_args(int argc, char **argv, struct args *args) {
             goto fail;
     } else {
         /* The subcommand is unknown. */
-        printf(help_main, command, get_current_log_level(), command);
+        printf(help_main, command, command);
         return 0;
     }
 

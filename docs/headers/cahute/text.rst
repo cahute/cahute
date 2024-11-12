@@ -79,9 +79,9 @@ picture's data is encoded.
 Function declarations
 ---------------------
 
-.. c:function:: int cahute_convert_text(void **bufp, size_t *buf_sizep, \
-    void const **datap, size_t *data_sizep, int dest_encoding, \
-    int source_encoding)
+.. c:function:: int cahute_convert_text(cahute_context *context, \
+    void **bufp, size_t *buf_sizep, void const **datap, size_t *data_sizep, \
+    int dest_encoding, int source_encoding)
 
     Convert text from one encoding to another.
 
@@ -189,6 +189,7 @@ Function declarations
     For specific guides on how to use this function, see
     :ref:`guide-developer-convert-text`.
 
+    :param context: Context in which to run the function.
     :param bufp: Pointer to the destination buffer pointer.
     :param buf_sizep: Pointer to the destination buffer size.
     :param datap: Pointer to the source data pointer.
@@ -197,14 +198,16 @@ Function declarations
     :param source_encoding: Source encoding.
     :return: Error, or 0 if the operation was successful.
 
-.. c:function:: int cahute_convert_to_utf8(char *buf, size_t buf_size, \
-    void const *data, size_t data_size, int encoding)
+.. c:function:: int cahute_convert_to_utf8(cahute_context *context, \
+    char *buf, size_t buf_size, void const *data, size_t data_size, \
+    int encoding)
 
     Convert the provided data to UTF-8, and place a terminating NUL character.
 
     This is a utility that calls :c:func:`cahute_convert_text`, for
     simple scripts using the Cahute library.
 
+    :param context: Context in which to run the function.
     :param buf: Destination buffer.
     :param buf_size: Destination buffer size.
     :param data: Source data.

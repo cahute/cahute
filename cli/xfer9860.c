@@ -67,17 +67,23 @@ static int print_device_info(cahute_link *link) {
  */
 int main(int argc, char **argv) {
     struct args args;
+    cahute_context *context = NULL;
     cahute_link *link = NULL;
-    int err = 0, ret;
-
-    /* Since xfer9860 has no logging level of any kind, we disable logging
-     * entirely here. */
-    cahute_set_log_level(CAHUTE_LOGLEVEL_NONE);
+    int err = 0, ret = 1;
 
     if (!parse_args(argc, argv, &args))
         return 0;
 
+    err = cahute_create_context(&context);
+    if (err)
+        goto fail;
+
+    /* Since xfer9860 has no logging level of any kind, we disable logging
+     * entirely here. */
+    cahute_set_log_level(context, CAHUTE_LOGLEVEL_NONE);
+
     err = cahute_open_simple_usb_link(
+        context,
         &link,
         CAHUTE_USB_FILTER_SERIAL | CAHUTE_USB_SEVEN
     );
@@ -85,20 +91,39 @@ int main(int argc, char **argv) {
         goto fail;
 
     switch (args.operation) {
-    case OPERATION_UPLOAD:
+    case OPERATION_UPLOAD: {
+        cahute_file *file;
+
+        err = cahute_open_file(
+            context,
+            &file,
+            0,
+            args.local_source_path,
+            CAHUTE_PATH_TYPE_CLI
+        );
+        if (err) {
+            fprintf(
+                stderr,
+                "Unable to open file: %s\n",
+                args.local_source_path
+            );
+            goto fail;
+        }
+
         err = cahute_send_file_to_storage(
             link,
             CAHUTE_SEND_FILE_FLAG_FORCE | CAHUTE_SEND_FILE_FLAG_OPTIMIZE,
             NULL,
             args.distant_target_name,
             "fls0",
-            args.local_source_file,
+            file,
             NULL,
             NULL,
             NULL,
             NULL
         );
-        break;
+        cahute_close_file(file);
+    } break;
 
     case OPERATION_DOWNLOAD:
         err = cahute_request_file_from_storage(
@@ -126,13 +151,11 @@ int main(int argc, char **argv) {
         break;
     }
 
+    ret = 0;
 fail:
-    if (link)
-        cahute_close_link(link);
-    if (args.local_source_file)
-        cahute_close_file(args.local_source_file);
+    cahute_close_link(link);
+    cahute_destroy_context(context);
 
-    ret = 1;
     switch (err) {
     case 0:
         ret = 0;

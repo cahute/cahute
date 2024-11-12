@@ -69,28 +69,31 @@ Type definitions
 Function declarations
 ---------------------
 
-.. c:function:: int cahute_open_file(cahute_file **filep, \
-    void const *path, int path_type)
+.. c:function:: int cahute_open_file(cahute_context *context, \
+    cahute_file **filep, void const *path, int path_type)
 
     Open a file from a path, in order to read it.
 
+    :param context: Context in which to open the file.
     :param filep: Pointer to the file object to create.
     :param path: Path to the file to open, with the file type.
     :param path_type: Type of the path to the file to open.
     :return: Error, or 0 if the operation was successful.
 
-.. c:function:: int cahute_create_file(cahute_file **filep, \
-    size_t size, void const *path, int path_type)
+.. c:function:: int cahute_create_file(cahute_context *context, \
+    cahute_file **filep, size_t size, void const *path, int path_type)
 
-    Open a file from a path, in order to write its content.
+    Create a file at a path, in order to write its content.
 
+    :param context: Context in which to create and open the file.
     :param filep: Pointer to the file object to create.
     :param size: Size of the file to create or open.
     :param path: Path to the file to open, with the file type.
     :param path_type: Type of the path to the file to create or open.
     :return: Error, or 0 if the operation was successful.
 
-.. c:function:: int cahute_open_stdout(cahute_file **filep)
+.. c:function:: int cahute_open_stdout(cahute_context *context, \
+    cahute_file **filep)
 
     Open standard output as a file, in order to write to it.
 
@@ -101,6 +104,7 @@ Function declarations
         :c:func:`cahute_open_file`. It will always return a new
         file instance.
 
+    :param context: Context in which to open the standard output.
     :param filep: Pointer to the file object to create.
     :return: Error, or 0 if the operation was successful.
 

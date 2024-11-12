@@ -6,6 +6,7 @@ Links and mediums
 All communication implementations are centered around resources called links.
 Internally, links are mostly constituted of:
 
+* A context; see :ref:`topic-contexts` for more information.
 * A medium, which is an interface with a set of resources to communicate with
   the underlying medium opened with the system or hardware.
 * A protocol, which is a set of resources and functions that do not constitute

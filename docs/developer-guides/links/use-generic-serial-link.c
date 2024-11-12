@@ -4,11 +4,23 @@
 #include <cahute.h>
 
 int main(void) {
-    cahute_link *link;
+    cahute_context *context;
+    cahute_link *link = NULL;
     cahute_u8 buf[2];
     int err, ret = 1;
 
+    err = cahute_create_context(&context);
+    if (err) {
+        fprintf(
+            stderr,
+            "cahute_create_context() has returned error %s.\n",
+            cahute_get_error_name(err)
+        );
+        return 1;
+    }
+
     err = cahute_open_serial_link(
+        context,
         &link,
         CAHUTE_SERIAL_PROTOCOL_NONE,
         "/dev/ttyUSB0",
@@ -20,7 +32,7 @@ int main(void) {
             "cahute_open_serial_link() has returned %s.\n",
             cahute_get_error_name(err)
         );
-        return 1;
+        goto fail;
     }
 
     buf[0] = 'A';
@@ -51,6 +63,9 @@ int main(void) {
     ret = 0;
 
 fail:
-    cahute_close_link(link);
+    if (link)
+        cahute_close_link(link);
+
+    cahute_destroy_context(context);
     return 0;
 }

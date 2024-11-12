@@ -48,7 +48,7 @@
  *
  * The combinations for the operations on the file system are the following:
  *
- * - SEND a {local_source_file}'s content to a {distant_target_name}, in the
+ * - SEND {local_source_path}'s content to a {distant_target_name}, in the
  *   {distant_target_directory_name} directory on {storage_name}.
  * - GET {distant_source_name}, in the {distant_source_directory_name}
  *   directory on {storage_name}, to {local_target_path}.
@@ -67,6 +67,7 @@
  * @property command Selected subcommand.
  * @property nice_display Whether nice display is enabled or not.
  * @property force Whether to force overwrite or not.
+ * @property loglevel Logging level to set, if provided.
  *
  * Connection properties:
  *
@@ -97,13 +98,13 @@
  * Local filesystem properties:
  *
  * @property local_source_path Path to the local file when uploading a file.
- * @property local_source_file Local file object for uploading a file.
  * @property local_target_path Path to the local file when downloading a file.
  */
 struct args {
     int command;
     int nice_display;
     int force;
+    char const *loglevel;
 
     /* Connection-related parameters. */
     unsigned long serial_flags;
@@ -128,7 +129,6 @@ struct args {
      * such as stdin. Same for the target with stdout or stderr. */
     char const *local_source_path;
     char const *local_target_path;
-    cahute_file *local_source_file;
 };
 
 extern int parse_args(int ac, char **av, struct args *args);

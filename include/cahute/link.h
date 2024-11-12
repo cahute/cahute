@@ -29,6 +29,7 @@
 #ifndef CAHUTE_LINK_H
 #define CAHUTE_LINK_H 1
 #include "cdefs.h"
+#include "context.h"
 #include "file.h"
 #include "picture.h"
 #include <stdio.h>
@@ -174,23 +175,26 @@ typedef void(cahute_progress_func)(
 #define CAHUTE_USB_FILTER_UMS    0x00020000UL
 
 CAHUTE_WUR CAHUTE_EXTERN(int) cahute_open_serial_link(
+    cahute_context CAHUTE_NNPTR(cahute__context),
     cahute_link **cahute__linkp,
     unsigned long cahute__flags,
     char const *cahute__name,
     unsigned long cahute__speed
-);
+) CAHUTE_NONNULL((1));
 
 CAHUTE_WUR CAHUTE_EXTERN(int) cahute_open_usb_link(
+    cahute_context CAHUTE_NNPTR(cahute__context),
     cahute_link **cahute__linkp,
     unsigned long cahute__flags,
     int cahute__bus,
     int cahute__address
-);
+) CAHUTE_NONNULL((1));
 
 CAHUTE_WUR CAHUTE_EXTERN(int) cahute_open_simple_usb_link(
+    cahute_context CAHUTE_NNPTR(cahute__context),
     cahute_link **cahute__linkp,
     unsigned long cahute__flags
-);
+) CAHUTE_NONNULL((1));
 
 CAHUTE_EXTERN(void) cahute_close_link(cahute_link *cahute__link);
 

@@ -64,7 +64,7 @@ Type definitions
 Function declarations
 ---------------------
 
-.. c:function:: int cahute_detect_serial( \
+.. c:function:: int cahute_detect_serial(cahute_context *context, \
     cahute_detect_serial_entry_func *func, void *cookie)
 
     Detect available serial devices.
@@ -76,12 +76,13 @@ Function declarations
     If the callback returns a non-zero value, it signals the current function
     to stop and return the :c:macro:`CAHUTE_ERROR_INT` error.
 
+    :param context: Context in which to run the function.
     :param func: Function to call with every entry.
     :param cookie: Cookie to pass to the function.
     :return: The error, or 0 if the operation was successful.
 
-.. c:function:: int cahute_detect_usb(cahute_detect_usb_entry_func *func, \
-    void *cookie)
+.. c:function:: int cahute_detect_usb(cahute_context *context, \
+    cahute_detect_usb_entry_func *func, void *cookie)
 
     Detect available USB devices.
 
@@ -92,6 +93,7 @@ Function declarations
     If the callback returns a non-zero value, it signals the current function
     to stop and return the :c:macro:`CAHUTE_ERROR_INT` error.
 
+    :param context: Context in which to run the function.
     :param func: Function to call with every entry.
     :param cookie: Cookie to pass to the function.
     :return: The error, or 0 if the operation was successful.

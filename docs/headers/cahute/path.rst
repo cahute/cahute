@@ -179,8 +179,8 @@ representation.
 Function declarations
 ---------------------
 
-.. c:function:: int cahute_find_path_extension(char *buf, \
-    size_t buf_size, void const *path, int path_type)
+.. c:function:: int cahute_find_path_extension(cahute_context *context, \
+    char *buf, size_t buf_size, void const *path, int path_type)
 
     Find the extension, in ASCII lowercase, of the file designated by the
     provided path.
@@ -196,6 +196,7 @@ Function declarations
         char buf[10];
 
         cahute_find_path_extension(
+            context,
             buf,
             sizeof(buf),
             "/home/david/ARCHIVE.G1M",
@@ -204,6 +205,7 @@ Function declarations
 
         printf("Extension: %s\n", buf); /* "Extension: g1m" */
 
+    :param context: Context in which to run the function.
     :param buf: Buffer in which to place the extension, in ASCII lowercase.
     :param buf_size: Capacity / size of the buffer to write into, including
         the NUL terminator.

@@ -64,15 +64,15 @@
 #define PROTOCOL_FLAG_RECEIVER 0x00000800 /* Act as a receiver. */
 
 /* Full check packets. */
-CAHUTE_LOCAL_DATA(cahute_u8 const)
+CAHUTE_LOCAL_DATA(cahute_u8)
 seven_check_packet[] = {5, '0', '0', '0', '7', '0'};
-CAHUTE_LOCAL_DATA(cahute_u8 const)
+CAHUTE_LOCAL_DATA(cahute_u8)
 seven_ack_packet[] = {6, '0', '0', '0', '7', '0'};
-CAHUTE_LOCAL_DATA(cahute_u8 const) casiolink_start_packet[] = {0x16};
 
 /**
  * Cookie for detection in the context of simple USB link opening.
  *
+ * @property context Context in which the USB detection is run.
  * @property found_bus Bus of the found USB device; -1 if no device was found.
  * @property found_address Address relative to the bus of the found USB device;
  *           -1 if no device was found.
@@ -81,6 +81,7 @@ CAHUTE_LOCAL_DATA(cahute_u8 const) casiolink_start_packet[] = {0x16};
  *           already been found.
  */
 struct simple_usb_detection_cookie {
+    cahute_context *context;
     int found_bus;
     int found_address;
     int found_type;
@@ -89,7 +90,7 @@ struct simple_usb_detection_cookie {
 };
 
 /* Map the linkopen protocol to the actual protocol. */
-CAHUTE_INLINE(int) get_protocol_value(int protocol) {
+CAHUTE_INLINE(int) get_protocol_value(cahute_context *context, int protocol) {
     switch (protocol) {
     case PROTOCOL_SERIAL_NONE:
         return CAHUTE_LINK_PROTOCOL_SERIAL_NONE;
@@ -118,7 +119,8 @@ CAHUTE_INLINE(int) get_protocol_value(int protocol) {
     case PROTOCOL_USB_MASS_STORAGE:
         return CAHUTE_LINK_PROTOCOL_USB_MASS_STORAGE;
     default:
-        msg(ll_error,
+        msg(context,
+            ll_error,
             "Could not map linkopen protocol to actual protocol: %d",
             protocol);
         return 0;
@@ -219,7 +221,9 @@ determine_protocol_as_receiver(cahute_link *link, int *protocolp) {
     int protocol = *protocolp;
     int err;
 
-    msg(ll_info, "Waiting for input to determine the protocol.");
+    msg(link->medium.context,
+        ll_info,
+        "Waiting for input to determine the protocol.");
 
     do {
         err = cahute_receive_on_link_medium(&link->medium, buf, 1, 0, 0);
@@ -261,7 +265,8 @@ determine_protocol_as_receiver(cahute_link *link, int *protocolp) {
                     break;
 
                 default:
-                    msg(ll_error,
+                    msg(link->medium.context,
+                        ll_error,
                         "No SEVEN detected equiv. for protocol: %d",
                         protocol);
                     err = CAHUTE_ERROR_UNKNOWN;
@@ -289,7 +294,8 @@ determine_protocol_as_receiver(cahute_link *link, int *protocolp) {
                 break;
 
             default:
-                msg(ll_error,
+                msg(link->medium.context,
+                    ll_error,
                     "No SEVEN_OHP detected equiv. for protocol: %d",
                     protocol);
                 err = CAHUTE_ERROR_UNKNOWN;
@@ -339,7 +345,8 @@ determine_protocol_as_receiver(cahute_link *link, int *protocolp) {
                 break;
 
             default:
-                msg(ll_error,
+                msg(link->medium.context,
+                    ll_error,
                     "No CASIOLINK detected equiv. for protocol: %d",
                     protocol);
                 err = CAHUTE_ERROR_UNKNOWN;
@@ -352,8 +359,10 @@ determine_protocol_as_receiver(cahute_link *link, int *protocolp) {
         break;
     } while (1);
 
-    msg(ll_error, "Unable to determine a protocol out of the following:");
-    mem(ll_error, buf, received);
+    msg(link->medium.context,
+        ll_error,
+        "Unable to determine a protocol out of the following:");
+    mem(link->medium.context, ll_error, buf, received);
 
     err = CAHUTE_ERROR_UNKNOWN;
 fail:
@@ -384,8 +393,10 @@ determine_protocol_as_sender(cahute_link *link, int *protocolp) {
         /* Try writing only the 0x05 part of the Protocol 7.00 check packet
          * first, to see if the calculator reacts. If this is the case,
          * we have a Classpad 300 / 330 (+). */
-        msg(ll_info, "Sending a Protocol 7.00 check packet:");
-        mem(ll_info, seven_check_packet, 6);
+        msg(link->medium.context,
+            ll_info,
+            "Sending a Protocol 7.00 check packet:");
+        mem(link->medium.context, ll_info, seven_check_packet, 6);
 
         err = cahute_send_on_link_medium(&link->medium, seven_check_packet, 6);
         if (err)
@@ -398,13 +409,10 @@ determine_protocol_as_sender(cahute_link *link, int *protocolp) {
             return err;
 
         /* Try writing a CASIOLINK start packet to see if we get an answer. */
-        msg(ll_info, "Sending the CASIOLINK check packet:");
-        mem(ll_info, casiolink_start_packet, 1);
-        err = cahute_send_on_link_medium(
-            &link->medium,
-            casiolink_start_packet,
-            1
-        );
+        msg(link->medium.context,
+            ll_info,
+            "Sending the CASIOLINK check packet.");
+        err = cahute_send_byte_on_link_medium(&link->medium, 0x16);
         if (err)
             return err;
 
@@ -416,7 +424,9 @@ determine_protocol_as_sender(cahute_link *link, int *protocolp) {
     }
 
     if (!attempts) {
-        msg(ll_error, "No answer detected, protocol could not be determined.");
+        msg(link->medium.context,
+            ll_error,
+            "No answer detected, protocol could not be determined.");
         return CAHUTE_ERROR_NOT_FOUND;
     }
 
@@ -439,14 +449,16 @@ determine_protocol_as_sender(cahute_link *link, int *protocolp) {
             if (buf[0] == 0x05)
                 continue;
             else if (buf[0] == 0x13) {
-                msg(ll_info,
+                msg(link->medium.context,
+                    ll_info,
                     "Received an established packet after %d check bytes.",
                     checks);
                 break;
             } else {
-                msg(ll_error,
+                msg(link->medium.context,
+                    ll_error,
                     "Got an unexpected answer other than 0x05 or 0x13:");
-                mem(ll_error, buf, 1);
+                mem(link->medium.context, ll_error, buf, 1);
                 return CAHUTE_ERROR_UNKNOWN;
             }
         }
@@ -462,7 +474,8 @@ determine_protocol_as_sender(cahute_link *link, int *protocolp) {
             break;
 
         default:
-            msg(ll_error,
+            msg(link->medium.context,
+                ll_error,
                 "No CAS300 detected equiv. for protocol: %d",
                 protocol);
             err = CAHUTE_ERROR_UNKNOWN;
@@ -496,7 +509,8 @@ determine_protocol_as_sender(cahute_link *link, int *protocolp) {
                 break;
 
             default:
-                msg(ll_error,
+                msg(link->medium.context,
+                    ll_error,
                     "No SEVEN detected equiv. for protocol: %d",
                     protocol);
                 err = CAHUTE_ERROR_UNKNOWN;
@@ -534,7 +548,10 @@ determine_protocol_as_sender(cahute_link *link, int *protocolp) {
             break;
 
         default:
-            msg(ll_error, "No CAS detected equiv. for protocol: %d", protocol);
+            msg(link->medium.context,
+                ll_error,
+                "No CAS detected equiv. for protocol: %d",
+                protocol);
             err = CAHUTE_ERROR_UNKNOWN;
             goto fail;
         }
@@ -542,9 +559,10 @@ determine_protocol_as_sender(cahute_link *link, int *protocolp) {
         goto found;
     }
 
-    msg(ll_error,
+    msg(link->medium.context,
+        ll_error,
         "Unable to determine a protocol out of the received packet:");
-    mem(ll_error, buf, received);
+    mem(link->medium.context, ll_error, buf, received);
     err = CAHUTE_ERROR_UNKNOWN;
 
 fail:
@@ -560,11 +578,16 @@ found:
 /**
  * Close a medium.
  *
+ * @param context Context in which the function is called.
  * @param type Medium type.
  * @param state Medium state.
  */
 CAHUTE_LOCAL(void)
-close_medium(int type, union cahute_link_medium_state *state) {
+close_medium(
+    cahute_context *context,
+    int type,
+    union cahute_link_medium_state *state
+) {
     switch (type) {
 #ifdef CAHUTE_LINK_MEDIUM_POSIX_SERIAL
     case CAHUTE_LINK_MEDIUM_POSIX_SERIAL:
@@ -582,7 +605,7 @@ close_medium(int type, union cahute_link_medium_state *state) {
 # endif
         if (!CancelIo(state->windows.handle)) {
             DWORD werr = GetLastError();
-            log_windows_error("CancelIo", werr);
+            log_windows_error(context, "CancelIo", werr);
         }
 
         CloseHandle(state->windows.overlapped.hEvent);
@@ -609,14 +632,12 @@ close_medium(int type, union cahute_link_medium_state *state) {
 #ifdef CAHUTE_LINK_MEDIUM_LIBUSB
     case CAHUTE_LINK_MEDIUM_LIBUSB:
         libusb_close(state->libusb.handle);
-        if (state->libusb.context)
-            libusb_exit(state->libusb.context);
-
         break;
 #endif
 
     default:
-        msg(ll_warn,
+        msg(context,
+            ll_warn,
             "No closing method for %s (%d) link medium.",
             get_medium_name(type),
             type);
@@ -626,6 +647,7 @@ close_medium(int type, union cahute_link_medium_state *state) {
 /**
  * Create a link out of a medium type and state.
  *
+ * @param context Context in which to open the link.
  * @param linkp Pointer to the link to initialize.
  * @param flags Flags to initialize the link's protocol state with.
  * @param medium_type Medium type.
@@ -637,6 +659,7 @@ close_medium(int type, union cahute_link_medium_state *state) {
  */
 CAHUTE_LOCAL(int)
 open_link_from_medium(
+    cahute_context *context,
     cahute_link **linkp,
     unsigned long flags,
     int medium_type,
@@ -653,7 +676,7 @@ open_link_from_medium(
     int err = CAHUTE_ERROR_UNKNOWN;
 
     if (!medium_type) {
-        msg(ll_error, "Undefined medium type, this is a bug!");
+        msg(context, ll_error, "Undefined medium type, this is a bug!");
         goto fail;
     }
 
@@ -667,6 +690,7 @@ open_link_from_medium(
     }
 
     /* Initialize medium properties. */
+    link->medium.context = context;
     link->medium.type = medium_type;
     link->medium.flags = 0;
     memcpy(
@@ -728,12 +752,14 @@ open_link_from_medium(
     }
 
     /* Map the linkopen protocol to the actual link protocol. */
-    link->protocol = get_protocol_value(protocol);
-    msg(ll_info,
+    link->protocol = get_protocol_value(context, protocol);
+    msg(context,
+        ll_info,
         "Using %s over %s.",
         get_protocol_name(link->protocol),
         get_medium_name(link->medium.type));
-    msg(ll_info,
+    msg(context,
+        ll_info,
         "Playing the role of %s.",
         flags & PROTOCOL_FLAG_RECEIVER ? "receiver / passive side"
                                        : "sender / active side");
@@ -753,7 +779,8 @@ open_link_from_medium(
         casiolink_state->cas300.next_id = 0;
 
         if (link->data_buffer_capacity < CASIOLINK_MINIMUM_BUFFER_SIZE) {
-            msg(ll_fatal,
+            msg(context,
+                ll_fatal,
                 "CASIOLINK implementation expected a minimum data "
                 "buffer capacity of %" CAHUTE_PRIuSIZE
                 ", got %" CAHUTE_PRIuSIZE ".",
@@ -776,7 +803,8 @@ open_link_from_medium(
 
     case CAHUTE_LINK_PROTOCOL_SERIAL_CAS100:
         if (link->data_buffer_capacity < CASIOLINK_MINIMUM_BUFFER_SIZE) {
-            msg(ll_fatal,
+            msg(context,
+                ll_fatal,
                 "CASIOLINK implementation expected a minimum data "
                 "buffer capacity of %" CAHUTE_PRIuSIZE
                 ", got %" CAHUTE_PRIuSIZE ".",
@@ -852,7 +880,10 @@ open_link_from_medium(
         break;
 
     default:
-        CAHUTE_RETURN_IMPL("No initialization routine for the protocol.");
+        CAHUTE_RETURN_IMPL(
+            context,
+            "No initialization routine for the protocol."
+        );
     }
 
     *linkp = link;
@@ -862,7 +893,7 @@ fail:
     if (link)
         free(link);
 
-    close_medium(medium_type, medium_state);
+    close_medium(context, medium_type, medium_state);
     return err;
 }
 
@@ -884,11 +915,13 @@ fail:
  *
  * An example string is "{4d36e967-e325-11ce-bfc1-08002be10318}".
  *
+ * @param context Context in which the function is run.
  * @param guid Pointer to the GUID to set.
  * @param raw Raw GUID to parse.
  * @return 1 if parsing has failed, 0 otherwise.
  */
-CAHUTE_INLINE(int) decode_guid(GUID *guid, char const *raw) {
+CAHUTE_INLINE(int)
+decode_guid(cahute_context *context, GUID *guid, char const *raw) {
     if (raw[0] != '{' || !isxdigit(raw[1]) || !isxdigit(raw[2])
         || !isxdigit(raw[3]) || !isxdigit(raw[4]) || !isxdigit(raw[5])
         || !isxdigit(raw[6]) || !isxdigit(raw[7]) || !isxdigit(raw[8])
@@ -902,7 +935,7 @@ CAHUTE_INLINE(int) decode_guid(GUID *guid, char const *raw) {
         || !isxdigit(raw[30]) || !isxdigit(raw[31]) || !isxdigit(raw[32])
         || !isxdigit(raw[33]) || !isxdigit(raw[34]) || !isxdigit(raw[35])
         || !isxdigit(raw[36]) || raw[37] != '}') {
-        msg(ll_error, "Unable to decode GUID: %s", raw);
+        msg(context, ll_error, "Unable to decode GUID: %s", raw);
         return 1;
     }
 
@@ -936,6 +969,7 @@ CAHUTE_INLINE(int) decode_guid(GUID *guid, char const *raw) {
 /**
  * Find a volume interface associated with the provided device identifier.
  *
+ * @param context Context in which the function is run.
  * @param path Path to the device interface to fill.
  * @param path_size Size of the path.
  * @param device_id Device identifier.
@@ -944,6 +978,7 @@ CAHUTE_INLINE(int) decode_guid(GUID *guid, char const *raw) {
  */
 CAHUTE_LOCAL(int)
 find_win32_interface(
+    cahute_context *context,
     char *path,
     size_t path_size,
     char *device_id,
@@ -959,7 +994,8 @@ find_win32_interface(
         CM_GET_DEVICE_INTERFACE_LIST_PRESENT
     );
     if (cret != CR_SUCCESS) {
-        msg(ll_error,
+        msg(context,
+            ll_error,
             "CM_Get_Device_Interface_List_SizeA returned error "
             "0x%08lX.",
             cret);
@@ -981,7 +1017,8 @@ find_win32_interface(
         CM_GET_DEVICE_INTERFACE_LIST_PRESENT
     );
     if (cret != CR_SUCCESS) {
-        msg(ll_error,
+        msg(context,
+            ll_error,
             "CM_Get_Device_Interface_ListA returned error "
             "0x%08lX.",
             cret);
@@ -1033,6 +1070,7 @@ find_win32_interface(
  *   Step 5. Get the volume device interface path corresponding to the
  *           volume device.
  *
+ * @param context Context in which the function is run.
  * @param path Path to the device interface to fill.
  * @param path_size Size of the path.
  * @param mediump Medium type to define.
@@ -1040,7 +1078,13 @@ find_win32_interface(
  * @return Cahute error.
  */
 CAHUTE_LOCAL(int)
-find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
+find_win32_usb_device(
+    cahute_context *context,
+    char *path,
+    size_t path_size,
+    int *mediump,
+    DWORD addr
+) {
     DEVINST device_instance;
     char *usb_device_id_list = NULL, *usb_device_id;
     BYTE property[64];
@@ -1067,7 +1111,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
         CM_GETIDLIST_FILTER_NONE
     );
     if (cret != CR_SUCCESS) {
-        msg(ll_error,
+        msg(context,
+            ll_error,
             "CM_Get_Device_ID_List_SizeA returned error 0x%08lX.",
             cret);
         goto fail;
@@ -1076,7 +1121,7 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
     usb_device_id_list =
         (char *)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, property_size);
     if (!usb_device_id_list) {
-        log_windows_error("HeapAlloc", GetLastError());
+        log_windows_error(context, "HeapAlloc", GetLastError());
         err = CAHUTE_ERROR_ALLOC;
         goto fail;
     }
@@ -1088,7 +1133,10 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
         CM_GETIDLIST_FILTER_NONE
     );
     if (cret != CR_SUCCESS) {
-        msg(ll_error, "CM_Get_Device_ID_ListA returned error 0x%08lX.", cret);
+        msg(context,
+            ll_error,
+            "CM_Get_Device_ID_ListA returned error 0x%08lX.",
+            cret);
         goto fail;
     }
 
@@ -1104,7 +1152,10 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
             continue;
 
         if (cret != CR_SUCCESS) {
-            msg(ll_error, "CM_Locate_DevNodeA returned error 0x%08lX.", cret);
+            msg(context,
+                ll_error,
+                "CM_Locate_DevNodeA returned error 0x%08lX.",
+                cret);
             goto fail;
         }
 
@@ -1123,7 +1174,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
             continue; /* Virtual device, we need to check the parent. */
 
         if (cret != CR_SUCCESS) {
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "CM_Get_DevNode_Registry_PropertyA with property "
                 "CM_DRP_BUSTYPEGUID returned error 0x%08lX.",
                 cret);
@@ -1132,7 +1184,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
 
         if (property_type != REG_BINARY
             || property_size != sizeof(GUID_BUS_TYPE_USB)) {
-            msg(ll_warn,
+            msg(context,
+                ll_warn,
                 "Unexpected type 0x%08lX or size %luo for bus type key.",
                 property_type,
                 property_size);
@@ -1157,7 +1210,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
             0
         );
         if (cret != CR_SUCCESS) {
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "CM_Get_DevNode_Registry_PropertyA with property "
                 "CM_DRP_ADDRESS returned error 0x%08lX.",
                 cret);
@@ -1165,7 +1219,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
         }
 
         if (property_type != REG_DWORD) {
-            msg(ll_warn,
+            msg(context,
+                ll_warn,
                 "Unexpected type 0x%08lX for device address key.",
                 property_type);
             goto fail;
@@ -1195,7 +1250,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
             continue; /* No driver installed. */
 
         if (cret != CR_SUCCESS) {
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "CM_Get_DevNode_Registry_PropertyA returned error "
                 "0x%08lX.",
                 cret);
@@ -1207,6 +1263,7 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
             /* The medium type is CESG, since we must interact with it. */
             *mediump = CAHUTE_LINK_MEDIUM_WIN32_CESG;
             err = find_win32_interface(
+                context,
                 path,
                 path_size,
                 usb_device_id,
@@ -1231,7 +1288,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
             CM_GETIDLIST_FILTER_BUSRELATIONS
         );
         if (cret == CR_BUFFER_SMALL) {
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "Sub device id buffer size was not big enough for USB "
                 "device bus relations.");
             err = CAHUTE_ERROR_SIZE;
@@ -1239,7 +1297,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
         }
 
         if (cret != CR_SUCCESS) {
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "CM_Get_Device_ID_ListA (disk drive) returned error "
                 "0x%08lX.",
                 cret);
@@ -1260,7 +1319,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
                 continue;
 
             if (cret != CR_SUCCESS) {
-                msg(ll_error,
+                msg(context,
+                    ll_error,
                     "CM_Locate_DevNodeA (disk drive) returned error 0x%08lX.",
                     cret);
                 goto fail;
@@ -1280,7 +1340,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
                 continue;
 
             if (cret != CR_SUCCESS) {
-                msg(ll_error,
+                msg(context,
+                    ll_error,
                     "CM_Get_DevNode_Registry_PropertyA (disk drive) with "
                     "property CM_DRP_CLASSGUID returned error 0x%08lX.",
                     cret);
@@ -1288,12 +1349,13 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
             }
 
             if (property_type == REG_SZ && property_size == 39) {
-                if (decode_guid(&guid, (char const *)property))
+                if (decode_guid(context, &guid, (char const *)property))
                     goto fail;
             } else if (property_type != REG_BINARY || property_size != sizeof(GUID_DEVCLASS_DISKDRIVE))
                 memcpy(&guid, property, sizeof(GUID));
             else {
-                msg(ll_warn,
+                msg(context,
+                    ll_warn,
                     "Unexpected type 0x%08lX or size %luo for device "
                     "class key.",
                     property_type,
@@ -1323,7 +1385,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
             );
 
             if (cret == CR_BUFFER_SMALL) {
-                msg(ll_error,
+                msg(context,
+                    ll_error,
                     "Sub device id buffer size was not big enough for disk "
                     "drive bus relations.");
                 err = CAHUTE_ERROR_SIZE;
@@ -1331,7 +1394,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
             }
 
             if (cret != CR_SUCCESS) {
-                msg(ll_error,
+                msg(context,
+                    ll_error,
                     "CM_Get_Device_ID_ListA (volume) returned error 0x%08lX.",
                     cret);
                 goto fail;
@@ -1351,7 +1415,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
                     continue;
 
                 if (cret != CR_SUCCESS) {
-                    msg(ll_error,
+                    msg(context,
+                        ll_error,
                         "CM_Locate_DevNodeA (volume) returned error 0x%08lX.",
                         cret);
                     goto fail;
@@ -1371,7 +1436,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
                     continue;
 
                 if (cret != CR_SUCCESS) {
-                    msg(ll_error,
+                    msg(context,
+                        ll_error,
                         "CM_Get_DevNode_Registry_PropertyA (volume) with "
                         "property CM_DRP_CLASSGUID returned error 0x%08lX.",
                         cret);
@@ -1379,12 +1445,13 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
                 }
 
                 if (property_type == REG_SZ && property_size == 39) {
-                    if (decode_guid(&guid, (char const *)property))
+                    if (decode_guid(context, &guid, (char const *)property))
                         goto fail;
                 } else if (property_type != REG_BINARY || property_size != sizeof(GUID))
                     memcpy(&guid, property, sizeof(GUID));
                 else {
-                    msg(ll_warn,
+                    msg(context,
+                        ll_warn,
                         "Unexpected type 0x%08lX or size %luo for device "
                         "class key.",
                         property_type,
@@ -1407,6 +1474,7 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
                  * --- */
 
                 err = find_win32_interface(
+                    context,
                     path,
                     path_size,
                     volume_id,
@@ -1419,7 +1487,8 @@ find_win32_usb_device(char *path, size_t path_size, int *mediump, DWORD addr) {
     }
 
     /* No device has been found! */
-    msg(ll_error, "No device for USB port number %ld was found.", addr);
+    msg(context, ll_error, "No device for USB port number %ld was found.", addr
+    );
     goto fail;
 
 end:
@@ -1476,6 +1545,7 @@ get_amigaos_serial_port(char const *raw, unsigned long *unitp) {
 /**
  * Open a link over a serial medium.
  *
+ * @param context Context in which the link is opened.
  * @param linkp Pointer to the link to set with the opened link.
  * @param flags Flags to open the link and underlying medium with.
  * @param name_or_path Name or path of the serial port.
@@ -1484,6 +1554,7 @@ get_amigaos_serial_port(char const *raw, unsigned long *unitp) {
  */
 CAHUTE_EXTERN(int)
 cahute_open_serial_link(
+    cahute_context *context,
     cahute_link **linkp,
     unsigned long flags,
     char const *name_or_path,
@@ -1503,7 +1574,10 @@ cahute_open_serial_link(
             | CAHUTE_SERIAL_NODISC | CAHUTE_SERIAL_NOTERM);
 
     if (unsupported_flags)
-        CAHUTE_RETURN_IMPL("At least one unsupported flag was present.");
+        CAHUTE_RETURN_IMPL(
+            context,
+            "At least one unsupported flag was present."
+        );
 
     if (!(flags & CAHUTE_SERIAL_PROTOCOL_MASK)) {
         /* Default value depends on the presence of the
@@ -1523,7 +1597,8 @@ cahute_open_serial_link(
                             & (CAHUTE_SERIAL_RECEIVER | CAHUTE_SERIAL_NOCHECK
                                | CAHUTE_SERIAL_NODISC | CAHUTE_SERIAL_NOTERM);
         if (unsupported_flags) {
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "The following flags are not supported by the generic "
                 "protocol: 0x%08lX",
                 unsupported_flags);
@@ -1557,6 +1632,7 @@ cahute_open_serial_link(
         /* TODO */
         if (~flags & CAHUTE_SERIAL_RECEIVER)
             CAHUTE_RETURN_IMPL(
+                context,
                 "Only receiver is supported for screenstreaming."
             );
 
@@ -1566,7 +1642,8 @@ cahute_open_serial_link(
     case CAHUTE_SERIAL_PROTOCOL_AUTO:
         /* In sender mode, we need to know which CASIOLINK variant to use. */
         if (~flags & CAHUTE_SERIAL_RECEIVER) {
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "Fully automatic protocol detection can only be selected when "
                 "receiver mode is enabled.");
             return CAHUTE_ERROR_UNKNOWN;
@@ -1593,7 +1670,7 @@ cahute_open_serial_link(
         break;
 
     default:
-        CAHUTE_RETURN_IMPL("Unsupported serial protocol.");
+        CAHUTE_RETURN_IMPL(context, "Unsupported serial protocol.");
     }
 
     /* If we are not allowed to initiate the connection, we cannot test
@@ -1606,7 +1683,9 @@ cahute_open_serial_link(
     case PROTOCOL_SERIAL_AUTO_CAS100:
     case PROTOCOL_SERIAL_AUTO_CAS300:
         if (flags & CAHUTE_SERIAL_NOCHECK) {
-            msg(ll_error, "We need the check flow to determine the protocol.");
+            msg(context,
+                ll_error,
+                "We need the check flow to determine the protocol.");
             return CAHUTE_ERROR_UNKNOWN;
         }
         break;
@@ -1632,7 +1711,7 @@ cahute_open_serial_link(
         break;
 
     default:
-        CAHUTE_RETURN_IMPL("Unsupported value for stop bits.");
+        CAHUTE_RETURN_IMPL(context, "Unsupported value for stop bits.");
     }
 
     switch (flags & CAHUTE_SERIAL_PARITY_MASK) {
@@ -1668,7 +1747,7 @@ cahute_open_serial_link(
         break;
 
     default:
-        CAHUTE_RETURN_IMPL("Unsupported XON/XOFF mode.");
+        CAHUTE_RETURN_IMPL(context, "Unsupported XON/XOFF mode.");
     }
 
     if ((flags & CAHUTE_SERIAL_DTR_MASK) == 0) {
@@ -1716,7 +1795,7 @@ cahute_open_serial_link(
         break;
 
     default:
-        CAHUTE_RETURN_IMPL("Unsupported serial speed.");
+        CAHUTE_RETURN_IMPL(context, "Unsupported serial speed.");
     }
 
 #if defined(CAHUTE_LINK_MEDIUM_POSIX_SERIAL)
@@ -1731,7 +1810,8 @@ cahute_open_serial_link(
             case ENXIO:
             case EPIPE:
             case ESPIPE:
-                msg(ll_error,
+                msg(context,
+                    ll_error,
                     "Could not open serial device: %s",
                     strerror(errno));
                 return CAHUTE_ERROR_NOT_FOUND;
@@ -1740,15 +1820,19 @@ cahute_open_serial_link(
                 return CAHUTE_ERROR_PRIV;
 
             default:
-                msg(ll_error, "Unknown error: %s (%d)", strerror(errno), errno
-                );
+                msg(context,
+                    ll_error,
+                    "Unknown error: %s (%d)",
+                    strerror(errno),
+                    errno);
                 return CAHUTE_ERROR_UNKNOWN;
             }
         }
 
         /* In case there's still unread data, we want to remove it. */
         if (tcflush(fd, TCIOFLUSH)) {
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "Could not flush existing input or output: %s (%d)",
                 strerror(errno),
                 errno);
@@ -1785,7 +1869,7 @@ cahute_open_serial_link(
                 return CAHUTE_ERROR_PRIV;
 
             default:
-                log_windows_error("CreateFile", werr);
+                log_windows_error(context, "CreateFile", werr);
                 return CAHUTE_ERROR_UNKNOWN;
             }
 
@@ -1799,20 +1883,20 @@ cahute_open_serial_link(
         timeouts.WriteTotalTimeoutConstant = 0;
 
         if (!SetCommTimeouts(handle, &timeouts)) {
-            log_windows_error("SetCommTimeouts", GetLastError());
+            log_windows_error(context, "SetCommTimeouts", GetLastError());
             CloseHandle(handle);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         /* We only want events to be set if we are receiving a byte. */
         if (!SetCommMask(handle, EV_RXCHAR)) {
-            log_windows_error("SetCommMask", GetLastError());
+            log_windows_error(context, "SetCommMask", GetLastError());
             CloseHandle(handle);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         if (!PurgeComm(handle, PURGE_RXCLEAR | PURGE_TXCLEAR)) {
-            log_windows_error("PurgeComm", GetLastError());
+            log_windows_error(context, "PurgeComm", GetLastError());
             CloseHandle(handle);
             return CAHUTE_ERROR_UNKNOWN;
         }
@@ -1820,7 +1904,7 @@ cahute_open_serial_link(
         /* Create the overlapped event. */
         overlapped_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL);
         if (overlapped_event_handle == INVALID_HANDLE_VALUE) {
-            log_windows_error("CreateEvent", GetLastError());
+            log_windows_error(context, "CreateEvent", GetLastError());
             CloseHandle(handle);
             return CAHUTE_ERROR_UNKNOWN;
         }
@@ -1848,18 +1932,18 @@ cahute_open_serial_link(
 
         msg_port = CreateMsgPort();
         if (!msg_port) {
-            msg(ll_error, "Could not open message port.");
+            msg(context, ll_error, "Could not open message port.");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         io = CreateIORequest(msg_port, sizeof(struct IOExtSer));
         if (!io) {
-            msg(ll_error, "Could not create IORequest.");
+            msg(context, ll_error, "Could not create IORequest.");
             DeleteMsgPort(msg_port);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
-        msg(ll_info, "Opening DEVICE=%s,UNIT=%lu.", SERIALNAME, unit);
+        msg(context, ll_info, "Opening DEVICE=%s,UNIT=%lu.", SERIALNAME, unit);
         ret = OpenDevice(
             (CONST_STRPTR)SERIALNAME,
             unit,
@@ -1867,7 +1951,8 @@ cahute_open_serial_link(
             0L
         );
         if (ret) {
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "Error %d has occurred while opening DEVICE=%s,UNIT=%lu.",
                 ret,
                 SERIALNAME,
@@ -1890,7 +1975,7 @@ cahute_open_serial_link(
         medium_state.amigaos_serial.io = io;
     }
 #else
-    CAHUTE_RETURN_IMPL("No serial device opening method available.");
+    CAHUTE_RETURN_IMPL(context, "No serial device opening method available.");
 #endif
 
     if (flags & CAHUTE_SERIAL_NOCHECK)
@@ -1903,6 +1988,7 @@ cahute_open_serial_link(
         open_flags |= PROTOCOL_FLAG_RECEIVER;
 
     return open_link_from_medium(
+        context,
         linkp,
         open_flags,
         medium_type,
@@ -1919,6 +2005,7 @@ cahute_open_serial_link(
 /**
  * Open a link over a USB medium.
  *
+ * @param context Context in which the link is opened.
  * @param linkp Pointer to the link to set with the opened link.
  * @param flags Flags to open the link and underlying medium with.
  * @param bus USB bus number of the device to open.
@@ -1928,13 +2015,14 @@ cahute_open_serial_link(
  */
 CAHUTE_EXTERN(int)
 cahute_open_usb_link(
+    cahute_context *context,
     cahute_link **linkp,
     unsigned long flags,
     int bus,
     int address
 ) {
 #if LIBUSB_ENABLED
-    libusb_context *context = NULL;
+    libusb_context *lu_context = NULL;
     libusb_device **device_list = NULL;
     struct libusb_config_descriptor *config_descriptor = NULL;
     libusb_device_handle *device_handle = NULL;
@@ -1957,7 +2045,10 @@ cahute_open_usb_link(
             | CAHUTE_USB_RECEIVER | CAHUTE_USB_OHP | CAHUTE_USB_NOPROTO
             | CAHUTE_USB_SEVEN | CAHUTE_USB_CAS300);
     if (unsupported_flags)
-        CAHUTE_RETURN_IMPL("At least one unsupported flag was present.");
+        CAHUTE_RETURN_IMPL(
+            context,
+            "At least one unsupported flag was present."
+        );
 
     if (flags & CAHUTE_USB_NOPROTO) {
         unsupported_flags =
@@ -1966,7 +2057,8 @@ cahute_open_usb_link(
                | CAHUTE_USB_RECEIVER | CAHUTE_USB_OHP | CAHUTE_USB_SEVEN
                | CAHUTE_USB_CAS300);
         if (unsupported_flags) {
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "The following flags are not supported by the generic "
                 "protocol: 0x%08lX",
                 unsupported_flags);
@@ -1975,34 +2067,43 @@ cahute_open_usb_link(
     } else if (flags & CAHUTE_USB_OHP) {
         /* TODO */
         if (~flags & CAHUTE_USB_RECEIVER)
-            CAHUTE_RETURN_IMPL("Sender mode not available for screenstreaming."
+            CAHUTE_RETURN_IMPL(
+                context,
+                "Sender mode not available for screenstreaming."
             );
 
         if (flags & CAHUTE_USB_CAS300)
-            CAHUTE_RETURN_IMPL("No screenstreaming is available with CAS300.");
+            CAHUTE_RETURN_IMPL(
+                context,
+                "No screenstreaming is available with CAS300."
+            );
 
         open_flags |= PROTOCOL_FLAG_RECEIVER;
     } else if (flags & CAHUTE_USB_RECEIVER)
-        CAHUTE_RETURN_IMPL("Receiver mode not available for data protocols.");
+        CAHUTE_RETURN_IMPL(
+            context,
+            "Receiver mode not available for data protocols."
+        );
 
     if ((flags & CAHUTE_USB_SEVEN) && (flags & CAHUTE_USB_CAS300)) {
-        msg(ll_error,
+        msg(context,
+            ll_error,
             "SEVEN and CAS300 USB flags cannot be used at the same time.");
         return CAHUTE_ERROR_UNKNOWN;
     } else if ((flags & CAHUTE_USB_NOCHECK) && !(flags & (CAHUTE_USB_SEVEN | CAHUTE_USB_CAS300 | CAHUTE_USB_OHP))) {
-        msg(ll_error,
+        msg(context,
+            ll_error,
             "SEVEN or CAS300 USB flag must be set if check is disabled.");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
-    if (libusb_init(&context)) {
-        msg(ll_fatal, "Could not create a libusb context.");
+    err = cahute_get_libusb_context(context, &lu_context);
+    if (err)
         goto fail;
-    }
 
-    device_count = libusb_get_device_list(context, &device_list);
+    device_count = libusb_get_device_list(lu_context, &device_list);
     if (device_count < 0) {
-        msg(ll_fatal, "Could not get a device list.");
+        msg(context, ll_fatal, "Could not get a device list.");
         goto fail;
     }
 
@@ -2083,7 +2184,8 @@ cahute_open_usb_link(
             else if (flags & CAHUTE_USB_SEVEN)
                 protocol = PROTOCOL_USB_SEVEN;
         } else {
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "Unsupported interface class %d and interface subclass %d",
                 interface_class,
                 interface_subclass);
@@ -2116,12 +2218,12 @@ cahute_open_usb_link(
         }
 
         if (bulk_in < 0) {
-            msg(ll_error, "Bulk in endpoint could not be found.");
+            msg(context, ll_error, "Bulk in endpoint could not be found.");
             goto fail;
         }
 
         if (bulk_out < 0) {
-            msg(ll_error, "Bulk out endpoint could not be found.");
+            msg(context, ll_error, "Bulk out endpoint could not be found.");
             goto fail;
         }
 
@@ -2147,6 +2249,7 @@ cahute_open_usb_link(
             /* NOTE: This function sets "medium_type" to either
              * CAHUTE_LINK_MEDIUM_WIN32_UMS or CAHUTE_LINK_MEDIUM_WIN32_CESG */
             err = find_win32_usb_device(
+                context,
                 device_interface,
                 sizeof(device_interface),
                 &medium_type,
@@ -2176,7 +2279,7 @@ cahute_open_usb_link(
                         if (werr == ERROR_ACCESS_DENIED)
                             err = CAHUTE_ERROR_PRIV;
                         else
-                            log_windows_error("CreateFileA", werr);
+                            log_windows_error(context, "CreateFileA", werr);
 
                         goto fail;
                     }
@@ -2202,7 +2305,7 @@ cahute_open_usb_link(
                         if (werr == ERROR_ACCESS_DENIED)
                             err = CAHUTE_ERROR_PRIV;
                         else
-                            log_windows_error("CreateFileA", werr);
+                            log_windows_error(context, "CreateFileA", werr);
 
                         goto fail;
                     }
@@ -2211,7 +2314,11 @@ cahute_open_usb_link(
                     overlapped_event_handle =
                         CreateEvent(NULL, TRUE, FALSE, NULL);
                     if (overlapped_event_handle == INVALID_HANDLE_VALUE) {
-                        log_windows_error("CreateEvent", GetLastError());
+                        log_windows_error(
+                            context,
+                            "CreateEvent",
+                            GetLastError()
+                        );
                         goto fail;
                     }
 
@@ -2237,7 +2344,8 @@ cahute_open_usb_link(
             /* FALLTHRU */
 
         default:
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "libusb_open returned %d: %s",
                 libusberr,
                 libusb_error_name(libusberr));
@@ -2278,7 +2386,9 @@ cahute_open_usb_link(
         /* On MacOS / OS X, we actually require an entitlement guaranteed
          * by code signing, and that costs money, so we just don't
          * detach the kernel driver and try to use the device directly. */
-        msg(ll_warn, "Kernel driver could not be detached due to access.");
+        msg(context,
+            ll_warn,
+            "Kernel driver could not be detached due to access.");
         break;
 
     case LIBUSB_ERROR_NO_DEVICE:
@@ -2286,7 +2396,8 @@ cahute_open_usb_link(
         goto fail;
 
     default:
-        msg(ll_fatal,
+        msg(context,
+            ll_fatal,
             "libusb_detach_kernel_driver returned %d: %s",
             libusberr,
             libusb_error_name(libusberr));
@@ -2306,16 +2417,19 @@ cahute_open_usb_link(
 
     case LIBUSB_ERROR_ACCESS:
         /* Same entitlement problems on MacOS / OS X. */
-        msg(ll_warn, "Interface could not be claimed due to access.");
+        msg(context, ll_warn, "Interface could not be claimed due to access.");
         break;
 
     case LIBUSB_ERROR_BUSY:
-        msg(ll_info, "Another program/driver has claimed the interface.");
+        msg(context,
+            ll_info,
+            "Another program/driver has claimed the interface.");
         err = CAHUTE_ERROR_PRIV;
         goto fail;
 
     default:
-        msg(ll_fatal,
+        msg(context,
+            ll_fatal,
             "libusb_claim_interface returned %d: %s",
             libusberr,
             libusb_error_name(libusberr));
@@ -2326,8 +2440,8 @@ cahute_open_usb_link(
         /* Calculators running 1.x OSes with Protocol 7.00 support may need a
          * push to enable communicating using Protocol 7.00, in the form of
          * a vendor-specific request documented in fxReverse. */
-
-        msg(ll_info, "Running vendor-specific interface request 0x01.");
+        msg(context, ll_info, "Running vendor-specific interface request 0x01."
+        );
         libusberr = libusb_control_transfer(
             device_handle,
             0x41,   /* Vendor-specific interface request. */
@@ -2344,7 +2458,8 @@ cahute_open_usb_link(
             break;
 
         default:
-            msg(ll_fatal,
+            msg(context,
+                ll_fatal,
                 "libusb_control_transfer with vendor-specific interface "
                 "request 0x01 caused error %d: %s",
                 libusberr,
@@ -2353,13 +2468,12 @@ cahute_open_usb_link(
         }
     }
 
-    medium_state.libusb.context = context;
     medium_state.libusb.handle = device_handle;
     medium_state.libusb.bulk_in = bulk_in;
     medium_state.libusb.bulk_out = bulk_out;
 
-    msg(ll_info, "Bulk in endpoint address is: 0x%02X", bulk_in);
-    msg(ll_info, "Bulk out endpoint address is: 0x%02X", bulk_out);
+    msg(context, ll_info, "Bulk in endpoint address is: 0x%02X", bulk_in);
+    msg(context, ll_info, "Bulk out endpoint address is: 0x%02X", bulk_out);
 
 # if WIN32_ENABLED
 ready:
@@ -2374,6 +2488,7 @@ ready:
         protocol = PROTOCOL_USB_NONE;
 
     return open_link_from_medium(
+        context,
         linkp,
         open_flags,
         medium_type,
@@ -2397,12 +2512,13 @@ fail:
         libusb_free_device_list(device_list, 1);
     if (device_handle)
         libusb_close(device_handle);
-    if (context)
-        libusb_exit(context);
 
     return err;
 #else
-    CAHUTE_RETURN_IMPL("No method available for opening an USB device.");
+    CAHUTE_RETURN_IMPL(
+        context,
+        "No method available for opening an USB device."
+    );
 #endif
 }
 
@@ -2454,15 +2570,17 @@ cahute_find_simple_usb_device(
          * connected devices! */
         if (!cookie->multiple) {
             cookie->multiple = 1;
-            msg(ll_error, "Multiple devices were found:");
-            msg(ll_error,
+            msg(cookie->context, ll_error, "Multiple devices were found:");
+            msg(cookie->context,
+                ll_error,
                 "- %03d:%03d: %s",
                 cookie->found_bus,
                 cookie->found_address,
                 get_usb_detection_type_name(cookie->found_type));
         }
 
-        msg(ll_error,
+        msg(cookie->context,
+            ll_error,
             "- %03d:%03d: %s",
             entry->cahute_usb_detection_entry_bus,
             entry->cahute_usb_detection_entry_address,
@@ -2478,8 +2596,9 @@ cahute_find_simple_usb_device(
     return 0;
 
 filtered_out:
-    msg(ll_info, "Device was filtered out:");
-    msg(ll_info,
+    msg(cookie->context, ll_info, "Device was filtered out:");
+    msg(cookie->context,
+        ll_info,
         "  %03d:%03d: %s",
         entry->cahute_usb_detection_entry_bus,
         entry->cahute_usb_detection_entry_address,
@@ -2490,12 +2609,17 @@ filtered_out:
 /**
  * Open a link over a detected USB medium.
  *
+ * @param context Context in which the link is opened.
  * @param linkp Pointer to the link to set with the opened link.
  * @param flags Flags to open the link and underlying medium with.
  * @return Error, or CAHUTE_OK if no error has occurred.
  */
 CAHUTE_EXTERN(int)
-cahute_open_simple_usb_link(cahute_link **linkp, unsigned long flags) {
+cahute_open_simple_usb_link(
+    cahute_context *context,
+    cahute_link **linkp,
+    unsigned long flags
+) {
     struct simple_usb_detection_cookie cookie;
     int attempts_left, err;
 
@@ -2508,7 +2632,7 @@ cahute_open_simple_usb_link(cahute_link **linkp, unsigned long flags) {
         break;
 
     default:
-        CAHUTE_RETURN_IMPL("Unsupported simple USB filter.");
+        CAHUTE_RETURN_IMPL(context, "Unsupported simple USB filter.");
     }
 
     /* If any filter is provided that does not contain serial devices,
@@ -2519,7 +2643,8 @@ cahute_open_simple_usb_link(cahute_link **linkp, unsigned long flags) {
             flags & (CAHUTE_USB_SEVEN | CAHUTE_USB_CAS300 | CAHUTE_USB_OHP)
         )) {
         if (!cookie.filter || (cookie.filter & CAHUTE_USB_FILTER_SERIAL)) {
-            msg(ll_error,
+            msg(context,
+                ll_error,
                 "SEVEN or CAS300 USB flag must be set if check is disabled "
                 "and serial devices are candidates.");
             return CAHUTE_ERROR_UNKNOWN;
@@ -2530,19 +2655,21 @@ cahute_open_simple_usb_link(cahute_link **linkp, unsigned long flags) {
 
     for (attempts_left = 20; attempts_left; attempts_left--) {
         if (attempts_left < 20) {
-            msg(ll_warn, "Calculator not found, retrying in 250ms.");
+            msg(context, ll_warn, "Calculator not found, retrying in 250ms.");
 
-            err = cahute_sleep(250);
+            err = cahute_sleep(context, 250);
             if (err)
                 return err;
         }
 
+        cookie.context = context;
         cookie.found_bus = -1;
         cookie.found_address = -1;
         cookie.found_type = -1;
         cookie.multiple = 0;
 
         err = cahute_detect_usb(
+            context,
             (cahute_detect_usb_entry_func *)&cahute_find_simple_usb_device,
             &cookie
         );
@@ -2556,6 +2683,7 @@ cahute_open_simple_usb_link(cahute_link **linkp, unsigned long flags) {
             continue;
 
         return cahute_open_usb_link(
+            context,
             linkp,
             flags,
             cookie.found_bus,
@@ -2575,7 +2703,7 @@ CAHUTE_EXTERN(void) cahute_close_link(cahute_link *link) {
     if (!link)
         return;
 
-    msg(ll_info, "Closing the link.");
+    msg(link->medium.context, ll_info, "Closing the link.");
 
     if (link->cached_device_info)
         free(link->cached_device_info);
@@ -2615,7 +2743,8 @@ CAHUTE_EXTERN(void) cahute_close_link(cahute_link *link) {
             break;
 
         default:
-            msg(ll_warn,
+            msg(link->medium.context,
+                ll_warn,
                 "No method to terminate protocol %s (%d).",
                 get_protocol_name(link->protocol),
                 link->protocol);
@@ -2623,7 +2752,11 @@ CAHUTE_EXTERN(void) cahute_close_link(cahute_link *link) {
     }
 
     if (link->flags & CAHUTE_LINK_FLAG_CLOSE_MEDIUM)
-        close_medium(link->medium.type, &link->medium.state);
+        close_medium(
+            link->medium.context,
+            link->medium.type,
+            &link->medium.state
+        );
 
     free(link);
 }

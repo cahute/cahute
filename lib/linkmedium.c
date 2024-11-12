@@ -100,7 +100,7 @@ cahute_receive_on_link_medium(
      * attempts at reading and does not remove time from the time. */
     bytes_read = 1;
 
-    err = cahute_monotonic(&start_time);
+    err = cahute_monotonic(medium->context, &start_time);
     if (err)
         return err;
 
@@ -126,7 +126,7 @@ cahute_receive_on_link_medium(
         if (!bytes_read && timeout) {
             unsigned long current_time;
 
-            err = cahute_monotonic(&current_time);
+            err = cahute_monotonic(medium->context, &current_time);
             if (err)
                 return err;
 
@@ -186,7 +186,8 @@ cahute_receive_on_link_medium(
                     goto time_out;
 
                 default:
-                    msg(ll_error,
+                    msg(medium->context,
+                        ll_error,
                         "An error occurred while calling select() %s (%d)",
                         strerror(errno),
                         errno);
@@ -207,7 +208,8 @@ cahute_receive_on_link_medium(
                     return CAHUTE_ERROR_GONE;
 
                 default:
-                    msg(ll_error,
+                    msg(medium->context,
+                        ll_error,
                         "An error occurred while calling read(): %s (%d)",
                         strerror(errno),
                         errno);
@@ -249,7 +251,7 @@ cahute_receive_on_link_medium(
                     if (werr == ERROR_IO_PENDING)
                         medium->state.windows.read_in_progress = 1;
                     else {
-                        log_windows_error("ReadFile", werr);
+                        log_windows_error(medium->context, "ReadFile", werr);
                         return CAHUTE_ERROR_UNKNOWN;
                     }
                 }
@@ -278,7 +280,11 @@ cahute_receive_on_link_medium(
                         if (werr == ERROR_GEN_FAILURE)
                             return CAHUTE_ERROR_GONE;
 
-                        log_windows_error("GetOverlappedResult", werr);
+                        log_windows_error(
+                            medium->context,
+                            "GetOverlappedResult",
+                            werr
+                        );
                         return CAHUTE_ERROR_UNKNOWN;
                     }
                     break;
@@ -289,7 +295,11 @@ cahute_receive_on_link_medium(
                     goto time_out;
 
                 default:
-                    log_windows_error("WaitForSingleObject", GetLastError());
+                    log_windows_error(
+                        medium->context,
+                        "WaitForSingleObject",
+                        GetLastError()
+                    );
 
                     return CAHUTE_ERROR_UNKNOWN;
                 }
@@ -310,7 +320,11 @@ cahute_receive_on_link_medium(
             cahute_u32 signals = 0;
             int has_serial = 0;
 
-            err = cahute_get_amiga_timer(&timer_msgport, &timer);
+            err = cahute_get_amiga_timer(
+                medium->context,
+                &timer_msgport,
+                &timer
+            );
             if (err)
                 return err;
 
@@ -369,7 +383,8 @@ cahute_receive_on_link_medium(
                 goto time_out;
 
             if (io->IOSer.io_Error) {
-                msg(ll_error,
+                msg(medium->context,
+                    ll_error,
                     "Error %d occurred while reading from device.",
                     io->IOSer.io_Error);
                 return CAHUTE_ERROR_UNKNOWN;
@@ -377,7 +392,8 @@ cahute_receive_on_link_medium(
 
             /* I/O request was completed, we want to read the contents. */
             if (io->IOSer.io_Error) {
-                msg(ll_error,
+                msg(medium->context,
+                    ll_error,
                     "Error %d occurred while reading from device.",
                     io->IOSer.io_Error);
                 return CAHUTE_ERROR_UNKNOWN;
@@ -408,7 +424,9 @@ cahute_receive_on_link_medium(
             case LIBUSB_ERROR_PIPE:
             case LIBUSB_ERROR_NO_DEVICE:
             case LIBUSB_ERROR_IO:
-                msg(ll_error, "USB device is no longer available.");
+                msg(medium->context,
+                    ll_error,
+                    "USB device is no longer available.");
                 medium->flags |= CAHUTE_LINK_MEDIUM_FLAG_GONE;
                 return CAHUTE_ERROR_GONE;
 
@@ -416,12 +434,16 @@ cahute_receive_on_link_medium(
                 goto time_out;
 
             default:
-                msg(ll_error,
+                msg(medium->context,
+                    ll_error,
                     "libusb_bulk_transfer returned %d: %s",
                     libusberr,
                     libusb_error_name(libusberr));
                 if (libusberr == LIBUSB_ERROR_OVERFLOW)
-                    msg(ll_error, "Required buffer size was %d.", received);
+                    msg(medium->context,
+                        ll_error,
+                        "Required buffer size was %d.",
+                        received);
                 return CAHUTE_ERROR_UNKNOWN;
             }
 
@@ -461,7 +483,7 @@ cahute_receive_on_link_medium(
 
             avail = (status_buf[6] << 8) | status_buf[7];
             if (!avail) {
-                err = cahute_sleep(10);
+                err = cahute_sleep(medium->context, 10);
                 if (err)
                     return err;
 
@@ -500,7 +522,10 @@ cahute_receive_on_link_medium(
 #endif
 
         default:
-            CAHUTE_RETURN_IMPL("No method available for reading.");
+            CAHUTE_RETURN_IMPL(
+                medium->context,
+                "No method available for reading."
+            );
         }
 
         if (!bytes_read)
@@ -513,13 +538,13 @@ cahute_receive_on_link_medium(
         timeout_error = CAHUTE_ERROR_TIMEOUT;
 
         if (!first_time) {
-            err = cahute_monotonic(&first_time);
+            err = cahute_monotonic(medium->context, &first_time);
             if (err)
                 return err;
 
             last_time = first_time;
         } else {
-            err = cahute_monotonic(&last_time);
+            err = cahute_monotonic(medium->context, &last_time);
             if (err)
                 return err;
         }
@@ -542,16 +567,18 @@ cahute_receive_on_link_medium(
         size -= bytes_read;
     }
 
-    if (!cahute_monotonic(&last_time)) {
+    if (!cahute_monotonic(medium->context, &last_time)) {
         if (first_time > start_time + 20) {
-            msg(ll_info,
+            msg(medium->context,
+                ll_info,
                 "Read %" CAHUTE_PRIuSIZE
                 " bytes in %lums (after waiting %lums).",
                 original_size + medium->read_size - medium->read_start,
                 last_time - first_time,
                 first_time - start_time);
         } else {
-            msg(ll_info,
+            msg(medium->context,
+                ll_info,
                 "Read %" CAHUTE_PRIuSIZE " bytes in %lums.",
                 original_size + medium->read_size - medium->read_start,
                 last_time - start_time);
@@ -561,7 +588,8 @@ cahute_receive_on_link_medium(
     return CAHUTE_OK;
 
 time_out:
-    msg(ll_error,
+    msg(medium->context,
+        ll_error,
         "Hit a timeout of %lums after reading %" CAHUTE_PRIuSIZE
         "/%" CAHUTE_PRIuSIZE " bytes.",
         iteration_timeout,
@@ -612,7 +640,11 @@ cahute_send_on_link_medium(
                     return CAHUTE_ERROR_GONE;
 
                 default:
-                    msg(ll_fatal, "errno was %d: %s", errno, strerror(errno));
+                    msg(medium->context,
+                        ll_fatal,
+                        "errno was %d: %s",
+                        errno,
+                        strerror(errno));
                     return CAHUTE_ERROR_UNKNOWN;
                 }
 
@@ -660,20 +692,25 @@ cahute_send_on_link_medium(
                             if (werr == ERROR_GEN_FAILURE)
                                 return CAHUTE_ERROR_GONE;
 
-                            log_windows_error("GetOverlappedResult", werr);
+                            log_windows_error(
+                                medium->context,
+                                "GetOverlappedResult",
+                                werr
+                            );
                             return CAHUTE_ERROR_UNKNOWN;
                         }
                         break;
 
                     default:
                         log_windows_error(
+                            medium->context,
                             "WaitForSingleObject",
                             GetLastError()
                         );
                         return CAHUTE_ERROR_UNKNOWN;
                     }
                 } else {
-                    log_windows_error("WriteFile", werr);
+                    log_windows_error(medium->context, "WriteFile", werr);
                     return CAHUTE_ERROR_UNKNOWN;
                 }
             }
@@ -692,7 +729,9 @@ cahute_send_on_link_medium(
             io->IOSer.io_Data = (cahute_u8 *)buf; /* Explicit non-const. */
             io->IOSer.io_Command = CMD_WRITE;
             if (DoIO((struct IORequest *)io)) {
-                msg(ll_error, "Unable to set the serial parameters!");
+                msg(medium->context,
+                    ll_error,
+                    "Unable to set the serial parameters!");
                 return CAHUTE_ERROR_UNKNOWN;
             }
 
@@ -721,12 +760,15 @@ cahute_send_on_link_medium(
             case LIBUSB_ERROR_PIPE:
             case LIBUSB_ERROR_NO_DEVICE:
             case LIBUSB_ERROR_IO:
-                msg(ll_error, "USB device is no longer available.");
+                msg(medium->context,
+                    ll_error,
+                    "USB device is no longer available.");
                 medium->flags |= CAHUTE_LINK_MEDIUM_FLAG_GONE;
                 return CAHUTE_ERROR_GONE;
 
             default:
-                msg(ll_error,
+                msg(medium->context,
+                    ll_error,
                     "libusb_bulk_transfer returned %d: %s",
                     libusberr,
                     libusb_error_name(libusberr));
@@ -791,7 +833,10 @@ cahute_send_on_link_medium(
 #endif
 
         default:
-            CAHUTE_RETURN_IMPL("No method available for writing.");
+            CAHUTE_RETURN_IMPL(
+                medium->context,
+                "No method available for writing."
+            );
         }
 
         if (bytes_written >= size)
@@ -821,7 +866,8 @@ cahute_set_serial_params_to_link_medium(
     if (medium->serial_flags == flags && medium->serial_speed == speed)
         return CAHUTE_OK;
 
-    msg(ll_info,
+    msg(medium->context,
+        ll_info,
         "Setting serial parameters to %lu%c%d.",
         speed,
         (flags & CAHUTE_SERIAL_PARITY_MASK) == CAHUTE_SERIAL_PARITY_ODD ? 'O'
@@ -878,12 +924,16 @@ cahute_set_serial_params_to_link_medium(
             break;
 # endif
         default:
-            msg(ll_error, "Speed unsupported by termios: %lu", speed);
+            msg(medium->context,
+                ll_error,
+                "Speed unsupported by termios: %lu",
+                speed);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         if (tcdrain(medium->state.posix.fd)) {
-            msg(ll_error,
+            msg(medium->context,
+                ll_error,
                 "Could not wait until data has been written: %s (%d)",
                 strerror(errno),
                 errno);
@@ -891,7 +941,8 @@ cahute_set_serial_params_to_link_medium(
         }
 
         if (tcgetattr(medium->state.posix.fd, &term) < 0) {
-            msg(ll_error,
+            msg(medium->context,
+                ll_error,
                 "Could not get serial attributes: %s (%d)",
                 strerror(errno),
                 errno);
@@ -934,7 +985,8 @@ cahute_set_serial_params_to_link_medium(
             term.c_cflag |= CSTOPB;
 
         if (tcsetattr(medium->state.posix.fd, TCSANOW, &term)) {
-            msg(ll_error,
+            msg(medium->context,
+                ll_error,
                 "Could not get serial attributes: %s (%d)",
                 strerror(errno),
                 errno);
@@ -979,7 +1031,7 @@ cahute_set_serial_params_to_link_medium(
 
             if (status != original_status
                 && ioctl(medium->state.posix.fd, TIOCMSET, &status) < 0) {
-                msg(ll_error, "Could not set DTR/RTS mode.");
+                msg(medium->context, ll_error, "Could not set DTR/RTS mode.");
                 return CAHUTE_ERROR_UNKNOWN;
             }
         }
@@ -1025,14 +1077,17 @@ cahute_set_serial_params_to_link_medium(
             break;
 
         default:
-            msg(ll_error, "Speed unsupported by Windows API: %lu", speed);
+            msg(medium->context,
+                ll_error,
+                "Speed unsupported by Windows API: %lu",
+                speed);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         SecureZeroMemory(&dcb, sizeof(DCB));
         dcb.DCBlength = sizeof(DCB);
         if (!GetCommState(medium->state.windows.handle, &dcb)) {
-            log_windows_error("GetCommState", GetLastError());
+            log_windows_error(medium->context, "GetCommState", GetLastError());
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -1113,7 +1168,7 @@ cahute_set_serial_params_to_link_medium(
         }
 
         if (!SetCommState(medium->state.windows.handle, &dcb)) {
-            log_windows_error("SetCommState", GetLastError());
+            log_windows_error(medium->context, "SetCommState", GetLastError());
             return CAHUTE_ERROR_UNKNOWN;
         }
     } break;
@@ -1166,14 +1221,19 @@ cahute_set_serial_params_to_link_medium(
 
         io->IOSer.io_Command = SDCMD_SETPARAMS;
         if (DoIO((struct IORequest *)io)) {
-            msg(ll_error, "Unable to set the serial parameters!");
+            msg(medium->context,
+                ll_error,
+                "Unable to set the serial parameters!");
             return CAHUTE_ERROR_UNKNOWN;
         }
     } break;
 #endif
 
     default:
-        CAHUTE_RETURN_IMPL("No method available for setting serial params.");
+        CAHUTE_RETURN_IMPL(
+            medium->context,
+            "No method available for setting serial params."
+        );
     }
 
     medium->serial_flags = flags;
@@ -1210,7 +1270,7 @@ cahute_scsi_request(
     int status = 0;
 
     if (!is_send && !buf_size) {
-        msg(ll_error, "buf_size must be > 0 for reception!");
+        msg(medium->context, ll_error, "buf_size must be > 0 for reception!");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -1259,7 +1319,7 @@ cahute_scsi_request(
             if (werr == ERROR_SEM_TIMEOUT)
                 return CAHUTE_ERROR_GONE;
 
-            log_windows_error("DeviceIoControl", werr);
+            log_windows_error(medium->context, "DeviceIoControl", werr);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -1302,12 +1362,14 @@ cahute_scsi_request(
         case LIBUSB_ERROR_PIPE:
         case LIBUSB_ERROR_NO_DEVICE:
         case LIBUSB_ERROR_IO:
-            msg(ll_error, "USB device is no longer available.");
+            msg(medium->context, ll_error, "USB device is no longer available."
+            );
             medium->flags |= CAHUTE_LINK_MEDIUM_FLAG_GONE;
             return CAHUTE_ERROR_GONE;
 
         default:
-            msg(ll_error,
+            msg(medium->context,
+                ll_error,
                 "libusb_bulk_transfer returned %d: %s",
                 libusberr,
                 libusb_error_name(libusberr));
@@ -1336,12 +1398,15 @@ cahute_scsi_request(
             case LIBUSB_ERROR_PIPE:
             case LIBUSB_ERROR_NO_DEVICE:
             case LIBUSB_ERROR_IO:
-                msg(ll_error, "USB device is no longer available.");
+                msg(medium->context,
+                    ll_error,
+                    "USB device is no longer available.");
                 medium->flags |= CAHUTE_LINK_MEDIUM_FLAG_GONE;
                 return CAHUTE_ERROR_GONE;
 
             default:
-                msg(ll_error,
+                msg(medium->context,
+                    ll_error,
                     "libusb_bulk_transfer returned %d: %s",
                     libusberr,
                     libusb_error_name(libusberr));
@@ -1366,12 +1431,15 @@ cahute_scsi_request(
                 case LIBUSB_ERROR_PIPE:
                 case LIBUSB_ERROR_NO_DEVICE:
                 case LIBUSB_ERROR_IO:
-                    msg(ll_error, "USB device is no longer available.");
+                    msg(medium->context,
+                        ll_error,
+                        "USB device is no longer available.");
                     medium->flags |= CAHUTE_LINK_MEDIUM_FLAG_GONE;
                     return CAHUTE_ERROR_GONE;
 
                 default:
-                    msg(ll_error,
+                    msg(medium->context,
+                        ll_error,
                         "libusb_bulk_transfer returned %d: %s",
                         libusberr,
                         libusb_error_name(libusberr));
@@ -1408,12 +1476,15 @@ cahute_scsi_request(
                 case LIBUSB_ERROR_PIPE:
                 case LIBUSB_ERROR_NO_DEVICE:
                 case LIBUSB_ERROR_IO:
-                    msg(ll_error, "USB device is no longer available.");
+                    msg(medium->context,
+                        ll_error,
+                        "USB device is no longer available.");
                     medium->flags |= CAHUTE_LINK_MEDIUM_FLAG_GONE;
                     return CAHUTE_ERROR_GONE;
 
                 default:
-                    msg(ll_error,
+                    msg(medium->context,
+                        ll_error,
                         "libusb_bulk_transfer returned %d: %s",
                         libusberr,
                         libusb_error_name(libusberr));
@@ -1425,8 +1496,10 @@ cahute_scsi_request(
             } while (csw_size);
 
             if (memcmp(csw_buf, "USBSABCD", 8)) {
-                msg(ll_error, "Unknown or unrecognized UMS CSW:");
-                mem(ll_error, csw_buf, 13);
+                msg(medium->context,
+                    ll_error,
+                    "Unknown or unrecognized UMS CSW:");
+                mem(medium->context, ll_error, csw_buf, 13);
                 return CAHUTE_ERROR_CORRUPT;
             }
 
@@ -1436,7 +1509,10 @@ cahute_scsi_request(
 #endif
 
     default:
-        CAHUTE_RETURN_IMPL("No method available for making an SCSI request.");
+        CAHUTE_RETURN_IMPL(
+            medium->context,
+            "No method available for making an SCSI request."
+        );
     }
 
     if (statusp)

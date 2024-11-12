@@ -32,6 +32,7 @@
 /**
  * Decode an MCS file.
  *
+ * @param context Context in which the MCS file is decoded.
  * @param final_datap Pointer to the data to allocate.
  * @param group Name of the group of the file to decode.
  * @param group_size Size of the name of the group of the file to decode.
@@ -48,6 +49,7 @@
  */
 CAHUTE_EXTERN(int)
 cahute_mcs_decode_data(
+    cahute_context *context,
     cahute_data **final_datap,
     cahute_u8 const *group,
     size_t group_size,
@@ -82,17 +84,17 @@ cahute_mcs_decode_data(
     if (name_size && (p = memchr(name, 0x00, name_size)))
         name_size = (size_t)(p - (cahute_u8 const *)name);
 
-    msg(ll_info, "Data Type: 0x%02X", data_type);
-    msg(ll_info, "Directory Name: %.*s", directory_size, directory);
-    msg(ll_info, "Data Name: %.*s", name_size, name);
-    msg(ll_info, "Group Name: %.*s", group_size, group);
+    msg(context, ll_info, "Data Type: 0x%02X", data_type);
+    msg(context, ll_info, "Directory Name: %.*s", directory_size, directory);
+    msg(context, ll_info, "Data Name: %.*s", name_size, name);
+    msg(context, ll_info, "Group Name: %.*s", group_size, group);
 
     if (data_type == DATA_TYPE_PROGRAM) {
         cahute_u8 program_header[10];
 
         /* We have a program. */
         if (content_size < 10) {
-            msg(ll_error, "Expected at least 10 bytes!");
+            msg(context, ll_error, "Expected at least 10 bytes!");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -118,7 +120,7 @@ cahute_mcs_decode_data(
     }
 
     /* TODO */
-    CAHUTE_RETURN_IMPL("MCS file not implemented.");
+    CAHUTE_RETURN_IMPL(context, "MCS file not implemented.");
 
 data_ready:
     while (*datap)

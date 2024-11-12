@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2017, 2024 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2024 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -26,46 +26,19 @@
  * knowledge of the CeCILL 2.1 license and that you accept its terms.
  * ************************************************************************* */
 
-#ifndef P7OS_H
-#define P7OS_H 1
-#include <cahute.h>
-#define COMMAND_NONE   0
-#define COMMAND_BACKUP 1
-#define COMMAND_FLASH  2
+#ifndef CAHUTE_CONTEXT_H
+#define CAHUTE_CONTEXT_H 1
+#include "cdefs.h"
 
-/**
- * Parsed argument structure.
- *
- * @property command Selected subcommand.
- * @property upload_uexe Whether to upload the Update.EXE to the calculator.
- * @property erase_flash Whether to erase flash before writing data.
- * @property display_progress Whether to display a progress bar or not.
- * @property loglevel Logging level to set.
- * @property uexe_data Update.EXE data.
- * @property uexe_allocated_data Allocated Update.EXE data.
- * @property uexe_size Update.EXE size.
- * @property system_data System data, for COMMAND_FLASH.
- * @property system_size System size, for COMMAND_FLUSH.
- * @property output_fp Output file pointer, for COMMAND_BACKUP.
- */
-struct args {
-    int command;
-    int upload_uexe;
-    int erase_flash;
-    int display_progress;
-    char const *loglevel;
+CAHUTE_BEGIN_NAMESPACE
+CAHUTE_BEGIN_DECLS
 
-    cahute_u8 const *uexe_data;
-    cahute_u8 *uexe_allocated_data;
-    size_t uexe_size;
+CAHUTE_DECLARE_TYPE(cahute_context)
 
-    cahute_u8 *system_data;
-    size_t system_size;
+CAHUTE_EXTERN(int) cahute_create_context(cahute_context **cahute__contextp);
+CAHUTE_EXTERN(void) cahute_destroy_context(cahute_context *cahute__context);
 
-    FILE *output_fp;
-};
+CAHUTE_END_DECLS
+CAHUTE_END_NAMESPACE
 
-extern int parse_args(int ac, char **av, struct args *args);
-extern void free_args(struct args *args);
-
-#endif /* P7OS_H */
+#endif /* CAHUTE_CONTEXT_H */

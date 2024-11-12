@@ -33,11 +33,23 @@ int my_callback(void *cookie, cahute_usb_detection_entry const *entry) {
 }
 
 int main(void) {
+    cahute_context *context;
     int err;
 
-    err = cahute_detect_usb(&my_callback, NULL);
+    err = cahute_create_context(&context);
+    if (err) {
+        fprintf(
+            stderr,
+            "cahute_create_context() has returned error %s.\n",
+            cahute_get_error_name(err)
+        );
+        return 1;
+    }
+
+    err = cahute_detect_usb(context, &my_callback, NULL);
     if (err)
         fprintf(stderr, "Cahute has returned error 0x%04X.\n", err);
 
+    cahute_destroy_context(context);
     return 0;
 }

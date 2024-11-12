@@ -65,7 +65,7 @@ static char const help_main[] =
     "General options:\n"
     "  -h, --help        Display the help page of the (sub)command and quit.\n"
     "  -v, --version     Display the version message and quit.\n"
-    "  -l, --log <level> Logging level to set (default: %s).\n"
+    "  -l, --log <level> Logging level to use, instead of the default one.\n"
     "                    One of: info, warning, error, fatal, none.\n"
     "\n"
     "Link-related options:\n"
@@ -323,6 +323,7 @@ int parse_args(int argc, char **argv, struct args *args) {
      * By default, the serial speed is defined as 9600N2. */
     args->command = COMMAND_IDLE;
     args->nice_display = 0;
+    args->loglevel = NULL;
 
     args->serial_flags = CAHUTE_SERIAL_PARITY_OFF | CAHUTE_SERIAL_STOP_TWO;
     args->serial_speed = 9600;
@@ -342,7 +343,6 @@ int parse_args(int argc, char **argv, struct args *args) {
 
     args->local_source_path = NULL;
     args->local_target_path = NULL;
-    args->local_source_file = NULL;
 
     init_option_parser(
         &state,
@@ -378,7 +378,7 @@ int parse_args(int argc, char **argv, struct args *args) {
 
         case 'l':
             /* -l, --log: set the logging level. */
-            set_log_level(optarg);
+            args->loglevel = optarg;
             break;
 
         case 'o':
@@ -487,7 +487,7 @@ int parse_args(int argc, char **argv, struct args *args) {
 
     update_positional_parameters(&state, &param_count, &params);
     if (!param_count || !strcmp(params[0], "help")) {
-        printf(help_main, command, get_current_log_level(), command);
+        printf(help_main, command, command);
         return 0;
     }
 
@@ -609,7 +609,7 @@ int parse_args(int argc, char **argv, struct args *args) {
         args->command = COMMAND_IDLE;
     } else {
         /* The subcommand is unknown. */
-        printf(help_main, command, get_current_log_level(), command);
+        printf(help_main, command, command);
         return 0;
     }
 
@@ -641,25 +641,6 @@ int parse_args(int argc, char **argv, struct args *args) {
     if (!check_file_name(args->distant_target_name)) {
         fprintf(stderr, "Invalid target file name format.\n");
         return 0;
-    }
-
-    /* Open the local source path if a path is given. */
-    if (args->local_source_path && !args->local_source_file) {
-        err = cahute_open_file(
-            &args->local_source_file,
-            0,
-            args->local_source_path,
-            CAHUTE_PATH_TYPE_CLI
-        );
-        if (err) {
-            fprintf(
-                stderr,
-                "Can't open '%s': %s\n",
-                args->local_source_path,
-                cahute_get_error_name(err)
-            );
-            return 0;
-        }
     }
 
     return 1;

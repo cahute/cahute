@@ -48,7 +48,7 @@ static char const help_message[] =
     "Options are:\n"
     "  -h, --help        Display this help page\n"
     "  -v, --version     Displays the version\n"
-    "  -l, --log <level> Logging level to set (default: %s).\n"
+    "  -l, --log <level> Logging level to use, instead of the default one.\n"
     "                    One of: info, warning, error, fatal, none.\n"
     "  --com <device>    Path or name of the serial device with which to\n"
     "                    communicate. If this option isn't used, the\n"
@@ -109,6 +109,7 @@ int parse_args(int argc, char **argv, struct args *args) {
 
     /* Default parsed arguments. */
     args->zoom = DEFAULT_ZOOM;
+    args->loglevel = NULL;
     args->serial_flags = 0;
     args->serial_speed = 0;
     args->serial_name = NULL;
@@ -165,7 +166,7 @@ int parse_args(int argc, char **argv, struct args *args) {
 
         case 'l':
             /* -l, --log: set the logging level. */
-            set_log_level(optarg);
+            args->loglevel = optarg;
             break;
 
         case GETOPT_FAIL:
@@ -189,7 +190,7 @@ int parse_args(int argc, char **argv, struct args *args) {
 
     /* If we want to display the help message, do it here! */
     if (help) {
-        printf(help_message, command, get_current_log_level(), DEFAULT_ZOOM);
+        printf(help_message, command, DEFAULT_ZOOM);
         return 0;
     }
 

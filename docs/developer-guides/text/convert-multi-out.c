@@ -45,12 +45,23 @@ static cahute_u8 const example[] =
     "\"GOLDORAK\"\x0D\xF7\x02\x0D\"INVALIDE\"\x0D\xF7\x03\x00";
 
 int main(void) {
+    cahute_context *context;
     cahute_u8 buf[64];
     void const *src = example;
     size_t src_size = sizeof(example);
     void *dest;
     size_t dest_size;
     int i, err;
+
+    err = cahute_create_context(&context);
+    if (err) {
+        fprintf(
+            stderr,
+            "cahute_create_context() has returned error %s.\n",
+            cahute_get_error_name(err)
+        );
+        return 1;
+    }
 
     for (i = 0;; i++) {
         size_t converted;
@@ -59,6 +70,7 @@ int main(void) {
         dest_size = sizeof(buf);
 
         err = cahute_convert_text(
+            context,
             &dest,
             &dest_size,
             &src,
@@ -97,5 +109,6 @@ int main(void) {
     if (err && err != CAHUTE_ERROR_TERMINATED)
         printf("Conversion has failed.\n");
 
+    cahute_destroy_context(context);
     return 0;
 }

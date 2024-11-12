@@ -73,9 +73,10 @@ CAHUTE_INLINE(int) all_numbers(char const *s) {
  */
 CAHUTE_EXTERN(int)
 cahute_detect_serial(
+    cahute_context CAHUTE_NNPTR(context),
     cahute_detect_serial_entry_func CAHUTE_NNPTR(func),
     void *cookie
-) CAHUTE_NONNULL(1) {
+) CAHUTE_NONNULL((1)) {
 #if POSIX_ENABLED
     DIR *dp;
     struct dirent *dr;
@@ -189,7 +190,7 @@ cahute_detect_serial(
         /* No serial devices available. */
         goto end;
     } else if (werr) {
-        log_windows_error("RegOpenKey", werr);
+        log_windows_error(context, "RegOpenKey", werr);
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -220,7 +221,7 @@ cahute_detect_serial(
             continue;
 
         default:
-            log_windows_error("RegEnumValue", werr);
+            log_windows_error(context, "RegEnumValue", werr);
             RegCloseKey(hkey);
             return CAHUTE_ERROR_UNKNOWN;
         }
@@ -260,7 +261,10 @@ end:
     return CAHUTE_OK;
 #endif
 
-    CAHUTE_RETURN_IMPL("No serial device detection method available.");
+    CAHUTE_RETURN_IMPL(
+        context,
+        "No serial device detection method available."
+    );
 }
 
 /**
@@ -272,24 +276,24 @@ end:
  */
 CAHUTE_EXTERN(int)
 cahute_detect_usb(
+    cahute_context CAHUTE_NNPTR(context),
     cahute_detect_usb_entry_func CAHUTE_NNPTR(func),
     void *cookie
-) CAHUTE_NONNULL(1) {
+) CAHUTE_NONNULL((1)) {
 #if LIBUSB_ENABLED
-    libusb_context *context = NULL;
+    libusb_context *lu_context = NULL;
     libusb_device **device_list = NULL;
     cahute_usb_detection_entry entry;
     cahute_ssize device_count;
-    int id, err = CAHUTE_OK;
+    int id, err;
 
-    if (libusb_init(&context)) {
-        msg(ll_fatal, "Could not create a libusb context.");
-        return CAHUTE_ERROR_UNKNOWN;
-    }
+    err = cahute_get_libusb_context(context, &lu_context);
+    if (err)
+        return err;
 
-    device_count = libusb_get_device_list(context, &device_list);
+    device_count = libusb_get_device_list(lu_context, &device_list);
     if (device_count < 0) {
-        msg(ll_fatal, "Could not get a device list.");
+        msg(context, ll_fatal, "Could not get a device list.");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -346,9 +350,8 @@ cahute_detect_usb(
     }
 
     libusb_free_device_list(device_list, 1);
-    libusb_exit(context);
     return err;
 #else
-    CAHUTE_RETURN_IMPL("No USB device detection method available.");
+    CAHUTE_RETURN_IMPL(context, "No USB device detection method available.");
 #endif
 }

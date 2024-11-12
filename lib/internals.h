@@ -100,14 +100,6 @@ CAHUTE_DECLARE_TYPE(cahute_link_medium)
 CAHUTE_DECLARE_TYPE(cahute_file_medium)
 CAHUTE_DECLARE_TYPE(cahute_casiolink_data_description)
 
-#if AMIGAOS_ENABLED
-CAHUTE_EXTERN(int)
-cahute_get_amiga_timer(
-    struct MsgPort **msg_portp,
-    struct timerequest **timerp
-);
-#endif
-
 /* ---
  * Endianess management.
  * --- */
@@ -185,11 +177,45 @@ CAHUTE_EXTERN(cahute_u32) cahute_htole32(cahute_u32 cahute__x);
 #endif
 
 /* ---
+ * Context definition.
+ * --- */
+
+struct cahute_context {
+    cahute_log_func *log_callback;
+    void *log_callback_cookie;
+    int log_level;
+
+#if LIBUSB_ENABLED
+    libusb_context *libusb_context;
+#endif
+
+#if AMIGAOS_ENABLED
+    struct MsgPort *amiga_timer_msg_port;
+    struct timerequest *amiga_timer_request;
+#endif
+};
+
+#if LIBUSB_ENABLED
+CAHUTE_EXTERN(int)
+cahute_get_libusb_context(cahute_context *context, libusb_context **contextp);
+#endif
+
+#if AMIGAOS_ENABLED
+CAHUTE_EXTERN(int)
+cahute_get_amiga_timer(
+    cahute_context *context,
+    struct MsgPort **msg_portp,
+    struct timerequest **timerp
+);
+#endif
+
+/* ---
  * Logging internals.
  * --- */
 
 CAHUTE_EXTERN(void)
 cahute_log_message(
+    cahute_context *cahute__context,
     int cahute__loglevel,
     char const *cahute__func,
     char const *cahute__format,
@@ -197,6 +223,7 @@ cahute_log_message(
 );
 CAHUTE_EXTERN(void)
 cahute_log_memory(
+    cahute_context *cahute__context,
     int cahute__loglevel,
     char const *cahute__func,
     void const *cahute__memory,
@@ -223,9 +250,9 @@ cahute_log_memory(
  * This is necessary to avoid having to track down exactly what was not
  * implemented in the chain using the message.
  * Usage of this macro is enforced with pre-commit. */
-#define CAHUTE_RETURN_IMPL(MESSAGE) \
+#define CAHUTE_RETURN_IMPL(CONTEXT, MESSAGE) \
     { \
-        msg(ll_error, MESSAGE); \
+        msg(CONTEXT, ll_error, MESSAGE); \
         return CAHUTE_ERROR_IMPL /* Comment to prevent match by hook. */; \
     } \
     (void)0 /* Force introducing a semicolon. */
@@ -237,6 +264,7 @@ cahute_log_memory(
  * This is implemented as a separate function to the rest, because gathering
  * an error message for a given error code is quite lengthy.
  *
+ * @param context Context to use for logging.
  * @param func_name Name of the function from which the log is emitted.
  * @param win_func Name of the Windows API function that returned the
  *        error.
@@ -244,6 +272,7 @@ cahute_log_memory(
  */
 CAHUTE_INLINE(void)
 cahute__log_win_error(
+    cahute_context *context,
     char const *func_name,
     char const *win_func,
     DWORD code
@@ -263,6 +292,7 @@ cahute__log_win_error(
 
     if (!buf_size) {
         cahute_log_message(
+            context,
             30,
             func_name,
             "Error 0x%08lX occurred in %s.",
@@ -274,6 +304,7 @@ cahute__log_win_error(
 
     buf[buf_size] = '\0';
     cahute_log_message(
+        context,
         30,
         func_name,
         "Error 0x%08lX occurred in %s: %s",
@@ -283,8 +314,8 @@ cahute__log_win_error(
     );
 }
 
-# define log_windows_error(FUNC, CODE) \
-     cahute__log_win_error(CAHUTE_LOGFUNC, FUNC, CODE)
+# define log_windows_error(CTX, FUNC, CODE) \
+     cahute__log_win_error(CTX, CAHUTE_LOGFUNC, FUNC, CODE)
 #endif
 
 /* ---
@@ -394,13 +425,11 @@ struct cahute_link_windows_ums_medium_state {
 /**
  * libusb device medium state.
  *
- * @property context libusb context to close once the link is closed.
  * @property handle libusb device handle which to use to make USB requests.
  * @property bulk_in Bulk IN endpoint address to use for reading.
  * @property bulk_out Bulk OUT endpoint address to use for writing.
  */
 struct cahute_link_libusb_medium_state {
-    libusb_context *context;
     libusb_device_handle *handle;
     int bulk_in;
     int bulk_out;
@@ -441,6 +470,7 @@ union cahute_link_medium_state {
 /**
  * Medium-related information.
  *
+ * @property context Context in which the link/medium is defined.
  * @property type Medium type, as any ``CAHUTE_LINK_MEDIUM_*`` constant
  *           representing the medium state to use and how to use it.
  * @property flags Flags for the medium.
@@ -460,6 +490,8 @@ union cahute_link_medium_state {
  *           medium, starting at the offset stored in ``read_start``.
  */
 struct cahute_link_medium {
+    cahute_context *context;
+
     int type;
     unsigned int flags;
 
@@ -748,6 +780,7 @@ union cahute_file_medium_state {
 /**
  * File medium related information.
  *
+ * @property context Context in which the file / medium is defined and used.
  * @property type Medium type, as any ``CAHUTE_FILE_MEDIUM_*`` constant.
  * @property write Whether the medium is writable or not.
  * @property flags Medium flags.
@@ -764,6 +797,8 @@ union cahute_file_medium_state {
  * @property file_size File size computed when the file was opened.
  */
 struct cahute_file_medium {
+    cahute_context *context;
+
     int type;
 
     unsigned long flags;
@@ -800,6 +835,7 @@ struct cahute_file {
 CAHUTE_EXTERN(void)
 cahute_populate_file_from_memory(
     cahute_file *file,
+    cahute_context *context,
     cahute_u8 *buf,
     size_t size
 );
@@ -808,8 +844,9 @@ cahute_populate_file_from_memory(
  * Miscellaneous functions, defined in misc.c
  * --- */
 
-CAHUTE_EXTERN(int) cahute_sleep(unsigned long ms);
-CAHUTE_EXTERN(int) cahute_monotonic(unsigned long *msp);
+CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms);
+CAHUTE_EXTERN(int)
+cahute_monotonic(cahute_context *context, unsigned long *msp);
 
 CAHUTE_EXTERN(int)
 cahute_pad_data(cahute_u8 *buf, cahute_u8 const *data, size_t data_size);
@@ -1002,59 +1039,13 @@ cahute_write_to_file_medium(
     size_t size
 );
 
-/**
- * Compute a checksum from a file starting at an offset.
- *
- * @param file File from which to read.
- * @param offset Offset from which to read.
- * @param size Size of the data region to read.
- * @param checksum Checksum pointer.
- * @return Error, or 0 if ok.
- */
-CAHUTE_INLINE(int)
+CAHUTE_EXTERN(int)
 cahute_checksum_from_file_medium(
     cahute_file_medium *medium,
     unsigned long offset,
     size_t size,
     unsigned int *checksump
-) {
-    cahute_u8 tmp_buf[1024];
-    unsigned int checksum = 0;
-    int err;
-
-    while (size > sizeof(tmp_buf)) {
-        err = cahute_read_from_file_medium(
-            medium,
-            offset,
-            tmp_buf,
-            sizeof(tmp_buf)
-        );
-        if (err)
-            return err;
-
-        checksum += cahute_checksum(tmp_buf, sizeof(tmp_buf));
-        offset += sizeof(tmp_buf);
-        size -= sizeof(tmp_buf);
-    }
-
-    if (size) {
-        err = cahute_read_from_file_medium(medium, offset, tmp_buf, size);
-        if (err)
-            return err;
-
-        checksum += cahute_checksum(tmp_buf, size);
-    }
-
-    *checksump = checksum & 255;
-    return CAHUTE_OK;
-}
-
-#define cahute_checksum_from_file(CAHUTE__FILE, CAHUTE__OFFSET, CAHUTE__SIZE) \
-    cahute_checksum_from_file_medium( \
-        (CAHUTE__FILE)->medium, \
-        (CAHUTE__OFFSET), \
-        (CAHUTE__SIZE) \
-    )
+);
 
 /* ---
  * Data management, defined in data.c
@@ -1147,213 +1138,18 @@ cahute_casiolink_compute_data_description_size(
     return total_size;
 }
 
-/**
- * Check a file based on a data description.
- *
- * @param file File to check.
- * @param offset Offset from which to check the file.
- * @param desc Data description based on which to check the file.
- * @return Cahute error, or 0 if ok.
- */
-CAHUTE_INLINE(int)
+CAHUTE_EXTERN(int)
 cahute_casiolink_check_file_data(
     cahute_file *file,
     unsigned long offset,
     struct cahute_casiolink_data_description const *desc
-) {
-    cahute_u8 buf[4];
-    unsigned int checksum, checksum_alt;
-    size_t i, total_parts, part_size;
-    int err;
+);
 
-    if (!desc->part_count)
-        return CAHUTE_OK;
-
-    total_parts = desc->part_count - 1 + desc->last_part_repeat;
-    for (i = 0; i < total_parts; i++) {
-        part_size =
-            desc->part_sizes[i >= desc->part_count ? desc->part_count - 1 : i];
-
-        err = cahute_read_from_file(file, offset++, buf, 2);
-        if (err)
-            return err;
-
-        if (buf[0] != desc->packet_type) {
-            msg(ll_error,
-                "In part %" CAHUTE_PRIuSIZE "/%" CAHUTE_PRIuSIZE
-                ": invalid "
-                "type 0x%02X (expected: 0x%02X)",
-                i + 1,
-                total_parts,
-                buf[0],
-                desc->packet_type);
-            return CAHUTE_ERROR_CORRUPT;
-        }
-
-        /* We apply the same checksum logics as in
-         * `cahute_casiolink_receive_packet()`, with the alt checksum
-         * for CAS40 screenshots. */
-        if (part_size > 1) {
-            err = cahute_checksum_from_file_medium(
-                &file->medium,
-                offset + 1,
-                part_size - 1,
-                &checksum_alt
-            );
-            if (err)
-                return err;
-
-            checksum = (checksum_alt + buf[1]) & 255;
-        } else if (part_size) {
-            checksum = buf[1];
-            checksum_alt = 0;
-        } else {
-            checksum = 0;
-            checksum_alt = 0;
-        }
-
-        checksum = cahute_checksub_from_checksum(checksum);
-        checksum_alt = cahute_checksub_from_checksum(checksum_alt);
-
-        if (err)
-            return err;
-
-        offset += part_size;
-        err = cahute_read_from_file(file, offset++, &buf[1], 1);
-        if (err)
-            return err;
-
-        if (buf[1] != checksum && buf[1] != checksum_alt) {
-            msg(ll_error,
-                "In part %" CAHUTE_PRIuSIZE "/%" CAHUTE_PRIuSIZE
-                ": invalid checksum (obtained: 0x%02X, computed: 0x%02X)",
-                i + 1,
-                total_parts,
-                buf[1],
-                checksum);
-            return CAHUTE_ERROR_CORRUPT;
-        }
-    }
-
-    return CAHUTE_OK;
-}
-
-/**
- * Show a data description in a logging context.
- *
- * @param desc Data description to show.
- */
-CAHUTE_INLINE(void)
+CAHUTE_EXTERN(void)
 cahute_casiolink_log_data_description(
+    cahute_context *context,
     struct cahute_casiolink_data_description const *desc
-) {
-    msg(ll_info, "Data description was the following:");
-
-    {
-        char flags_buf[50], *p = flags_buf;
-
-        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_END) {
-            *p++ = ' ';
-            *p++ = '|';
-            *p++ = ' ';
-            *p++ = 'E';
-            *p++ = 'N';
-            *p++ = 'D';
-        }
-
-        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_FINAL) {
-            *p++ = ' ';
-            *p++ = '|';
-            *p++ = ' ';
-            *p++ = 'F';
-            *p++ = 'I';
-            *p++ = 'N';
-            *p++ = 'A';
-            *p++ = 'L';
-        }
-
-        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_AL) {
-            *p++ = ' ';
-            *p++ = '|';
-            *p++ = ' ';
-            *p++ = 'A';
-            *p++ = 'L';
-        }
-
-        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_AL_END) {
-            *p++ = ' ';
-            *p++ = '|';
-            *p++ = ' ';
-            *p++ = 'A';
-            *p++ = 'L';
-            *p++ = '_';
-            *p++ = 'E';
-            *p++ = 'N';
-            *p++ = 'D';
-        }
-
-        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_NO_LOG) {
-            *p++ = ' ';
-            *p++ = '|';
-            *p++ = ' ';
-            *p++ = 'N';
-            *p++ = 'O';
-            *p++ = '_';
-            *p++ = 'L';
-            *p++ = 'O';
-            *p++ = 'G';
-        }
-
-        if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_MDL) {
-            *p++ = ' ';
-            *p++ = '|';
-            *p++ = ' ';
-            *p++ = 'M';
-            *p++ = 'D';
-            *p++ = 'L';
-        }
-
-        *p = '\0';
-
-        msg(ll_info, "  Flags: %s", flags_buf[0] ? &flags_buf[3] : "(none)");
-    }
-
-    {
-        size_t part_count = desc->part_count,
-               last_part_repeat = desc->last_part_repeat;
-
-        if (part_count && !last_part_repeat) {
-            part_count--;
-            last_part_repeat = 1;
-        }
-
-        if (!part_count)
-            msg(ll_info, "  Part count: 0");
-        else {
-            char sizes[60], *p = sizes;
-            size_t i;
-
-            for (i = 0; i < part_count - 1; i++) {
-                sprintf(p, "%" CAHUTE_PRIuSIZE "o, ", desc->part_sizes[i]);
-                for (; *p; p++)
-                    ;
-            }
-
-            if (last_part_repeat > 1)
-                sprintf(
-                    p,
-                    "%" CAHUTE_PRIuSIZE "o (x%" CAHUTE_PRIuSIZE ")",
-                    desc->part_sizes[i],
-                    last_part_repeat
-                );
-            else
-                sprintf(p, "%" CAHUTE_PRIuSIZE "o", desc->part_sizes[i]);
-
-            msg(ll_info, "  Part count: %" CAHUTE_PRIuSIZE, part_count);
-            msg(ll_info, "  Part sizes: %s", sizes);
-        }
-    }
-}
+);
 
 CAHUTE_EXTERN(int)
 cahute_casiolink_decode_data(
@@ -1488,6 +1284,7 @@ CAHUTE_EXTERN(int) cahute_cas300_terminate(cahute_link *link);
 
 CAHUTE_EXTERN(int)
 cahute_cas300_make_device_info(
+    cahute_context *context,
     cahute_device_info **infop,
     cahute_u8 const *raw_info
 );
@@ -1629,6 +1426,7 @@ cahute_seven_ohp_receive_screen(
 
 CAHUTE_EXTERN(int)
 cahute_mcs_decode_data(
+    cahute_context *context,
     cahute_data **datap,
     cahute_u8 const *group,
     size_t group_size,

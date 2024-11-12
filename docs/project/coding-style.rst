@@ -121,6 +121,16 @@ are available:
     except on seeking / telling, which could cause problems where the
     computed file size does not match with the size of the actually read data.
 
+Memory
+------
+
+Cahute does not use global mutable variables; its only globals are constants,
+i.e. read-only, and mutable "global" variables are placed in contexts, so
+that different users of the Cahute library in the same process do not use
+the same resources.
+
+See :ref:`topic-contexts` for more information.
+
 .. _pre-commit: https://pre-commit.com/
 .. _clang-format: https://clang.llvm.org/docs/ClangFormat.html
 .. _Black: https://github.com/psf/black

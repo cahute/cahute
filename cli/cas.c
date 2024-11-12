@@ -33,27 +33,99 @@
 #define OUTPUT_ENCODING CAHUTE_TEXT_ENCODING_UTF8
 
 /**
+ * Logging function used when a debug file is set.
+ *
+ * This callback prints the logs on the file pointer provided as the
+ * cookie, with a format resembling the following output:
+ *
+ *     info: Without a function.
+ *     warning: With a user function.
+ *     error: With an int. function.
+ *
+ * @param filep File pointer.
+ * @param level Log level for the given message.
+ * @param func Name of the function.
+ * @param message Formatted message.
+ */
+static void log_to_debug_file(
+    FILE *filep,
+    int level,
+    char const *func,
+    char const *message
+) {
+    char const *level_name;
+
+    switch (level) {
+    case CAHUTE_LOGLEVEL_INFO:
+        level_name = "info";
+        break;
+    case CAHUTE_LOGLEVEL_WARNING:
+        level_name = "warning";
+        break;
+    case CAHUTE_LOGLEVEL_ERROR:
+        level_name = "error";
+        break;
+    case CAHUTE_LOGLEVEL_FATAL:
+        level_name = "fatal";
+        break;
+    case CAHUTE_LOGLEVEL_NONE:
+        level_name = "(none)";
+        break;
+    default:
+        level_name = "(unknown)";
+    }
+
+    fprintf(filep, "%s: %s\n", level_name, message);
+}
+
+/**
  * Read data.
  *
+ * @param context Cahute context.
  * @param args Parsed command-line to use to read.
  * @param datap Pointer to the data to read from the input.
  * @return Return code.
  */
-CAHUTE_LOCAL(int) read_data(struct args const *args, cahute_data **datap) {
+CAHUTE_LOCAL(int)
+read_data(
+    cahute_context *context,
+    struct args const *args,
+    cahute_data **datap
+) {
     int err, ret = 1;
 
     switch (args->in.type) {
     case MEDIUM_FILE: {
-        err = cahute_get_data_from_file(args->in.data.file.file, datap);
+        cahute_file *file;
 
+        err = cahute_open_file(
+            context,
+            &file,
+            0,
+            args->in.path,
+            CAHUTE_PATH_TYPE_CLI
+        );
+        if (err) {
+            fprintf(
+                stderr,
+                "Could not open input file (%s).\n",
+                cahute_get_error_name(err)
+            );
+            return 1;
+        }
+
+        err = cahute_get_data_from_file(file, datap);
         if (err) {
             fprintf(
                 stderr,
                 "Could not decode data (%s).\n",
                 cahute_get_error_name(err)
             );
+            cahute_close_file(file);
             goto fail;
         }
+
+        cahute_close_file(file);
         ret = 0;
     } break;
 
@@ -61,6 +133,7 @@ CAHUTE_LOCAL(int) read_data(struct args const *args, cahute_data **datap) {
         cahute_link *link;
 
         err = cahute_open_serial_link(
+            context,
             &link,
             CAHUTE_SERIAL_RECEIVER | args->in.data.com.serial_flags,
             args->in.path,
@@ -111,12 +184,17 @@ fail:
 /**
  * List data types.
  *
+ * @param context Cahute context.
  * @param args Parsed arguments.
  * @param data Data to list.
  * @return Return code.
  */
 CAHUTE_LOCAL(int)
-list_data_types(struct args const *args, cahute_data const *data) {
+list_data_types(
+    cahute_context *context,
+    struct args const *args,
+    cahute_data const *data
+) {
     printf("\n");
     for (; data; data = data->cahute_data_next) {
         switch (data->cahute_data_type) {
@@ -134,6 +212,7 @@ list_data_types(struct args const *args, cahute_data const *data) {
                     program_size
                 );
                 print_content(
+                    context,
                     data->cahute_data_content.cahute_data_content_program
                         .cahute_data_content_program_name,
                     program_name_size,
@@ -161,11 +240,17 @@ list_data_types(struct args const *args, cahute_data const *data) {
 /**
  * List data.
  *
+ * @param context Cahute context.
  * @param args Parsed arguments.
  * @param data Data to list.
  * @return Return code.
  */
-CAHUTE_LOCAL(int) list_data(struct args const *args, cahute_data const *data) {
+CAHUTE_LOCAL(int)
+list_data(
+    cahute_context *context,
+    struct args const *args,
+    cahute_data const *data
+) {
     int is_first = 1;
 
     for (; data; data = data->cahute_data_next, is_first = 0) {
@@ -180,6 +265,7 @@ CAHUTE_LOCAL(int) list_data(struct args const *args, cahute_data const *data) {
 
             printf("@@display program \"");
             print_content(
+                context,
                 data->cahute_data_content.cahute_data_content_program
                     .cahute_data_content_program_name,
                 data->cahute_data_content.cahute_data_content_program
@@ -192,6 +278,7 @@ CAHUTE_LOCAL(int) list_data(struct args const *args, cahute_data const *data) {
             if (program_password_size) {
                 printf(" (");
                 print_content(
+                    context,
                     data->cahute_data_content.cahute_data_content_program
                         .cahute_data_content_program_password,
                     program_password_size,
@@ -204,6 +291,7 @@ CAHUTE_LOCAL(int) list_data(struct args const *args, cahute_data const *data) {
                 printf("\n");
 
             print_content(
+                context,
                 data->cahute_data_content.cahute_data_content_program
                     .cahute_data_content_program_content,
                 data->cahute_data_content.cahute_data_content_program
@@ -223,12 +311,17 @@ CAHUTE_LOCAL(int) list_data(struct args const *args, cahute_data const *data) {
 /**
  * Write data.
  *
+ * @param context Cahute context.
  * @param args Parsed arguments.
  * @param data Data to list.
  * @return Return code.
  */
 CAHUTE_LOCAL(int)
-write_data(struct args const *args, cahute_data const *data) {
+write_data(
+    cahute_context *context,
+    struct args const *args,
+    cahute_data const *data
+) {
     /* TODO */
     fprintf(stderr, "Output not implemented.\n");
     return 1;
@@ -242,26 +335,40 @@ write_data(struct args const *args, cahute_data const *data) {
  */
 int main(int ac, char **av) {
     struct args args;
+    cahute_context *context = NULL;
     cahute_data *data = NULL;
     int ret = 1;
 
     if (!parse_args(ac, av, &args))
         return 0;
 
-    ret = read_data(&args, &data);
+    if (cahute_create_context(&context))
+        goto end;
+
+    if (args.debug_fp)
+        cahute_set_log_func(
+            context,
+            (cahute_log_func *)&log_to_debug_file,
+            args.debug_fp
+        );
+
+    if (args.log_level)
+        cahute_set_log_level(context, args.log_level);
+
+    ret = read_data(context, &args, &data);
     if (ret)
         goto end;
 
     /* TODO: Operate 'before' conversions here. */
 
     if (args.should_list_types) {
-        ret = list_data_types(&args, data);
+        ret = list_data_types(context, &args, data);
         if (ret)
             goto end;
     }
 
     if (args.should_list_files) {
-        ret = list_data(&args, data);
+        ret = list_data(context, &args, data);
         if (ret)
             goto end;
     }
@@ -274,7 +381,7 @@ int main(int ac, char **av) {
          * - If one screenshot ('SSMono' or 'SSCol'), use the '.bmp' format;
          * - Otherwise, use the '.ctf' format. */
 
-        ret = write_data(&args, data);
+        ret = write_data(context, &args, data);
         if (ret)
             goto end;
     }
@@ -283,6 +390,7 @@ int main(int ac, char **av) {
 
 end:
     cahute_destroy_data(data);
+    cahute_destroy_context(context);
     free_args(&args);
     return ret;
 }

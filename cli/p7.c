@@ -166,11 +166,16 @@ static int confirm_overwrite(void *cookie) {
  * This function also takes care of changing the serial attributes, if the
  * opened link is on a serial medium.
  *
+ * @param context Context in which the link must be opened.
  * @param linkp Pointer to the link to initialize.
  * @param args Parsed parameters to base ourselves on.
  * @return Cahute error, or CAHUTE_OK if everything is ok.
  */
-static int open_link(cahute_link **linkp, struct args const *args) {
+static int open_link(
+    cahute_context *context,
+    cahute_link **linkp,
+    struct args const *args
+) {
     cahute_link *link = NULL;
     int err;
     unsigned long flags;
@@ -184,6 +189,7 @@ static int open_link(cahute_link **linkp, struct args const *args) {
             flags |= CAHUTE_SERIAL_NOTERM;
 
         err = cahute_open_serial_link(
+            context,
             &link,
             flags,
             args->serial_name,
@@ -217,7 +223,7 @@ static int open_link(cahute_link **linkp, struct args const *args) {
     if (args->no_term)
         flags |= CAHUTE_USB_NOTERM;
 
-    if ((err = cahute_open_simple_usb_link(&link, flags)))
+    if ((err = cahute_open_simple_usb_link(context, &link, flags)))
         return err;
 
     *linkp = link;
@@ -327,6 +333,7 @@ static int print_device_info(cahute_link *link) {
  * @param av Argument values.
  */
 int main(int ac, char **av) {
+    cahute_context *context = NULL;
     cahute_link *link = NULL;
     struct args args;
     unsigned long flags;
@@ -335,12 +342,20 @@ int main(int ac, char **av) {
     if (!parse_args(ac, av, &args))
         return 0;
 
+    err = cahute_create_context(&context);
+    if (err)
+        goto fail;
+
+    if (args.loglevel)
+        set_log_level(context, args.loglevel);
+
     if (args.command == COMMAND_LIST_SERIAL) {
         /* The "list-devices" command does not require a link, and as such,
          * is processed here independently from the others. */
         int first = 0;
 
         err = cahute_detect_serial(
+            context,
             (cahute_detect_serial_entry_func *)print_serial_device,
             &first
         );
@@ -354,7 +369,7 @@ int main(int ac, char **av) {
     }
 
     /* Open the link using the provided args. */
-    err = open_link(&link, &args);
+    err = open_link(context, &link, &args);
     if (err)
         goto fail;
 
@@ -367,7 +382,26 @@ int main(int ac, char **av) {
         /* Nothing to do! */
         break;
 
-    case COMMAND_SEND:
+    case COMMAND_SEND: {
+        cahute_file *file;
+
+        err = cahute_open_file(
+            context,
+            &file,
+            0,
+            args.local_source_path,
+            CAHUTE_PATH_TYPE_CLI
+        );
+        if (err) {
+            fprintf(
+                stderr,
+                "Can't open '%s': %s\n",
+                args.local_source_path,
+                cahute_get_error_name(err)
+            );
+            goto fail;
+        }
+
         flags = CAHUTE_SEND_FILE_FLAG_OPTIMIZE;
         if (args.force)
             flags |=
@@ -379,13 +413,14 @@ int main(int ac, char **av) {
             args.distant_target_directory_name,
             args.distant_target_name,
             args.storage_name,
-            args.local_source_file,
+            file,
             &confirm_overwrite,
             NULL,
             args.nice_display ? (cahute_progress_func *)&display_progress : 0,
             &progress_displayed
         );
-        break;
+        cahute_close_file(file);
+    } break;
 
     case COMMAND_GET:
         err = cahute_request_file_from_storage(
@@ -449,10 +484,7 @@ int main(int ac, char **av) {
         puts("\b\b\b\b\b\bTransfer complete.");
 
     cahute_close_link(link);
-
-    if (args.local_source_file)
-        cahute_close_file(args.local_source_file);
-
+    cahute_destroy_context(context);
     return 0;
 
 fail:
@@ -463,13 +495,12 @@ fail:
     if (link)
         cahute_close_link(link);
 
-    /* If files have been opened when parsing args, we want to close them. */
-    if (args.local_source_file)
-        cahute_close_file(args.local_source_file);
-
     /* If a local target path was defined, we want to remove it. */
     if (args.local_target_path)
         remove(args.local_target_path);
+
+    if (context)
+        cahute_destroy_context(context);
 
     /* And now, to display an error corresponding to the obtained error. */
     switch (err) {
