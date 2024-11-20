@@ -297,8 +297,7 @@ You can now build the project using the following command::
     Both Windows XP and above as a target and this build method are not
     officially supported yet.
 
-    See `#10 <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_ and
-    `#32 <https://gitlab.com/cahuteproject/cahute/-/issues/32>`_ for
+    See `#10 <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_ for
     more information.
 
 It is possible to build Cahute for Windows XP and above, using Microsoft's
