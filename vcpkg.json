@@ -1,11 +1,9 @@
 {
-  "builtin-baseline": "821100d967e1737d96414a308e3f7cbe0d1abf18",
+  "builtin-baseline": "0857a4b08c14030bbe41e80accb2b1fddb047a74",
   "dependencies": [
     "libusb",
     "pkgconf",
     "python3",
-    "sdl2",
-    "vcpkg-get-python-packages",
-    "vcpkg-pkgconfig-get-modules"
+    "sdl2"
   ]
 }
