@@ -189,7 +189,7 @@ following command:
     Both Windows XP and above as a target and this build method are not
     officially supported yet.
 
-    See `#32 <https://gitlab.com/cahuteproject/cahute/-/issues/32>`_ for
+    See `10 <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_ for
     more information.
 
 Building Cahute for Windows XP and above from Linux distributions
@@ -350,6 +350,22 @@ resemble this:
 
     Visual Studio, after the repository was successfully loaded and configured.
 
+.. warning::
+
+    You may have the following error when configuring the project using CMake::
+
+        Could NOT find PkgConfig (missing: PKG_CONFIG_EXECUTABLE)
+
+    This is likely, in fact, an error with the vcpkg integration with Visual
+    Studio, as by default, packages are not installed and accessed.
+    In order to do this, as described in `Installing and using packages
+    (vcpkg)`_, you can either:
+
+    * Integrate ``vcpkg`` for all projects with Visual Studio, by running
+      ``vcpkg integrate install``;
+    * Only enable ``vcpkg`` by setting ``CMAKE_TOOLCHAIN_FILE`` manually in
+      the ``CMakeSettings.json`` to your vcpkg install's ``vcpkg.cmake``.
+
 From here, you can select the target you want to build next to the green arrow
 on the top, and the architecture you're targetting. By leaving the default
 (``x64-Debug``) and clicking on ``p7.exe``, we obtain the following:
@@ -415,6 +431,9 @@ run the command-line utilities from here with the options you want to test.
     vcpkg-is-now-included-with-visual-studio/
 .. _Install and use packages with CMake:
     https://learn.microsoft.com/en-us/vcpkg/get_started/get-started
+.. _Installing and using packages (vcpkg):
+    https://github.com/microsoft/vcpkg-docs/blob/main/vcpkg/examples/
+    installing-and-using-packages.md#-step-2-use
 
 .. |linux| image:: linux.svg
 .. |apple| image:: apple.svg
