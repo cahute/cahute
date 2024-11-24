@@ -13,7 +13,7 @@ pre-commit:
     script:
         - pre-commit run -v --all-files
 
-build (linux):
+build (x86_64-pc-linux-gnu):
     stage: build
     rules:
         - if: $CI_COMMIT_BRANCH == "develop"
@@ -26,16 +26,14 @@ build (linux):
           - "include/*"
           - "lib/*"
           - ".gitlab-ci.yml"
-    image: python:3.8-slim-bookworm
-    before_script:
-        - apt-get update -y
-        - apt-get install -y cmake pkg-config gcc libusb-1.0-0-dev libsdl2-dev
-        - pip install toml
+    image: registry.gitlab.com/cahuteproject/docker-images/x86_64-pc-linux-gnu:latest
     script:
-        - cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
-        - cmake --build build
+        - >
+            cmake -B build-x86_64-pc-linux-gnu -S .
+            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
+        - cmake --build build-x86_64-pc-linux-gnu
 
-build (i686-w64-mingw32):
+build (i686-w64-mingw32-msvcrt):
     stage: build
     rules:
         - if: $CI_COMMIT_BRANCH == "develop"
@@ -48,12 +46,14 @@ build (i686-w64-mingw32):
           - "include/*"
           - "lib/*"
           - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahuteproject/docker-images/mingw-w64:latest
+    image: registry.gitlab.com/cahuteproject/docker-images/i686-w64-mingw32-msvcrt:latest
     script:
-        - i686-w64-mingw32-cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
-        - cmake --build build
+        - >
+            cmake -B build-i686-w64-mingw32-msvcrt -S .
+            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
+        - cmake --build build-i686-w64-mingw32-msvcrt
 
-build (x86_64-w64-mingw32):
+build (i686-w64-mingw32-ucrt):
     stage: build
     rules:
         - if: $CI_COMMIT_BRANCH == "develop"
@@ -66,10 +66,52 @@ build (x86_64-w64-mingw32):
           - "include/*"
           - "lib/*"
           - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahuteproject/docker-images/mingw-w64:latest
+    image: registry.gitlab.com/cahuteproject/docker-images/i686-w64-mingw32-ucrt:latest
     script:
-        - x86_64-w64-mingw32-cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
-        - cmake --build build
+        - >
+            cmake -B build-i686-w64-mingw32-ucrt -S .
+            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
+        - cmake --build build-i686-w64-mingw32-ucrt
+
+build (x86_64-w64-mingw32-msvcrt):
+    stage: build
+    rules:
+        - if: $CI_COMMIT_BRANCH == "develop"
+        - if: $CI_COMMIT_TAG
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          changes:
+          - "chars/*"
+          - "cli/*"
+          - "common/*"
+          - "include/*"
+          - "lib/*"
+          - ".gitlab-ci.yml"
+    image: registry.gitlab.com/cahuteproject/docker-images/x86_64-w64-mingw32-msvcrt:latest
+    script:
+        - >
+            cmake -B build-x86_64-w64-mingw32-msvcrt -S .
+            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
+        - cmake --build build-x86_64-w64-mingw32-msvcrt
+
+build (x86_64-w64-mingw32-ucrt):
+    stage: build
+    rules:
+        - if: $CI_COMMIT_BRANCH == "develop"
+        - if: $CI_COMMIT_TAG
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          changes:
+          - "chars/*"
+          - "cli/*"
+          - "common/*"
+          - "include/*"
+          - "lib/*"
+          - ".gitlab-ci.yml"
+    image: registry.gitlab.com/cahuteproject/docker-images/x86_64-w64-mingw32-ucrt:latest
+    script:
+        - >
+            cmake -B build-x86_64-w64-mingw32-ucrt -S .
+            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
+        - cmake --build build-x86_64-w64-mingw32-ucrt
 
 build (m68k-amigaos):
     stage: build
