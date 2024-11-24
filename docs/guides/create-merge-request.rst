@@ -21,7 +21,7 @@ on the project's `Gitlab repository at gitlab.com/cahuteproject/cahute
 .. warning::
 
     While Cahute may have mirrors on other forges, such as `on Github
-    <Github mirror>`_, **only merge requests on Gitlab.com can be accepted**.
+    <Github mirror_>`_, **only merge requests on Gitlab.com can be accepted**.
 
 Setting up the environment
 --------------------------
