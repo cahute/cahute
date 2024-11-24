@@ -24,6 +24,7 @@ cmake_dependent_option(ENABLE_UDEV "Whether to install the udev rule or not."
 cmake_dependent_option(ENABLE_LIBUSB "Whether to use libusb or not."
     ON "NOT DEFINED FXSDK_PLATFORM AND NOT DEFINED AMIGA" OFF)
 set(LOGLEVEL $ENV{LOGLEVEL} CACHE STRING "Default logging level")
+set(UDEV_GROUP CACHE STRING "Group to set to udev rules")
 
 # TODO: CaS is in its very early stages and supports too few features
 # as of today to be useful installed on a target system. Once this is no
@@ -36,6 +37,10 @@ endif()
 
 if(NOT LOGLEVEL)
     set(LOGLEVEL "warning")
+endif()
+
+if(NOT UDEV_GROUP)
+    set(UDEV_GROUP "uucp")
 endif()
 
 # ---
@@ -275,6 +280,10 @@ endif()
 
 configure_file(misc/cahute.pc.in misc/cahute.pc ESCAPE_QUOTES @ONLY)
 
+if(ENABLE_UDEV)
+    configure_file(misc/60-casio-calculators.rules.in misc/60-casio-calculators.rules ESCAPE_QUOTES @ONLY)
+endif()
+
 # ---
 # Packaging options.
 # ---
@@ -307,7 +316,7 @@ endif()
 
 if(ENABLE_UDEV)
     install(
-        FILES ${CMAKE_CURRENT_SOURCE_DIR}/misc/60-casio-calculators.rules
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/60-casio-calculators.rules
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/udev/rules.d"
     )
 endif()

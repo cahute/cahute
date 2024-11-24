@@ -1,0 +1,3 @@
+ACTION=="add", ATTR{idVendor}=="07cf", ATTR{idProduct}=="6101", GROUP="@UDEV_GROUP@"
+ACTION=="add", ATTR{idVendor}=="07cf", ATTR{idProduct}=="6102", GROUP="@UDEV_GROUP@"
+ACTION=="add", ATTR{idVendor}=="07cf", ATTR{idProduct}=="6103", GROUP="@UDEV_GROUP@"
