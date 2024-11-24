@@ -41,6 +41,22 @@ the following options:
 
 The project is present in the "cahute-|version|" directory.
 
+.. warning::
+
+    If you are building the project in the context of the
+    :ref:`guide-create-merge-request` guide, these commands need to be
+    replaced by the following::
+
+        git clone <your-repo-url>
+
+    Where the repository's URL can be obtained through the ``Code`` button
+    on the Gitlab.com interface:
+
+    .. figure:: mr4.png
+
+        Gitlab.com's repository interface with "Code" selected, presenting
+        the options to clone the repository.
+
 .. note::
 
     Since you will not be using a packaged version of Cahute, the project won't

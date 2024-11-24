@@ -9,5 +9,7 @@ This section consists of multiple guides for solving specific problems.
     guides/install
     guides/build
     guides/report
+    guides/request-feature
     guides/package
     guides/contribute
+    guides/create-merge-request

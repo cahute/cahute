@@ -53,6 +53,8 @@ changelog.
     Creating a new entry in Releases_ will notify package maintainers and
     other manual users.
 
+.. _project-git-repository-structure:
+
 Git repository structure
 ------------------------
 
@@ -71,11 +73,27 @@ to be merged using fast-forward with no merge commit.
 Maintainers are allowed to push their work on the repository under branches
 prefixed by one of the following:
 
-* ``fix/``: If a fix is required for an issue, e.g.
-  ``fix/fix-bad-check-packet-type-on-special-mode``.
-* ``feat/``: For adding features such as adding a protocol, a file format,
-  an option, and so on.
-* ``refactor/``: For refactoring part of the code or documentation.
+``fix/``
+    Bug fixes, e.g. ``fix/fix-bad-check-packet-type-on-special-mode``.
+
+``feat/``
+    New features on code, e.g. ``feat/add-g1m-support``.
+
+``refactor/``
+    Code refactoring (excluding CI), e.g. ``refactor/remake-link-open``.
+
+``docs/``
+    Documentation only commits, e.g. ``docs/add-vs-build``.
+
+``ci/``
+    CI only commits, e.g. ``ci/add-amigaos-m68k-build``.
+
+``chore/``
+    Anything else.
+
+The branch name is determined based on the need that has spawned the branch
+itself, and should be reflected (at least in the first version) by the type of
+the most important commit(s) in the branch.
 
 Git commit messages must be named using the commit naming convention;
 see :ref:`project-commit-naming`.

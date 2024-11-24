@@ -96,29 +96,12 @@ Contributing code and documentation directly
 --------------------------------------------
 
 Finally, there is the more commonly found option to contribute code and
-documentation directly, through `merge requests`_. In this case, it is
-highly recommended you read the following sections before doing so:
+documentation directly, through merge requests.
 
-* :ref:`guide-build`;
-* :ref:`contribution-style` and :ref:`coding-style`.
-
-.. warning::
-
-    Since the `Github repository`_ is only a mirror, pull requests on it
-    will either be rejected or ignored; you need to make a merge request
-    on the `Gitlab repository`_ specifically.
-
-.. note::
-
-    Unless you are a maintainer, you will be required to fork the project
-    first. This also means you will need to run pipelines on your side,
-    since successful pipelines are a prerequisite to merging.
-
-    See `Gitlab CI/CD pipelines`_ for more information.
+See :ref:`guide-create-merge-request` for more information.
 
 .. _Github repository: https://github.com/thomas-touhey/cahute
 .. _Gitlab repository: https://gitlab.com/cahuteproject/cahute
 .. _Repository issues: https://gitlab.com/cahuteproject/cahute/-/issues
 .. _Merge requests: https://gitlab.com/cahuteproject/cahute/-/merge_requests
 .. _justsimply.dev: https://justsimply.dev/
-.. _`Gitlab CI/CD pipelines`: https://docs.gitlab.com/ee/ci/pipelines/
