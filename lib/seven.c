@@ -1369,7 +1369,14 @@ cahute_seven_receive_raw_data(
     for (i = 1; size; i++) {
         unsigned int read_packet_count, read_packet_i;
 
-        msg(ll_info, "Requesting packet %u/%u.", i, packet_count);
+        /* On the first iteration, ``packet_count`` is set to 0, as we do not
+         * know yet how much packets the splitting algorithm on the other
+         * end has produced. In order to avoid logging "packet 1/0", we
+         * emit a specific log for the first packet. */
+        if (!packet_count)
+            msg(ll_info, "Requesting first data packet.");
+        else
+            msg(ll_info, "Requesting packet %u/%u.", i, packet_count);
 
         err = cahute_seven_send_basic(
             link,
