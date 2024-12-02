@@ -492,8 +492,10 @@ class SystemListDirective(TwoLevelListDirective):
         :return: Obtained result.
         """
         container = system_list()
-        for icon_element, detail in elements:
+        for icon_element, detail, *links in elements:
             sys = system("")
+            detail = system_detail("", *detail)
+
             sys += [
                 system_icon(
                     "",
@@ -503,8 +505,16 @@ class SystemListDirective(TwoLevelListDirective):
                         for icon in icon_paragraph
                     ),
                 ),
-                system_detail("", *detail),
+                detail,
             ]
+            if links:
+                link_list = nodes.bullet_list("")
+                link_list += [
+                    nodes.list_item("", *link)
+                    for link in links
+                ]
+                detail += [link_list]
+
             container.append(sys)
 
         return container

@@ -21,6 +21,8 @@ instructions depends on the system you want to install it on.
     tweak the commands to point to the right executable in an absolute or
     relative fashion, e.g. ``/opt/cahute/bin/p7 info``.
 
+.. _install-osx:
+
 |apple| macOS, OS X
 -------------------
 
@@ -38,6 +40,8 @@ following command::
     The installation requires that no calculator is currently connected
     to your computer through USB; having one currently in receive mode may
     result in the installation failing.
+
+.. _install-aur:
 
 |archlinux| Archlinux, |manjaro| Manjaro Linux
 ----------------------------------------------
@@ -59,6 +63,8 @@ for access to serial and USB devices, by running the following command
 **as root** then restarting your session::
 
     usermod -a -G uucp <your-username>
+
+.. _install-giteapc:
 
 |lephe| GiteaPC
 ---------------

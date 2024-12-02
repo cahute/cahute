@@ -34,8 +34,13 @@ Officially supported systems are the following:
 
     * - |system-arch|
       - Archlinux_ and derivatives
+      - :ref:`Install from the AUR <install-aur>`
+      - :ref:`Install using GiteaPC <install-giteapc>`
+      - :ref:`Build natively <build-linux>`
     * - |system-apple|
       - macOS_
+      - :ref:`Install using Homebrew <install-osx>`
+      - :ref:`Build natively <build-osx>`
 
 .. note::
 
@@ -47,12 +52,22 @@ Officially supported systems are the following:
         * - |system-debian|
           - Debian_ and derivatives (`#8
             <https://gitlab.com/cahuteproject/cahute/-/issues/8>`_)
+          - :ref:`Install using GiteaPC <install-giteapc>`
+          - :ref:`Build natively <build-linux>`
+        * - |system-voidlinux|
+          - `Void Linux`_ (`#72
+            <https://gitlab.com/cahuteproject/cahute/-/issues/72>`_)
+          - :ref:`Install using GiteaPC <install-giteapc>`
+          - :ref:`Build natively <build-linux>`
         * - |system-win|
           - `Microsoft Windows`_ XP and above (`#10
             <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_)
+          - :ref:`Build using MinGW-w64 from Linux <build-mingw>`
+          - :ref:`Build natively using Visual Studio <build-visual-studio>`
         * - |system-amigaos|
           - AmigaOS_ 3.2 and above (`#26
             <https://gitlab.com/cahuteproject/cahute/-/issues/26>`_)
+          - :ref:`Build from Linux <build-amiga-gcc>`
 
 The project is being worked on `on Gitlab <Cahute on Gitlab_>`_.
 It is maintained by `Thomas Touhey`_. See :ref:`project-forums` for the
@@ -159,12 +174,14 @@ is based on.
 .. |system-apple| image:: guides/apple.svg
 .. |system-win| image:: guides/win.png
 .. |system-debian| image:: guides/debian.svg
+.. |system-voidlinux| image:: guides/voidlinux.svg
 .. |system-amigaos| image:: guides/amigaos.png
 
 .. _Archlinux: https://archlinux.org/
 .. _macOS: https://www.apple.com/macos/
 .. _Microsoft Windows: http://windows.microsoft.com/
 .. _Debian: https://www.debian.org/
+.. _Void Linux: https://voidlinux.org/
 .. _AmigaOS: https://www.amigaos.net/
 
 .. _Cahute on Gitlab: https://gitlab.com/cahuteproject/cahute
