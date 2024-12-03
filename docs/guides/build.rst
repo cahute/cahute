@@ -105,6 +105,16 @@ directory aside it, and install from it, by running the following commands:
 
 .. note::
 
+    While CMake uses ``-O3`` by default for the ``Release`` configuration,
+    this is `considered an undesired behaviour
+    <CMake Release undesired behaviour_>`_ by Cahute, hence Cahute overrides
+    it with ``-O2`` by default.
+
+    See :ref:`CMAKE_BUILD_TYPE <cmake-setting-cmake-build-type>` for more
+    information.
+
+.. note::
+
     If you want to install Cahute on your system directly, you can use the
     following command:
 
@@ -425,6 +435,9 @@ run the command-line utilities from here with the options you want to test.
 .. _Archlinux: https://archlinux.org/
 .. _paru: https://github.com/Morganamilo/paru
 .. _libusb 1.0.23: https://github.com/libusb/libusb/releases/tag/v1.0.23
+.. _CMake Release undesired behaviour:
+    https://wiki.archlinux.org/title/CMake_package_guidelines
+    #CMake_can_automatically_override_the_default_compiler_optimization_flag
 .. _Cross Compiling With CMake:
     https://cmake.org/cmake/help/book/mastering-cmake/chapter/
     Cross%20Compiling%20With%20CMake.html?highlight=mingw

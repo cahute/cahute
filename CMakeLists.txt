@@ -7,7 +7,6 @@ project(
     HOMEPAGE_URL "https://cahuteproject.org/"
     LANGUAGES C
 )
-set(PROJECT_ISSUES_URL "https://cahuteproject.org/guides/report.html")
 
 # ---
 # Options.
@@ -15,36 +14,100 @@ set(PROJECT_ISSUES_URL "https://cahuteproject.org/guides/report.html")
 
 include(CMakeDependentOption)
 
-cmake_dependent_option(ENABLE_CLI "Whether to enable building the utilities or not."
-    ON "NOT DEFINED FXSDK_PLATFORM" OFF)
-cmake_dependent_option(ENABLE_SDL "Whether to enable building SDL2 dependent utilities or not."
-    ON "NOT DEFINED AMIGA" OFF)
-cmake_dependent_option(ENABLE_UDEV "Whether to install the udev rule or not."
-    ON "NOT DEFINED FXSDK_PLATFORM AND NOT DEFINED AMIGA" OFF)
-cmake_dependent_option(ENABLE_LIBUSB "Whether to use libusb or not."
-    ON "NOT DEFINED FXSDK_PLATFORM AND NOT DEFINED AMIGA" OFF)
-set(LOGLEVEL $ENV{LOGLEVEL} CACHE STRING "Default logging level")
-set(UDEV_GROUP CACHE STRING "Group to set to udev rules")
-
-# TODO: CaS is in its very early stages and supports too few features
-# as of today to be useful installed on a target system. Once this is no
-# longer the case, this option will be ineffective.
-option(ENABLE_INCOMPLETE_CAS "Whether to build incomplete CaS or not." OFF)
-
-if(NOT "${LOGLEVEL}" MATCHES "|info|warning|error|fatal|none")
-    message(SEND_ERROR "LOGLEVEL should be one of [info, warning, error, fatal, none]")
+set(CAHUTE_DEFAULT_LOGLEVEL "warning" CACHE STRING
+    "Default logging level used when creating a context?")
+set_property(CACHE CAHUTE_DEFAULT_LOGLEVEL PROPERTY STRINGS
+    "info" "warning" "error" "fatal" "none")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set_property(CACHE CAHUTE_DEFAULT_LOGLEVEL PROPERTY VALUE "info")
 endif()
 
-if(NOT LOGLEVEL)
-    set(LOGLEVEL "warning")
+set(CAHUTE_CLI ON CACHE BOOL
+    "Enable command-line utilities?")
+if(DEFINED FXSDK_PLATFORM)
+    set_property(CACHE CAHUTE_CLI PROPERTY VALUE OFF)
 endif()
 
-if(NOT UDEV_GROUP)
-    set(UDEV_GROUP "uucp")
+set(CAHUTE_CLI_EXPERIMENTAL OFF CACHE BOOL
+    "Enable experimental command-line utilities?")
+
+set(CAHUTE_LIBUSB ON CACHE BOOL
+    "Enable usage of libusb?")
+if(DEFINED FXSDK_PLATFORM OR DEFINED AMIGA)
+    set_property(CACHE CAHUTE_LIBUSB PROPERTY VALUE OFF)
 endif()
+
+set(CAHUTE_PKGCONF ON CACHE BOOL
+    "Enable installation of pkgconf files?")
+
+set(CAHUTE_REPORT_URL "https://cahuteproject.org/guides/report.html"
+    CACHE STRING "Bug report guide URL?")
+
+set(CAHUTE_SDL ON CACHE BOOL
+    "Enable usage of SDL?")
+if(DEFINED FXSDK_PLATFORM OR DEFINED AMIGA)
+    set_property(CACHE CAHUTE_SDL PROPERTY VALUE OFF)
+endif()
+
+set(CAHUTE_UDEV OFF CACHE BOOL
+    "Enable installation of udev rule?")
+if(LINUX)
+    set_property(CACHE CAHUTE_UDEV PROPERTY VALUE ON)
+endif()
+
+set(CAHUTE_UDEV_GROUP "uucp" CACHE STRING
+    "Name of the group inserted into the udev rule?")
 
 # ---
-# Other options.
+# Feature switches.
+# ---
+
+cmake_dependent_option(CAHUTE_FEATURE_CLI_CAS
+    "Enable CaS target?"
+    ON "CAHUTE_CLI AND CAHUTE_CLI_EXPERIMENTAL" OFF)
+
+cmake_dependent_option(CAHUTE_FEATURE_CLI_P7
+    "Enable p7 target?"
+    ON "CAHUTE_CLI" OFF)
+
+cmake_dependent_option(CAHUTE_FEATURE_CLI_P7OS
+    "Enable p7os target?"
+    ON "CAHUTE_CLI" OFF)
+
+cmake_dependent_option(CAHUTE_FEATURE_CLI_P7SCREEN
+    "Enable p7screen target?"
+    ON "CAHUTE_CLI AND CAHUTE_SDL" OFF)
+
+cmake_dependent_option(CAHUTE_FEATURE_CLI_XFER9860
+    "Enable xfer9860 target?"
+    ON "CAHUTE_CLI" OFF)
+
+set(CAHUTE_FEATURE_LIB_HEADERS ON CACHE BOOL
+    "Enable Cahute headers?")
+
+set(CAHUTE_FEATURE_LIB_PKGCONF ON CACHE BOOL
+    "Enable Cahute pkgconf / pkg-config files?")
+
+set(CAHUTE_FEATURE_LIB_STATIC ON CACHE BOOL
+    "Enable Cahute (static library) target?")
+
+cmake_dependent_option(CAHUTE_FEATURE_UDEV
+    "Enable udev rules?"
+    ON "CAHUTE_UDEV" OFF)
+
+mark_as_advanced(
+    CAHUTE_FEATURE_CLI_CAS
+    CAHUTE_FEATURE_CLI_P7
+    CAHUTE_FEATURE_CLI_P7OS
+    CAHUTE_FEATURE_CLI_P7SCREEN
+    CAHUTE_FEATURE_CLI_XFER9860
+    CAHUTE_FEATURE_LIB_HEADERS
+    CAHUTE_FEATURE_LIB_PKGCONF
+    CAHUTE_FEATURE_LIB_STATIC
+    CAHUTE_FEATURE_UDEV)
+
+# ---
+# Packaging options.
 # ---
 
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}")
@@ -63,56 +126,86 @@ set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
 set(CPACK_VERBATIM_VARIABLES true)
 include(CPack)
 
-string(TOUPPER ${LOGLEVEL} DEFAULT_LOGLEVEL)
+# ---
+# Common definitions.
+# ---
+# Cahute is developed against ANSI C / ISO C90, we want to enforce this as
+# much as possible to ensure that we stay compatible.
+set(CMAKE_C_STANDARD 90)
 
+# CMake defines "-O3" by default for the Release target.
+# This is very unsafe, so we force "-O2" instead.
+set(CMAKE_C_FLAGS_RELEASE -O2)
+
+# We want to add as much warnings as we can to all targets.
+if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(/W4)
+elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(
+        -Wall -Wextra -Wno-c99-extensions -Wc23-extensions
+    )
+else()
+    add_compile_options(
+        -Wall -Wextra -Wno-unused-macros
+        -Wshadow -Wwrite-strings -Wredundant-decls -Wformat -Wformat-nonliteral
+        -Wformat-security -Wimplicit-function-declaration
+        -Wdate-time -Wmissing-prototypes -Wreturn-type -Wpointer-arith
+        -Wstack-protector -Wno-unused-parameter
+    )
+endif()
+
+# In addition to PROJECT_VERSION*, we define PROJECT_VERSION_HEX as the "0x"
+# prefixed hexadecimal version of the number, so that <cahute/config.h>
+# can include it.
 execute_process(
-  COMMAND printf "0x%02X%02X0000" ${PROJECT_VERSION_MAJOR} ${PROJECT_VERSION_MINOR}
-  OUTPUT_VARIABLE PROJECT_VERSION_HEX
+    COMMAND printf
+        "0x%02X%02X0000"
+        ${PROJECT_VERSION_MAJOR} ${PROJECT_VERSION_MINOR}
+    OUTPUT_VARIABLE PROJECT_VERSION_HEX
 )
 
-configure_file(include/cahute/config.h.in include/cahute/config.h ESCAPE_QUOTES)
+# config.h.in actually requires the loglevel to be uppercase, but we kept
+# the option lowercase to be consistent with the command-line utility options,
+# so we need to produce an uppercase variable.
+string(TOUPPER ${CAHUTE_DEFAULT_LOGLEVEL} CAHUTE_DEFAULT_LOGLEVEL_UPPER)
 
-add_custom_target(lint COMMAND pre-commit run --all-files)
-
-# ---
-# Build options.
-# ---
-# Here, for portability, we define the following variables:
-#
-#   LIB_INCLUDE_DIRS
-#      Include directories for the library.
-#
-#   LIB_COMPILE_DEFS
-#      Compile definitions for the library.
-#
-#   CLI_INCLUDE_DIRS
-#      Include directories for the command-line utilities.
-#
-#   CLI_LIBRARIES
-#      Additional libraries for the command-line utilities.
-#
-#   PKGCONFIG_DEPS
-#      pkg-config additional dependencies.
-
+# LIB_INCLUDE_DIRS represents the directories to include in order to compile
+# the library.
 set(LIB_INCLUDE_DIRS
     "${CMAKE_CURRENT_BINARY_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/common"
 )
+
+# LIB_COMPILE_DEFS represents the additional defines to pass to the compiler
+# while compiling library, as compiler options ("-DXYZ=ABC").
+set(LIB_COMPILE_DEFS "")
+
+# CLI_INCLUDE_DIRS represent the directories to include in order to compile
+# any command-line utility.
 set(CLI_INCLUDE_DIRS
     "${CMAKE_CURRENT_BINARY_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/common"
 )
+
+# CLI_LIBRARIES represent the libraries against which to link for any
+# command-line utility.
 set(CLI_LIBRARIES
-    ${PROJECT_NAME}
+    cahute
 )
+
+# PKGCONFIG_DEPS represent the additional dependencies to place in the
+# pkgconf / pkg-config configuration file when installing the library.
 set(PKGCONFIG_DEPS "")
-set(LIB_COMPILE_DEFS "")
 
 include(GNUInstallDirs)
 include(CheckTypeSize)
-find_package(PkgConfig REQUIRED)
+
+if(CAHUTE_LIBUSB)
+    find_package(PkgConfig REQUIRED)
+endif()
+
 find_package(Python3 REQUIRED)
 
 if(WIN32 OR MINGW)
@@ -120,11 +213,11 @@ if(WIN32 OR MINGW)
     set(SDL2_NO_MWINDOWS 1)
 endif()
 
-if(ENABLE_CLI AND ENABLE_SDL)
+if(CAHUTE_FEATURE_CLI_P7SCREEN)
     find_package(SDL2 REQUIRED)
 endif()
 
-if(ENABLE_LIBUSB)
+if(CAHUTE_LIBUSB)
     pkg_check_modules(libusb REQUIRED libusb-1.0 IMPORTED_TARGET)
     list(APPEND LIB_INCLUDE_DIRS
         "${libusb_INCLUDE_DIRS}"
@@ -144,23 +237,6 @@ else()
     )
 endif()
 
-set(CMAKE_C_STANDARD 90)
-if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-    add_compile_options(/W4)
-elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
-    add_compile_options(
-        -Wall -Wextra -Wno-c99-extensions -Wc23-extensions
-    )
-else()
-    add_compile_options(
-        -Wall -Wextra -Wno-unused-macros -Wno-vla
-        -Wshadow -Wwrite-strings -Wredundant-decls -Wformat -Wformat-nonliteral
-        -Wformat-security -Wimplicit-function-declaration
-        -Wdate-time -Wmissing-prototypes -Wreturn-type -Wpointer-arith
-        -Wstack-protector -Wno-unused-parameter
-    )
-endif()
-
 check_type_size("ssize_t" "SIZEOF_SIZE_T")
 if(SIZEOF_SIZE_T STREQUAL "")
     check_type_size("size_t" "SIZEOF_SIZE_T" BUILTIN_TYPES_ONLY)
@@ -175,70 +251,99 @@ add_compile_definitions(
 )
 
 # ---
-# Target definitions.
+# Feature definitions.
 # ---
 
-add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/cli/fxremote-update.exe.bin.c"
-    COMMAND "${Python3_EXECUTABLE}" ${CMAKE_SOURCE_DIR}/misc/process_bin.py
-        "${CMAKE_CURRENT_BINARY_DIR}/cli/fxremote-update.exe.bin.c"
-        "${CMAKE_SOURCE_DIR}/cli/fxremote-update.exe.bin"
-    DEPENDS cli/fxremote-update.exe.bin misc/process_bin.py
-    VERBATIM
-)
+if(CAHUTE_FEATURE_LIB_HEADERS)
+    configure_file(include/cahute/config.h.in include/cahute/config.h ESCAPE_QUOTES)
 
-add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
-    COMMAND "${Python3_EXECUTABLE}" ${CMAKE_SOURCE_DIR}/chars/process_chars.py
+    install(
+        DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" "${CMAKE_CURRENT_BINARY_DIR}/include/"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/cahute-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+        FILES_MATCHING PATTERN "*.h"
+    )
+endif()
+
+if(CAHUTE_FEATURE_LIB_STATIC)
+    add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
+        COMMAND "${Python3_EXECUTABLE}" ${CMAKE_SOURCE_DIR}/chars/process_chars.py
+            "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
+        DEPENDS chars/process_chars.py chars/chars.toml
+        VERBATIM
+    )
+
+    add_library(cahute STATIC
+        lib/cas40.c
+        lib/cas50.c
+        lib/cas100.c
+        lib/cas300.c
+        lib/casiolink.c
+        lib/cdefs.c
         "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
-    DEPENDS chars/process_chars.py chars/chars.toml
-    VERBATIM
-)
+        lib/context.c
+        lib/data.c
+        lib/detection.c
+        lib/file.c
+        lib/filemedium.c
+        lib/fileopen.c
+        lib/link.c
+        lib/linkmedium.c
+        lib/linkopen.c
+        lib/logging.c
+        lib/mcs.c
+        lib/misc.c
+        lib/path.c
+        lib/picture.c
+        lib/seven.c
+        lib/seven_ohp.c
+        lib/text.c
+    )
+    target_include_directories(cahute PRIVATE
+        ${LIB_INCLUDE_DIRS}
+        "${CMAKE_SOURCE_DIR}/lib")
+    target_compile_definitions(cahute PRIVATE ${LIB_COMPILE_DEFS})
 
-add_library(${PROJECT_NAME} STATIC
-    lib/cas40.c
-    lib/cas50.c
-    lib/cas100.c
-    lib/cas300.c
-    lib/casiolink.c
-    lib/cdefs.c
-    "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
-    lib/context.c
-    lib/data.c
-    lib/detection.c
-    lib/file.c
-    lib/filemedium.c
-    lib/fileopen.c
-    lib/link.c
-    lib/linkmedium.c
-    lib/linkopen.c
-    lib/logging.c
-    lib/mcs.c
-    lib/misc.c
-    lib/path.c
-    lib/picture.c
-    lib/seven.c
-    lib/seven_ohp.c
-    lib/text.c
-)
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${LIB_INCLUDE_DIRS}
-    "${CMAKE_SOURCE_DIR}/lib")
-target_compile_definitions(${PROJECT_NAME} PRIVATE ${LIB_COMPILE_DEFS})
+    install(TARGETS cahute ARCHIVE)
+endif()
 
-if(ENABLE_CLI)
-    if(ENABLE_INCOMPLETE_CAS)
-        add_executable(CaS
-            cli/cas.c
-            cli/cas_args.c
-            cli/casrc.c
-            cli/common.c
-            cli/options.c
-        )
-        target_link_libraries(CaS PRIVATE ${CLI_LIBRARIES})
-        target_include_directories(CaS PRIVATE ${CLI_INCLUDE_DIRS})
-    endif()
+if(CAHUTE_FEATURE_LIB_PKGCONF)
+    configure_file(misc/cahute.pc.in misc/cahute.pc ESCAPE_QUOTES @ONLY)
 
+    install(
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/cahute.pc
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
+    )
+endif()
+
+if(CAHUTE_FEATURE_UDEV)
+    configure_file(
+        misc/60-casio-calculators.rules.in
+        misc/60-casio-calculators.rules
+        ESCAPE_QUOTES
+        @ONLY)
+
+    install(
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/60-casio-calculators.rules
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/udev/rules.d"
+    )
+endif()
+
+if(CAHUTE_FEATURE_CLI_CAS)
+    add_executable(CaS
+        cli/cas.c
+        cli/cas_args.c
+        cli/casrc.c
+        cli/common.c
+        cli/options.c
+    )
+    target_link_libraries(CaS PRIVATE ${CLI_LIBRARIES})
+    target_include_directories(CaS PRIVATE ${CLI_INCLUDE_DIRS})
+
+    install(TARGETS CaS RUNTIME)
+endif()
+
+if(CAHUTE_FEATURE_CLI_P7)
     add_executable(p7
         cli/p7.c
         cli/p7_args.c
@@ -247,6 +352,19 @@ if(ENABLE_CLI)
     )
     target_link_libraries(p7 PRIVATE ${CLI_LIBRARIES})
     target_include_directories(p7 PRIVATE ${CLI_INCLUDE_DIRS})
+
+    install(TARGETS p7 RUNTIME)
+endif()
+
+if(CAHUTE_FEATURE_CLI_P7OS)
+    add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/cli/fxremote-update.exe.bin.c"
+        COMMAND "${Python3_EXECUTABLE}" ${CMAKE_SOURCE_DIR}/misc/process_bin.py
+            "${CMAKE_CURRENT_BINARY_DIR}/cli/fxremote-update.exe.bin.c"
+            "${CMAKE_SOURCE_DIR}/cli/fxremote-update.exe.bin"
+        DEPENDS cli/fxremote-update.exe.bin misc/process_bin.py
+        VERBATIM
+    )
 
     add_executable(p7os
         cli/p7os.c
@@ -258,23 +376,29 @@ if(ENABLE_CLI)
     target_link_libraries(p7os PRIVATE ${CLI_LIBRARIES})
     target_include_directories(p7os PRIVATE ${CLI_INCLUDE_DIRS})
 
-    if(ENABLE_SDL)
-        add_executable(p7screen
-            cli/p7screen.c
-            cli/p7screen_args.c
-            cli/common.c
-            cli/options.c
-        )
-        target_link_libraries(p7screen PRIVATE
-            ${CLI_LIBRARIES}
-            ${SDL2_LIBRARIES}
-        )
-        target_include_directories(p7screen PRIVATE
-            ${CLI_INCLUDE_DIRS}
-            ${SDL2_INCLUDE_DIRS}
-        )
-    endif()
+    install(TARGETS p7os RUNTIME)
+endif()
 
+if(CAHUTE_FEATURE_CLI_P7SCREEN)
+    add_executable(p7screen
+        cli/p7screen.c
+        cli/p7screen_args.c
+        cli/common.c
+        cli/options.c
+    )
+    target_link_libraries(p7screen PRIVATE
+        ${CLI_LIBRARIES}
+        ${SDL2_LIBRARIES}
+    )
+    target_include_directories(p7screen PRIVATE
+        ${CLI_INCLUDE_DIRS}
+        ${SDL2_INCLUDE_DIRS}
+    )
+
+    install(TARGETS p7screen RUNTIME)
+endif()
+
+if(CAHUTE_FEATURE_CLI_XFER9860)
     add_executable(xfer9860
         cli/xfer9860.c
         cli/xfer9860_args.c
@@ -283,47 +407,6 @@ if(ENABLE_CLI)
     )
     target_link_libraries(xfer9860 PRIVATE ${CLI_LIBRARIES})
     target_include_directories(xfer9860 PRIVATE ${CLI_INCLUDE_DIRS})
-endif()
-
-configure_file(misc/cahute.pc.in misc/cahute.pc ESCAPE_QUOTES @ONLY)
-
-if(ENABLE_UDEV)
-    configure_file(misc/60-casio-calculators.rules.in misc/60-casio-calculators.rules ESCAPE_QUOTES @ONLY)
-endif()
-
-# ---
-# Packaging options.
-# ---
-
-install(TARGETS ${PROJECT_NAME} ARCHIVE)
-install(
-    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" "${CMAKE_CURRENT_BINARY_DIR}/include/"
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
-    FILES_MATCHING PATTERN "*.h"
-)
-install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/cahute.pc
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
-)
-
-if(ENABLE_CLI)
-    install(TARGETS p7 RUNTIME)
-    install(TARGETS p7os RUNTIME)
-
-    if(ENABLE_SDL)
-        install(TARGETS p7screen RUNTIME)
-    endif()
 
     install(TARGETS xfer9860 RUNTIME)
-
-    if(ENABLE_INCOMPLETE_CAS)
-        install(TARGETS CaS RUNTIME)
-    endif()
-endif()
-
-if(ENABLE_UDEV)
-    install(
-        FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/60-casio-calculators.rules
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/udev/rules.d"
-    )
 endif()

@@ -149,6 +149,7 @@ basic understanding of key concepts.
 
     cli
     headers
+    cmake
 
 Project management
 ------------------
