@@ -62,6 +62,17 @@ The following variables are specific to Cahute.
 ``CAHUTE_CLI_EXPERIMENTAL``
     Enable experimental / unfinished command-line utilities.
 
+``CAHUTE_GIT``
+    Include git_\ -related information to the built targets, i.e. if the
+    source directory is a git repository with at least one commit on the
+    current branch, the following macros will be defined and included in
+    the headers:
+
+    * :c:macro:`CAHUTE_GIT_COMMIT`;
+    * :c:macro:`CAHUTE_GIT_BRANCH`;
+    * :c:macro:`CAHUTE_GIT_TAGGED`;
+    * :c:macro:`CAHUTE_GIT_DIRTY`.
+
 ``CAHUTE_LIBUSB``
     Enable the use of libusb_.
 
@@ -169,6 +180,7 @@ configuration on or off directly.
     https://wiki.archlinux.org/title/CMake_package_guidelines
     #CMake_can_automatically_override_the_default_compiler_optimization_flag
 
+.. _git: https://git-scm.com/
 .. _libusb: https://libusb.info/
 .. _SDL: https://libsdl.org/
 .. _pkgconf: https://github.com/pkgconf/pkgconf

@@ -31,6 +31,9 @@ endif()
 set(CAHUTE_CLI_EXPERIMENTAL OFF CACHE BOOL
     "Enable experimental command-line utilities?")
 
+set(CAHUTE_GIT ON CACHE BOOL
+    "Include git-related information if available?")
+
 set(CAHUTE_LIBUSB ON CACHE BOOL
     "Enable usage of libusb?")
 if(DEFINED FXSDK_PLATFORM OR DEFINED AMIGA)
@@ -154,16 +157,6 @@ else()
     )
 endif()
 
-# In addition to PROJECT_VERSION*, we define PROJECT_VERSION_HEX as the "0x"
-# prefixed hexadecimal version of the number, so that <cahute/config.h>
-# can include it.
-execute_process(
-    COMMAND printf
-        "0x%02X%02X0000"
-        ${PROJECT_VERSION_MAJOR} ${PROJECT_VERSION_MINOR}
-    OUTPUT_VARIABLE PROJECT_VERSION_HEX
-)
-
 # LIB_INCLUDE_DIRS represents the directories to include in order to compile
 # the library.
 set(LIB_INCLUDE_DIRS
@@ -251,7 +244,34 @@ add_compile_definitions(
 # ---
 
 if(CAHUTE_FEATURE_LIB_HEADERS)
-    configure_file(include/cahute/config.h.in include/cahute/config.h ESCAPE_QUOTES)
+    FILE(GLOB_RECURSE CAHUTE_HEADERS
+        RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "*.h")
+
+    add_custom_target(
+        cahute-config-header
+        COMMAND ${CMAKE_COMMAND}
+            -DCAHUTE_GIT="${CAHUTE_GIT}"
+            -DCAHUTE_CONFIG_CHECK=1
+            -DCAHUTE_GIT_CACHE_PATH="${CMAKE_CURRENT_BINARY_DIR}/git-hash.txt"
+            -DCAHUTE_CONFIG_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
+            -DPROJECT_VERSION="${PROJECT_VERSION}"
+            -DPROJECT_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
+            -DPROJECT_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
+            -DPROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}"
+            -DCAHUTE_REPORT_URL="${CAHUTE_REPORT_URL}"
+            -P misc/CahuteConfig.cmake
+        DEPENDS include/cahute/config.h.in
+        BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
+    add_custom_target(cahute-headers
+        SOURCES
+            include/cahute/cdefs.h
+            "${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
+            include/cahute/context.h
+    )
 
     install(
         DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" "${CMAKE_CURRENT_BINARY_DIR}/include/"
@@ -295,6 +315,7 @@ if(CAHUTE_FEATURE_LIB_STATIC)
         lib/seven_ohp.c
         lib/text.c
     )
+    add_dependencies(cahute cahute-headers)
     target_include_directories(cahute PRIVATE
         ${LIB_INCLUDE_DIRS}
         "${CMAKE_SOURCE_DIR}/lib")
