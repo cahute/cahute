@@ -30,6 +30,7 @@
 #define CAS_H 1
 #include <stdio.h>
 #include <cahute.h>
+#include "common.h"
 
 /* Model. */
 #define MODEL_UNKNOWN 0

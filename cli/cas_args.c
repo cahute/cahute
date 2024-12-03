@@ -35,15 +35,11 @@
 #include <string.h>
 #include <ctype.h>
 
-#define BANNER \
-    "CaS - from Cahute v" CAHUTE_VERSION " (licensed under CeCILL 2.1)"
-
-static char const version_message[] = BANNER
-    "\n"
-    "\n"
-    "This is free software; see the source for copying conditions.\n"
-    "There is NO warranty; not even for MERCHANTABILITY or\n"
-    "FITNESS FOR A PARTICULAR PURPOSE.\n";
+static char const version_message[] = MAKE_BANNER("CaS"
+) "\n"
+  "This is free software; see the source for copying conditions.\n"
+  "There is NO warranty; not even for MERCHANTABILITY or\n"
+  "FITNESS FOR A PARTICULAR PURPOSE.\n";
 
 static char const help_message[] =
     "Usage: %s\n"
@@ -635,7 +631,7 @@ int parse_args(int argc, char **argv, struct args *args) {
     }
 
     if (args->verbose)
-        fprintf(stderr, BANNER ".\n");
+        fprintf(stderr, MAKE_BANNER("CaS"));
 
     if (debug_path) {
         if (args->debug_fp)

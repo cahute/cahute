@@ -31,6 +31,25 @@
 #include <cahute.h>
 #include <compat.h>
 
+#if defined(CAHUTE_GIT_COMMIT) && !CAHUTE_GIT_TAGGED
+# if CAHUTE_GIT_DIRTY
+#  define MAKE_BANNER(NAME) \
+      NAME " - from Cahute v" CAHUTE_VERSION \
+           " (licensed under CeCILL 2.1)\n" \
+           "from git commit " CAHUTE_GIT_COMMIT \
+           "-dirty on " CAHUTE_GIT_BRANCH ".\n"
+# else
+#  define MAKE_BANNER(NAME) \
+      NAME " - from Cahute v" CAHUTE_VERSION \
+           " (licensed under CeCILL 2.1)\n" \
+           "from git commit " CAHUTE_GIT_COMMIT " on " CAHUTE_GIT_BRANCH \
+           ".\n"
+# endif
+#else
+# define MAKE_BANNER(NAME) \
+     NAME " - from Cahute v" CAHUTE_VERSION " (licensed under CeCILL 2.1)\n"
+#endif
+
 extern void set_log_level(cahute_context *context, char const *loglevel);
 
 extern void print_content(

@@ -29,6 +29,7 @@
 #ifndef XFER9860_H
 #define XFER9860_H 1
 #include <cahute.h>
+#include "common.h"
 
 #define OPERATION_UPLOAD   1
 #define OPERATION_DOWNLOAD 2

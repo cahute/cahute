@@ -32,18 +32,15 @@
 #include <errno.h>
 #include "p7os.h"
 #include "options.h"
-#include "common.h"
 
 extern size_t const cahute_fxremote_update_exe_size;
 extern cahute_u8 const cahute_fxremote_update_exe[];
 
-static char const version_message[] =
-    "p7os - from Cahute v" CAHUTE_VERSION
-    " (licensed under CeCILL 2.1)\n"
-    "\n"
-    "This is free software; see the source for copying conditions.\n"
-    "There is NO warranty; not even for MERCHANTABILITY or\n"
-    "FITNESS FOR A PARTICULAR PURPOSE.\n";
+static char const version_message[] = MAKE_BANNER("p7os"
+) "\n"
+  "This is free software; see the source for copying conditions.\n"
+  "There is NO warranty; not even for MERCHANTABILITY or\n"
+  "FITNESS FOR A PARTICULAR PURPOSE.\n";
 
 static char const help_main[] =
     "Usage: %s\n"

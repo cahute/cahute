@@ -31,13 +31,11 @@
 #include <ctype.h>
 #include "options.h"
 
-static char const version_message[] =
-    "p7screen - from Cahute v" CAHUTE_VERSION
-    " (licensed under CeCILL 2.1)\n"
-    "\n"
-    "This is free software; see the source for copying conditions.\n"
-    "There is NO warranty; not even for MERCHANTABILITY or\n"
-    "FITNESS FOR A PARTICULAR PURPOSE.";
+static char const version_message[] = MAKE_BANNER("p7screen"
+) "\n"
+  "This is free software; see the source for copying conditions.\n"
+  "There is NO warranty; not even for MERCHANTABILITY or\n"
+  "FITNESS FOR A PARTICULAR PURPOSE.";
 
 static char const help_message[] =
     "Usage: %s\n"

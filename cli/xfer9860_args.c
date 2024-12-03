@@ -32,16 +32,14 @@
 #include "common.h"
 #include "options.h"
 
-static char const about_message[] =
-    "xfer9860 - from Cahute v" CAHUTE_VERSION
-    " (licensed under CeCILL 2.1)\n"
-    "\n"
-    "This utility is a reimplementation of the utility originally made\n"
-    "by Andreas Bertheussen, Manuel Naranjo and Bruno L. Alata in 2007.\n"
-    "\n"
-    "This is free software; see the source for copying conditions.\n"
-    "There is NO warranty; not even for MERCHANTABILITY or\n"
-    "FITNESS FOR A PARTICULAR PURPOSE.\n";
+static char const about_message[] = MAKE_BANNER("xfer9860"
+) "\n"
+  "This utility is a reimplementation of the utility originally made\n"
+  "by Andreas Bertheussen, Manuel Naranjo and Bruno L. Alata in 2007.\n"
+  "\n"
+  "This is free software; see the source for copying conditions.\n"
+  "There is NO warranty; not even for MERCHANTABILITY or\n"
+  "FITNESS FOR A PARTICULAR PURPOSE.\n";
 
 static char const help_message[] =
     "Usage: %s [-h] [-a] [-t <throttle>] ...\n"

@@ -29,6 +29,8 @@
 #ifndef P7OS_H
 #define P7OS_H 1
 #include <cahute.h>
+#include "common.h"
+
 #define COMMAND_NONE   0
 #define COMMAND_BACKUP 1
 #define COMMAND_FLASH  2
