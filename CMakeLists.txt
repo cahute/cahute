@@ -164,11 +164,6 @@ execute_process(
     OUTPUT_VARIABLE PROJECT_VERSION_HEX
 )
 
-# config.h.in actually requires the loglevel to be uppercase, but we kept
-# the option lowercase to be consistent with the command-line utility options,
-# so we need to produce an uppercase variable.
-string(TOUPPER ${CAHUTE_DEFAULT_LOGLEVEL} CAHUTE_DEFAULT_LOGLEVEL_UPPER)
-
 # LIB_INCLUDE_DIRS represents the directories to include in order to compile
 # the library.
 set(LIB_INCLUDE_DIRS
@@ -179,7 +174,8 @@ set(LIB_INCLUDE_DIRS
 
 # LIB_COMPILE_DEFS represents the additional defines to pass to the compiler
 # while compiling library, as compiler options ("-DXYZ=ABC").
-set(LIB_COMPILE_DEFS "")
+string(TOUPPER ${CAHUTE_DEFAULT_LOGLEVEL} CAHUTE_DEFAULT_LOGLEVEL_UPPER)
+set(LIB_COMPILE_DEFS "-DCAHUTE_DEFAULT_LOGLEVEL=CAHUTE_LOGLEVEL_${CAHUTE_DEFAULT_LOGLEVEL_UPPER}")
 
 # CLI_INCLUDE_DIRS represent the directories to include in order to compile
 # any command-line utility.

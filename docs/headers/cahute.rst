@@ -5,6 +5,7 @@
     :maxdepth: 1
 
     cahute/cdefs
+    cahute/config
     cahute/context
     cahute/data
     cahute/detection
