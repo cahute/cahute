@@ -34,13 +34,13 @@ Officially supported systems are the following:
 
     * - |system-arch|
       - Archlinux_ and derivatives
-      - :ref:`Install from the AUR <install-aur>`
-      - :ref:`Install using GiteaPC <install-giteapc>`
-      - :ref:`Build natively <build-linux>`
+      - :ref:`Install from the AUR <install-linux-aur>`
+      - :ref:`Install using GiteaPC <install-linux-giteapc>`
+      - :ref:`Build natively <build-linux-sh>`
     * - |system-apple|
       - macOS_
-      - :ref:`Install using Homebrew <install-osx>`
-      - :ref:`Build natively <build-osx>`
+      - :ref:`Install using Homebrew <install-macos-homebrew>`
+      - :ref:`Build natively <build-macos-sh>`
 
 .. note::
 
@@ -52,22 +52,22 @@ Officially supported systems are the following:
         * - |system-debian|
           - Debian_ and derivatives (`#8
             <https://gitlab.com/cahuteproject/cahute/-/issues/8>`_)
-          - :ref:`Install using GiteaPC <install-giteapc>`
-          - :ref:`Build natively <build-linux>`
+          - :ref:`Install using GiteaPC <install-linux-giteapc>`
+          - :ref:`Build natively <build-linux-sh>`
         * - |system-voidlinux|
           - `Void Linux`_ (`#72
             <https://gitlab.com/cahuteproject/cahute/-/issues/72>`_)
-          - :ref:`Install using GiteaPC <install-giteapc>`
-          - :ref:`Build natively <build-linux>`
+          - :ref:`Install using GiteaPC <install-linux-giteapc>`
+          - :ref:`Build natively <build-linux-sh>`
         * - |system-win|
           - `Microsoft Windows`_ XP and above (`#10
             <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_)
-          - :ref:`Build using MinGW-w64 from Linux <build-mingw>`
-          - :ref:`Build natively using Visual Studio <build-visual-studio>`
+          - :ref:`Build using MinGW-w64 from Archlinux <build-windows-mingw>`
+          - :ref:`Build for XP+ using Visual Studio <build-windows-vs>`
         * - |system-amigaos|
           - AmigaOS_ 3.2 and above (`#26
             <https://gitlab.com/cahuteproject/cahute/-/issues/26>`_)
-          - :ref:`Build from Linux <build-amiga-gcc>`
+          - :ref:`Build from Linux <build-amigaos-linux>`
 
 The project is being worked on `on Gitlab <Cahute on Gitlab_>`_.
 It is maintained by `Thomas Touhey`_. See :ref:`project-forums` for the
@@ -119,7 +119,9 @@ and use-cases.
 .. toctree::
     :maxdepth: 3
 
-    guides
+    guides/install
+    guides/build
+    contribution-guides
     cli-guides
     developer-guides
 
@@ -171,12 +173,12 @@ is based on.
 .. |feat-text| image:: feat-text.svg
 .. |feat-ohp| image:: feat-ohp.svg
 .. |feat-flash| image:: feat-flash.svg
-.. |system-arch| image:: guides/arch.svg
-.. |system-apple| image:: guides/apple.svg
-.. |system-win| image:: guides/win.png
-.. |system-debian| image:: guides/debian.svg
-.. |system-voidlinux| image:: guides/voidlinux.svg
-.. |system-amigaos| image:: guides/amigaos.png
+.. |system-arch| image:: install-guides/arch.svg
+.. |system-apple| image:: install-guides/apple.svg
+.. |system-win| image:: install-guides/win.png
+.. |system-debian| image:: install-guides/debian.svg
+.. |system-voidlinux| image:: install-guides/voidlinux.svg
+.. |system-amigaos| image:: install-guides/amigaos.png
 
 .. _Archlinux: https://archlinux.org/
 .. _macOS: https://www.apple.com/macos/
