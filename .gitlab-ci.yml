@@ -25,13 +25,14 @@ build (linux):
           - "common/*"
           - "include/*"
           - "lib/*"
+          - ".gitlab-ci.yml"
     image: python:3.8-slim-bookworm
     before_script:
         - apt-get update -y
         - apt-get install -y cmake pkg-config gcc libusb-1.0-0-dev libsdl2-dev
         - pip install toml
     script:
-        - cmake -B build -S . -DCAHUTE_CLI_EXPERIMENTAL=ON
+        - cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
         - cmake --build build
 
 build (i686-w64-mingw32):
@@ -46,9 +47,10 @@ build (i686-w64-mingw32):
           - "common/*"
           - "include/*"
           - "lib/*"
+          - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahuteproject/docker-images/mingw-w64:latest
     script:
-        - i686-w64-mingw32-cmake -B build -S . -DCAHUTE_CLI_EXPERIMENTAL=ON
+        - i686-w64-mingw32-cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
         - cmake --build build
 
 build (x86_64-w64-mingw32):
@@ -63,9 +65,10 @@ build (x86_64-w64-mingw32):
           - "common/*"
           - "include/*"
           - "lib/*"
+          - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahuteproject/docker-images/mingw-w64:latest
     script:
-        - x86_64-w64-mingw32-cmake -B build -S . -DCAHUTE_CLI_EXPERIMENTAL=ON
+        - x86_64-w64-mingw32-cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
         - cmake --build build
 
 build (m68k-amigaos):
@@ -80,11 +83,12 @@ build (m68k-amigaos):
           - "common/*"
           - "include/*"
           - "lib/*"
+          - ".gitlab-ci.yml"
     image: amigadev/crosstools:m68k-amigaos
     before_script:
         - apt-get update -y && apt-get install -y python3 python3-toml
     script:
-        - cmake -B build -S . -DCAHUTE_CLI_EXPERIMENTAL=ON
+        - cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
         - cmake --build build
 
 build tarball:
@@ -99,12 +103,13 @@ build tarball:
           - "common/*"
           - "include/*"
           - "lib/*"
+          - ".gitlab-ci.yml"
     image: debian:bookworm-slim
     before_script:
         - apt-get update -y
         - apt-get install -y cmake pkg-config gcc libusb-1.0-0-dev libsdl2-dev
     script:
-        - cmake -B build -S .
+        - cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
         - cpack --config build/CPackSourceConfig.cmake
     artifacts:
         paths:
@@ -118,6 +123,7 @@ build docs:
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
           changes:
           - "docs/**/*"
+          - ".gitlab-ci.yml"
     image: python:3.11
     before_script:
         - pip install -r docs/requirements.txt
@@ -131,11 +137,9 @@ publish docs:
     stage: publish
     rules:
       - if: $CI_COMMIT_TAG
-        when: always
         variables:
             UPLOAD_PATH: /var/www/cahuteproject/www
       - if: $CI_COMMIT_BRANCH == "develop"
-        when: always
         variables:
             UPLOAD_PATH: /var/www/cahuteproject/next
     image: debian:bookworm-slim
