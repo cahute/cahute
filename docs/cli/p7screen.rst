@@ -3,6 +3,11 @@
 ``p7screen`` command line reference
 ===================================
 
+.. note::
+
+    This utility is part of Cahute; see :ref:`guide-install` for more
+    information on how to install it.
+
 p7screen is a utility originally provided with libp7_ back in
 September of 2016 by `Thomas Touhey`_. It is used for receiving the
 screen from any USB calculator in "Projector", "Screen Capture" or

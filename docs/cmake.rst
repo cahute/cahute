@@ -59,6 +59,8 @@ The following variables are specific to Cahute.
 ``CAHUTE_CLI``
     Enable command-line utilities.
 
+.. _cmake-setting-cahute-cli-experimental:
+
 ``CAHUTE_CLI_EXPERIMENTAL``
     Enable experimental / unfinished command-line utilities.
 

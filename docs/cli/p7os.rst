@@ -3,6 +3,11 @@
 ``p7os`` command line reference
 ===============================
 
+.. note::
+
+    This utility is part of Cahute; see :ref:`guide-install` for more
+    information on how to install it.
+
 p7os is an experimental utility originally provided with p7utils_ in July 2017,
 then fixed in libcasio_ (unreleased). It is used to interact with the
 calculator's system, to run update programs.

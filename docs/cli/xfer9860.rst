@@ -3,6 +3,11 @@
 ``xfer9860`` command line reference
 ===================================
 
+.. note::
+
+    This utility is part of Cahute; see :ref:`guide-install` for more
+    information on how to install it.
+
 `xfer9860 <xfer9860 project page_>`_ is a tool originally released back in
 June 2007 by Andreas Bertheussen for their fx-9860G SD. It is used to interact
 with the calculator's storage memory from any calculator supporting

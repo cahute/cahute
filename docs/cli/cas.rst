@@ -3,6 +3,17 @@
 ``CaS`` command-line reference
 ==============================
 
+.. note::
+
+    This utility is part of Cahute; see :ref:`guide-install` for more
+    information on how to install it.
+
+.. warning::
+
+    This utility is experimental; enabling :ref:`CMAKE_CLI_EXPERIMENTAL
+    <cmake-setting-cahute-cli-experimental>` at build time is required to
+    build and install it.
+
 CaS is a originally a transfer and conversion program made by Tom Wheeley and
 Tom Lynn in 1997. It systematically operates the following way:
 
