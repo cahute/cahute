@@ -62,8 +62,10 @@ Officially supported systems are the following:
         * - |system-win|
           - `Microsoft Windows`_ XP and above (`#10
             <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_)
+          - :ref:`Build for Vista+ using Visual Studio <build-windows-vs>`
+          - :ref:`Build for XP using Visual Studio <build-windows-vs-xp>`
+          - :ref:`Build for XP+ using Visual Studio and MinGW-w64 <build-windows-vs-mingw>`
           - :ref:`Build using MinGW-w64 from Archlinux <build-windows-mingw>`
-          - :ref:`Build for XP+ using Visual Studio <build-windows-vs>`
         * - |system-amigaos|
           - AmigaOS_ 3.2 and above (`#26
             <https://gitlab.com/cahuteproject/cahute/-/issues/26>`_)
@@ -124,6 +126,7 @@ and use-cases.
     contribution-guides
     cli-guides
     developer-guides
+    misc-guides
 
 Discussion topics
 -----------------

@@ -23,6 +23,13 @@ h1 img, h2 img, p img {
     width: .8em;
 }
 
+figcaption > p {
+    font-size: .9em;
+    font-style: italic;
+    margin: 0;
+    padding: 0 2em;
+}
+
 .sidebar-logo {
     width: 80%;
 }

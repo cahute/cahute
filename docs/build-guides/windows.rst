@@ -24,8 +24,8 @@ The following building methods are available.
 
 .. _build-windows-vs:
 
-Building Cahute for Windows XP and above, using Visual Studio
--------------------------------------------------------------
+Building Cahute for Windows Vista and above, using Visual Studio
+----------------------------------------------------------------
 
 .. warning::
 
@@ -35,57 +35,48 @@ Building Cahute for Windows XP and above, using Visual Studio
     See `#10 <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_ for
     more information.
 
-It is possible to build Cahute for Windows XP and above, using Microsoft's
-`Visual Studio`_ starting from version 17.6 (VS2022).
+It is possible to build Cahute for Windows Vista and above, using Microsoft's
+`Visual Studio`_.
 
-.. warning::
+Setting up the project and configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Visual Studio is **not to be confused** with `Visual Studio Code`_, which
-    is an entirely different program.
+If you have not set up the project, **you must follow the instructions in**
+:ref:`misc-vs-clone`.
 
-.. note::
+Once this is done, you need to go to the project's CMake configurations, by
+going in "Project", then "CMake settings for cahute":
 
-    This version of Visual Studio is targeted since it is the first to
-    include ``vcpkg`` (`source <vcpkg is Now Included with Visual Studio_>`_).
-    It may be possible to compile Cahute on earlier versions of Visual
-    Studio; see `Install and use packages with CMake`_ for more information.
+.. figure:: winvsa1.png
 
-Cloning the Cahute repository
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Visual Studio, with the "CMake settings" menu selected.
 
-When opening Visual Studio, select "Clone a repository" (first option).
+Look for "x64-Windows" in the configuration list. If you do not have such a
+configuration yet, click on the "+" icon:
 
-.. figure:: msvs1.png
+.. figure:: winvsa2.png
 
-    Initial window for Visual Studio, with the first option selected.
+    Configuration list, with the "+" button highlighted.
 
-Enter the URL of the repository you're cloning
-(``https://gitlab.com/cahuteproject/cahute.git`` if cloning the upstream),
-and select "Clone".
+This will open a list of configurations to add. Look for "x64-Release", then
+click on "Select" at the bottom of the window:
 
-.. figure:: msvs2.png
+.. figure:: winvsa3.png
 
-    Repository cloning window, with the information filled out to clone
-    the main branch on the official project repository.
+    Sample configuration list, with the "x64-Release" configuration
+    highlighted.
 
-.. note::
+Once this is selected, the new configuration should appear in your list.
+Select it, then click on the configuration type to update its value
+to "Release":
 
-    The IDE may open to nothing much, such as in this example:
+.. figure:: winvsa4.png
 
-    .. figure:: msvs3.png
+    Configuration details for "x64-Release", with the configuration type
+    dropdown selected and the "Release" option highlighted.
 
-        Empty IDE windows, obtained after cloning the repository.
-
-    In this case, double-clicking on "Directory view" in the Solution Explorer
-    on the right should solve this.
-
-Once the repository is loaded, the IDE should automatically prepare the
-repository for building using CMake and vcpkg. The resulting view should
-resemble this:
-
-.. figure:: msvs4.png
-
-    Visual Studio, after the repository was successfully loaded and configured.
+Once this is selected, you can save by clicking on the floppy on the top left
+of the IDE, or using the Ctrl+S shortcut.
 
 .. warning::
 
@@ -100,8 +91,13 @@ resemble this:
 
     * Integrate ``vcpkg`` for all projects with Visual Studio, by running
       ``vcpkg integrate install``;
-    * Only enable ``vcpkg`` by setting ``CMAKE_TOOLCHAIN_FILE`` manually in
-      the ``CMakeSettings.json`` to your vcpkg install's ``vcpkg.cmake``.
+    * Only enable ``vcpkg`` by setting the CMake toolchain option to
+      your vcpkg install's ``vcpkg.cmake``:
+
+    .. figure:: winvsa5.png
+
+        Configuration details for "x64-Release", with selection of the CMake
+        toolchain to use vcpkg's ``vcpkg.cmake``.
 
 Building the project
 ~~~~~~~~~~~~~~~~~~~~
@@ -110,7 +106,7 @@ From here, you can select the target you want to build next to the green arrow
 on the top, and the architecture you're targetting. By leaving the default
 (``x64-Debug``) and clicking on ``p7.exe``, we obtain the following:
 
-.. figure:: msvs5.png
+.. figure:: winvsb1.png
 
     Visual Studio, after building and running p7.
 
@@ -118,7 +114,7 @@ Since Cahute defines mostly command-line utilities, it may be more interesting
 to have access to a command-line interface. In order to this, in the context
 menu, select "Tools", "Command line", then "Developer Powershell":
 
-.. figure:: msvs6.png
+.. figure:: winvsb2.png
 
     Visual Studio, with contextual menus opened up to "Developer Powershell".
 
@@ -126,7 +122,270 @@ A console should open at the bottom of the IDE. In this console, use ``cd``
 to go to the build directory (by default, ``.\out\build\<target>``), and
 run the command-line utilities from here with the options you want to test.
 
-.. figure:: msvs7.png
+.. figure:: winvsb3.png
+
+    A PowerShell developer console opened in Visual Studio, running p7 from
+    the build directory directly.
+
+.. _build-windows-vs-xp:
+
+Building Cahute for Windows XP, using Visual Studio
+---------------------------------------------------
+
+.. warning::
+
+    Both Windows XP and above as a target and this build method are not
+    officially supported yet.
+
+    See `#10 <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_ for
+    more information.
+
+.. warning::
+
+    This build method is not functional yet due to a bug with Visual Studio
+    and the Windows SDK; see `#68
+    <https://gitlab.com/cahuteproject/cahute/-/issues/68>`_ for more details.
+
+    For now, you can build for Windows XP using the
+    :ref:`build-windows-vs-mingw` guide.
+
+It is possible to build Cahute for Windows XP, using Microsoft's
+`Visual Studio`_.
+
+Installing the required components
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default, Visual Studio Installer selects MSVC v143 or later, which does not
+support Windows XP. In order to support Windows XP, you will need to open
+Visual Studio Installer, modify your existing installation, go to
+"Individual components", then select everything pertaining to MSVC v141:
+
+.. figure:: winvsxp1.png
+
+    Visual Studio Installer's "Individual components" tab, with MSVC v141
+    elements selected.
+
+You can then select "Modify" at the bottom right of the window in order to
+download and configure MSVC v141.
+
+Setting up the project and configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have not set up the project, **you must follow the instructions in**
+:ref:`misc-vs-clone`.
+
+Once this is done, you need to go to the project's CMake configurations, by
+going in "Project", then "CMake settings for cahute":
+
+.. figure:: winvsa1.png
+
+    Visual Studio, with the "CMake settings" menu selected.
+
+Look for "x64-Windows" in the configuration list. If you do not have such a
+configuration yet, click on the "+" icon:
+
+.. figure:: winvsa2.png
+
+    Configuration list, with the "+" button highlighted.
+
+This will open a list of configurations to add. Look for "x64-Release", then
+click on "Select" at the bottom of the window:
+
+.. figure:: winvsa3.png
+
+    Sample configuration list, with the "x64-Release" configuration
+    highlighted.
+
+Once this is selected, the new configuration should appear in your list.
+Select it, then click on the configuration type to update its value
+to "Release":
+
+.. figure:: winvsa4.png
+
+    Configuration details for "x64-Release", with the configuration type
+    dropdown selected and the "Release" option highlighted.
+
+Scroll down until you see "CMake command arguments", and add ``-T v141_xp``
+in the matching dialog box:
+
+.. figure:: winvsxp2.png
+
+    Configuration details for "x64-Release", with the CMake command-line
+    parameters being set to ``-T v141_xp``.
+
+Scroll down more until you reach the "Display advanced parameters", on which
+you must click:
+
+.. figure:: winvsxp3.png
+
+    Configuration details for "x64-Release", with the
+    "Display advanced parameters" option highlighted.
+
+You can now scroll down more to "CMake generator", which you must set to
+``Visual Studio 17 2022``:
+
+.. figure:: winvsxp4.png
+
+    Configuration details for "x64-Release", with the CMake generator
+    being set to ``Visual Studio 17 2022``.
+
+Once this is selected, you can save by clicking on the floppy on the top left
+of the IDE, or using the Ctrl+S shortcut.
+
+Building the project
+~~~~~~~~~~~~~~~~~~~~
+
+.. todo::
+
+    Currently, as reported in `VS community bug 4974`_, the project may not
+    build due to SDK issues. See `comment 2244287184 on #68`_ for alternative
+    solutions to the one found in the bug report.
+
+From here, you can select the target you want to build next to the green arrow
+on the top, and the architecture you're targetting. By leaving the default
+(``x64-Debug``) and clicking on ``p7.exe``, we obtain the following:
+
+.. figure:: winvsb1.png
+
+    Visual Studio, after building and running p7.
+
+Since Cahute defines mostly command-line utilities, it may be more interesting
+to have access to a command-line interface. In order to this, in the context
+menu, select "Tools", "Command line", then "Developer Powershell":
+
+.. figure:: winvsb2.png
+
+    Visual Studio, with contextual menus opened up to "Developer Powershell".
+
+A console should open at the bottom of the IDE. In this console, use ``cd``
+to go to the build directory (by default, ``.\out\build\<target>``), and
+run the command-line utilities from here with the options you want to test.
+
+.. figure:: winvsb3.png
+
+    A PowerShell developer console opened in Visual Studio, running p7 from
+    the build directory directly.
+
+.. _build-windows-vs-mingw:
+
+Building Cahute for Windows XP and above, using Visual Studio and MinGW-w64
+---------------------------------------------------------------------------
+
+.. warning::
+
+    Both Windows XP and above as a target and this build method are not
+    officially supported yet.
+
+    See `#10 <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_ for
+    more information.
+
+It is possible to build Cahute for Windows XP, using Microsoft's
+`Visual Studio`_ and `MinGW-w64`_.
+
+Installing the required components
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You need to install MinGW-w64 first. Pre-built binaries are available;
+for this, go to `MinGW-w64 Downloads`_ to the ``WinLibs.com`` section,
+click on the link present in the section, then go to the ``Download``,
+``Release versions``, and select the latest archive for Win64:
+
+.. figure:: winvsmingw1.png
+
+    A preview of the downloads section, with the link at roughly the correct
+    position selected.
+
+.. warning::
+
+    You should only trust ``WinLibs.com`` as long as they are referenced on
+    the MinGW-w64 website, as this website may be compromised at some point
+    (possibly as you read this!).
+
+Once you've downloaded the archive, you can open it, and move the ``mingw64``
+directory it contains to any directory you like; for this guide, we will move
+the directory to ``C:\``.
+
+Setting up the project and configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have not set up the project, **you must follow the instructions in**
+:ref:`misc-vs-clone`.
+
+Once this is done, you need to go to the project's CMake configurations, by
+going in "Project", then "CMake settings for cahute":
+
+.. figure:: winvsa1.png
+
+    Visual Studio, with the "CMake settings" menu selected.
+
+Look for "Mingw64-Release" in the configuration list. If you do not have such a
+configuration yet, click on the "+" icon:
+
+.. figure:: winvsa2.png
+
+    Configuration list, with the "+" button highlighted.
+
+This will open a list of configurations to add. Look for "Mingw64-Release",
+then click on "Select" at the bottom of the window:
+
+.. figure:: winvsmingw2.png
+
+    Sample configuration list, with the "x64-Release" configuration
+    highlighted.
+
+Once this is selected, the new configuration should appear in your list.
+Select it, then click on the configuration type to update its value
+to "Release":
+
+.. figure:: winvsmingw3.png
+
+    Configuration details for "Mingw64-Release", with the configuration type
+    dropdown selected and the "Release" option highlighted.
+
+Now, click on "Modify JSON" on the top right corner of the CMake parameters.
+
+.. figure:: winvsmingw4.png
+
+    Configuration details for "Mingw64-Release", with the "Modify JSON"
+    option highlighted.
+
+Look for the configuration with the "Mingw64-Release" name, then edit the
+value for ``MINGW64_ROOT`` to the path where you put MinGW-w64, in this
+example ``C:/mingw64``.
+
+.. figure:: winvsmingw5.png
+
+    JSON configuration details for "Mingw64-Release", with ``MINGW64_ROOT``
+    highlighted and set to the value ``C:/mingw64``.
+
+Once this is done, you can save by clicking on the floppy on the top left
+of the IDE, or using the Ctrl+S shortcut.
+
+Building the project
+~~~~~~~~~~~~~~~~~~~~
+
+From here, you can select the configuration you want on the left of the green
+arrow, then pick the target you want to build on the right of the green arrow
+on the top. By selecting ``Mingw64-Release`` and clicking on ``p7.exe``,
+we obtain the following:
+
+.. figure:: winvsmingw6.png
+
+    Visual Studio, after building and running p7 using MinGW-w64.
+
+Since Cahute defines mostly command-line utilities, it may be more interesting
+to have access to a command-line interface. In order to this, in the context
+menu, select "Tools", "Command line", then "Developer Powershell":
+
+.. figure:: winvsb2.png
+
+    Visual Studio, with contextual menus opened up to "Developer Powershell".
+
+A console should open at the bottom of the IDE. In this console, use ``cd``
+to go to the build directory (by default, ``.\out\build\<target>``), and
+run the command-line utilities from here with the options you want to test.
+
+.. figure:: winvsb3.png
 
     A PowerShell developer console opened in Visual Studio, running p7 from
     the build directory directly.
@@ -227,12 +486,12 @@ one of the following command depending on the architecture you're targetting::
     archlinux.Dockerfile?ref_type=heads
 
 .. _Visual Studio: https://visualstudio.microsoft.com/fr/
-.. _Visual Studio Code: https://visualstudio.microsoft.com/fr/
-.. _vcpkg is Now Included with Visual Studio:
-    https://devblogs.microsoft.com/cppblog/
-    vcpkg-is-now-included-with-visual-studio/
-.. _Install and use packages with CMake:
-    https://learn.microsoft.com/en-us/vcpkg/get_started/get-started
 .. _Installing and using packages (vcpkg):
     https://github.com/microsoft/vcpkg-docs/blob/main/vcpkg/examples/
     installing-and-using-packages.md#-step-2-use
+.. _VS Community bug 4974:
+    https://developercommunity.visualstudio.com/t/
+    macros-vc-includepath-and-vc-librarypath-x86-expan/4974
+.. _`Comment 2244287184 on #68`:
+    https://gitlab.com/cahuteproject/cahute/-/issues/68#note_2244287184
+.. _MinGW-w64 Downloads: https://www.mingw-w64.org/downloads/
