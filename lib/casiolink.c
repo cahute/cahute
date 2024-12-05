@@ -189,7 +189,7 @@ cahute_casiolink_determine_header_variant(cahute_u8 const *data) {
  * @param timeout Timeout, in ms.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_LOCAL(int)
+CAHUTE_EXTERN(int)
 cahute_casiolink_receive_first_byte(
     cahute_link *link,
     int *first_bytep,
@@ -694,7 +694,9 @@ data_decoded:
 CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_receiver(cahute_link *link) {
     int byte = -1, err;
 
-    while (byte < 0) {
+    /* On CAS300 serial links, the calculator may send invalid 0x00 bytes
+     * until it sends something else, so we want to ignore such cases. */
+    while (byte <= 0) {
         err = cahute_receive_byte_on_link_medium(&link->medium, &byte, 0);
         if (err)
             return err;
@@ -730,8 +732,7 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_receiver(cahute_link *link) {
  * @return Cahute error.
  */
 CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link) {
-    cahute_u8 *buf = link->data_buffer;
-    int initial_attempts = 6, attempts, err;
+    int initial_attempts = 6, attempts, err, byte;
 
     msg(link->medium.context,
         ll_info,
@@ -739,35 +740,35 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link) {
         initial_attempts,
         TIMEOUT_INIT);
     for (attempts = initial_attempts; attempts > 0; attempts--) {
-        buf[0] = PACKET_TYPE_START;
         msg(link->medium.context,
             ll_info,
-            "Sending the following start packet:");
-        mem(link->medium.context, ll_info, buf, 1);
+            "Sending 0x%02X start packet.",
+            PACKET_TYPE_START);
 
-        err = cahute_send_on_link_medium(&link->medium, buf, 1);
+        err =
+            cahute_send_byte_on_link_medium(&link->medium, PACKET_TYPE_START);
         if (err)
             return err;
 
-        err = cahute_receive_on_link_medium(
-            &link->medium,
-            buf,
-            1,
-            TIMEOUT_INIT,
-            0
-        );
+        /* On CAS300 serial links, the calculator may send invalid 0x00 bytes
+         * until it sends something else, so we want to ignore such cases. */
+        for (byte = -1; !err && byte <= 0;) {
+            err = cahute_receive_byte_on_link_medium(
+                &link->medium,
+                &byte,
+                TIMEOUT_INIT
+            );
+        }
+
         if (err == CAHUTE_ERROR_TIMEOUT_START)
             continue;
 
-        if (err)
-            return err;
-
-        if (buf[0] != PACKET_TYPE_ESTABLISHED) {
+        if (byte != PACKET_TYPE_ESTABLISHED) {
             msg(link->medium.context,
                 ll_error,
                 "Expected ESTABLISHED packet (0x%02X), got 0x%02X.",
                 PACKET_TYPE_ESTABLISHED,
-                buf[0]);
+                byte);
 
             return CAHUTE_ERROR_UNKNOWN;
         }
@@ -776,7 +777,10 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link) {
     }
 
     if (attempts <= 0) {
-        msg(link->medium.context, ll_error, "No response after %d attempts.");
+        msg(link->medium.context,
+            ll_error,
+            "No response after %d attempts.",
+            initial_attempts);
         return CAHUTE_ERROR_TIMEOUT_START;
     }
 

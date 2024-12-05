@@ -63,11 +63,18 @@
 #define PROTOCOL_FLAG_NODISC   0x00000400 /* Should not run discovery. */
 #define PROTOCOL_FLAG_RECEIVER 0x00000800 /* Act as a receiver. */
 
-/* Full check packets. */
+/* Protocol 7.00 packets for detection. */
 CAHUTE_LOCAL_DATA(cahute_u8)
 seven_check_packet[] = {5, '0', '0', '0', '7', '0'};
 CAHUTE_LOCAL_DATA(cahute_u8)
 seven_ack_packet[] = {6, '0', '0', '0', '7', '0'};
+CAHUTE_LOCAL_DATA(cahute_u8)
+seven_nak_packet[] = {21, '0', '4', '0', '6', 'C'};
+
+/* CAS300 discover packet for detection. */
+CAHUTE_LOCAL_DATA(cahute_u8)
+cas300_discover_packet[] =
+    {1, '0', '0', '0', '0', '0', '4', '0', '0', '1', '1', '7', 'A'};
 
 /**
  * Cookie for detection in the context of simple USB link opening.
@@ -380,25 +387,39 @@ found:
  *
  * @param link Link to initialize.
  * @param protocolp Pointer to the protocol to set.
+ * @param cas300_discoveredp Pointer to the boolean to set if the protocol
+ *        detection has caused CAS300 model information to be discovered.
+ * @param cas300_next_idp Pointer to the CAS300 next packet identifier to
+ *        set.
  * @return Cahute error, or 0 if successful.
  */
 CAHUTE_LOCAL(int)
-determine_protocol_as_sender(cahute_link *link, int *protocolp) {
+determine_protocol_as_sender(
+    cahute_link *link,
+    int *protocolp,
+    int *cas300_discoveredp,
+    int *cas300_next_idp
+) {
     cahute_u8 buf[48];
     size_t received = 1;
     int err, attempts;
     int protocol = *protocolp;
 
     for (attempts = 3; attempts; attempts--) {
-        /* Try writing only the 0x05 part of the Protocol 7.00 check packet
-         * first, to see if the calculator reacts. If this is the case,
-         * we have a Classpad 300 / 330 (+). */
+        /* We want to complete the Protocol 7.00 check packet. */
         msg(link->medium.context,
             ll_info,
-            "Sending a Protocol 7.00 check packet:");
-        mem(link->medium.context, ll_info, seven_check_packet, 6);
+            "Sending the Protocol 7.00 check packet:");
+        mem(link->medium.context,
+            ll_info,
+            seven_check_packet,
+            sizeof(seven_check_packet));
 
-        err = cahute_send_on_link_medium(&link->medium, seven_check_packet, 6);
+        err = cahute_send_on_link_medium(
+            &link->medium,
+            seven_check_packet,
+            sizeof(seven_check_packet)
+        );
         if (err)
             return err;
 
@@ -421,6 +442,54 @@ determine_protocol_as_sender(cahute_link *link, int *protocolp) {
             break;
         else if (err != CAHUTE_ERROR_TIMEOUT_START)
             return err;
+
+        /* It is possible we have a ClassPad 300 / 330 (+) for which the
+         * communication has already been initiated somehow. We want to try
+         * sending a command to find model information.
+         *
+         * In order to be able to terminate the communication if an active
+         * Protocol 7.00 device is listening, we want to send the command in
+         * two parts. */
+        msg(link->medium.context,
+            ll_info,
+            "Sending the start of the CAS300 discovery command:");
+        mem(link->medium.context, ll_info, cas300_discover_packet, 6);
+
+        err = cahute_send_on_link_medium(
+            &link->medium,
+            cas300_discover_packet,
+            6
+        );
+        if (err)
+            return err;
+
+        err = cahute_receive_on_link_medium(&link->medium, buf, 1, 100, 0);
+        if (!err)
+            break;
+        else if (err != CAHUTE_ERROR_TIMEOUT_START)
+            return err;
+
+        msg(link->medium.context,
+            ll_info,
+            "Sending the rest of the CAS300 discovery command:");
+        mem(link->medium.context,
+            ll_info,
+            &cas300_discover_packet[6],
+            sizeof(cas300_discover_packet) - 6);
+
+        err = cahute_send_on_link_medium(
+            &link->medium,
+            &cas300_discover_packet[6],
+            sizeof(cas300_discover_packet) - 6
+        );
+        if (err)
+            return err;
+
+        err = cahute_receive_on_link_medium(&link->medium, buf, 1, 400, 0);
+        if (!err)
+            break;
+        else if (err != CAHUTE_ERROR_TIMEOUT_START)
+            return err;
     }
 
     if (!attempts) {
@@ -430,41 +499,63 @@ determine_protocol_as_sender(cahute_link *link, int *protocolp) {
         return CAHUTE_ERROR_NOT_FOUND;
     }
 
-    if (buf[0] == 0x05) {
-        int checks = 1;
-
-        /* This is a Classpad 300 / 330 (+) answering our Protocol 7.00
-         * initial check packet with their own check packet. The calculator
-         * sends a few 0x05 followed by the answer to the next packet, so
-         * we want to try and send the 0x16 now. */
-        err = cahute_send_byte_on_link_medium(&link->medium, 0x16);
+    if (buf[0] == 0x00) {
+        /* This is a CAS300 serial status packet.
+         * It may have another byte to indicate the status. */
+        err = cahute_cas300_initiate_as_sender(link);
         if (err)
-            return err;
+            goto fail;
 
-        for (;; checks++) {
-            err = cahute_receive_on_link_medium(&link->medium, buf, 1, 200, 0);
-            if (err)
-                return err;
+        switch (protocol) {
+        case PROTOCOL_SERIAL_AUTO:
+        case PROTOCOL_SERIAL_AUTO_CAS300:
+        case PROTOCOL_SERIAL_CAS300:
+            protocol = PROTOCOL_SERIAL_CAS300;
+            break;
 
-            if (buf[0] == 0x05)
-                continue;
-            else if (buf[0] == 0x13) {
-                msg(link->medium.context,
-                    ll_info,
-                    "Received an established packet after %d check bytes.",
-                    checks);
+        case PROTOCOL_USB_AUTO:
+            protocol = PROTOCOL_USB_CAS300;
+            break;
+
+        default:
+            msg(link->medium.context,
+                ll_error,
+                "No CAS300 detected equiv. for protocol: %d",
+                protocol);
+            err = CAHUTE_ERROR_UNKNOWN;
+            goto fail;
+        }
+
+        goto found;
+    } else if (buf[0] == 0x05) {
+        /* This is likely a ClassPad 300 / 330 (+) answering our Protocol 7.00
+         * with the length amount of 0x05 bytes, in order to indicate to us
+         * that the communication was not initialized. We want to read all of
+         * the 0x05 bytes, then initialize the communication. */
+        while (1) {
+            int byte;
+
+            err =
+                cahute_receive_byte_on_link_medium(&link->medium, &byte, 200);
+            if (err == CAHUTE_ERROR_TIMEOUT_START)
                 break;
-            } else {
+            else if (err)
+                return err;
+            else if (byte != 0x05) {
                 msg(link->medium.context,
                     ll_error,
-                    "Got an unexpected answer other than 0x05 or 0x13:");
-                mem(link->medium.context, ll_error, buf, 1);
+                    "One of the bytes in the received ones is not 0x05!");
                 return CAHUTE_ERROR_UNKNOWN;
             }
         }
 
+        err = cahute_cas300_initiate_as_sender(link);
+        if (err)
+            return err;
+
         switch (protocol) {
         case PROTOCOL_SERIAL_AUTO:
+        case PROTOCOL_SERIAL_AUTO_CAS300:
         case PROTOCOL_SERIAL_CAS300:
             protocol = PROTOCOL_SERIAL_CAS300;
             break;
@@ -484,10 +575,67 @@ determine_protocol_as_sender(cahute_link *link, int *protocolp) {
 
         goto found;
     } else if (buf[0] == 0x06) {
+        /* This can either be the beginning of a Protocol 7.00 ack packet,
+         * or the answer to the CAS300 discovery command. In the first case,
+         * the packet is 6 bytes long, in the second case, the packet is
+         * 3 bytes long, but is immediately followed with a command, so
+         * we want to check the 4th byte. */
+        err = cahute_receive_on_link_medium(&link->medium, &buf[1], 3, 0, 0);
+        if (err)
+            goto fail;
+
+        received = 4;
+
+        if (buf[3] == 0x01) {
+            /* This is the packet identifier we have set on the discovery
+             * command, which means it is a CAS300 acknowledgement.
+             * We want to receive an acknowledge the information. */
+            err = cahute_cas300_receive_packet(link, 0x01, 0);
+            if (err)
+                return err;
+
+            if (link->protocol_state.casiolink.cas300.packet_subtype != 2
+                || link->protocol_state.casiolink.cas300.packet_payload_size
+                       != 49) {
+                msg(link->medium.context,
+                    ll_error,
+                    "Answer to discovery command was unexpected!");
+                return CAHUTE_ERROR_UNKNOWN;
+            }
+
+            switch (protocol) {
+            case PROTOCOL_SERIAL_AUTO:
+            case PROTOCOL_SERIAL_AUTO_CAS300:
+            case PROTOCOL_SERIAL_CAS300:
+                protocol = PROTOCOL_SERIAL_CAS300;
+                break;
+
+            case PROTOCOL_USB_AUTO:
+                protocol = PROTOCOL_USB_CAS300;
+                break;
+
+            default:
+                msg(link->medium.context,
+                    ll_error,
+                    "No CAS300 detected equiv. for protocol: %d",
+                    protocol);
+                err = CAHUTE_ERROR_UNKNOWN;
+                goto fail;
+            }
+
+            memcpy(
+                link->protocol_state.casiolink.raw_device_info,
+                link->protocol_state.casiolink.cas300.packet_payload,
+                link->protocol_state.casiolink.cas300.packet_payload_size
+            );
+            *cas300_discoveredp = 1;
+            goto found;
+        }
+
         /* This is the beginning of a Protocol 7.00 ack packet.
          * We want to read the rest of the packet to ensure that
          * everything is correct. */
-        err = cahute_receive_on_link_medium(&link->medium, &buf[1], 5, 0, 0);
+        err = cahute_receive_on_link_medium(&link->medium, &buf[4], 2, 0, 0);
         if (err)
             goto fail;
 
@@ -557,12 +705,127 @@ determine_protocol_as_sender(cahute_link *link, int *protocolp) {
         }
 
         goto found;
+    } else if (buf[0] == 0x15) {
+        /* This is either a ClassPad 300 / 330 (+) answering our discovery
+         * command to tell us the packet is out-of-order, or a past-initiation
+         * Protocol 7.00 device signaling an invalid packet.
+         *
+         * The difficulty here is that the ClassPad out-of-order packet is
+         * 3-bytes long, and the Protocol 7.00 NAK packet is 6-bytes
+         * long, and there is no actual way to distinguish between both based
+         * on the first 3 bytes because the Protocol 7.00 packet subtype is
+         * '04', not '00', since the error is generic. So we have to resort
+         * to reading the first 3 bytes, then trying to read a fourth one,
+         * and if we fail, we assume it's a ClassPad out-of-order packet. */
+        err = cahute_receive_on_link_medium(&link->medium, &buf[1], 2, 0, 0);
+        if (err)
+            goto fail;
+        received = 3;
+
+        err = cahute_receive_on_link_medium(&link->medium, &buf[3], 3, 50, 50);
+        if (!err) {
+            /* We have a Protocol 7.00 NAK. */
+            received = 6;
+
+            if (!memcmp(buf, seven_nak_packet, 6)) {
+                msg(link->medium.context,
+                    ll_info,
+                    "Received Protocol 7.00 NAK packet:");
+                mem(link->medium.context, ll_info, buf, 6);
+
+                switch (protocol) {
+                case PROTOCOL_SERIAL_AUTO:
+                case PROTOCOL_SERIAL_AUTO_CAS40:
+                case PROTOCOL_SERIAL_AUTO_CAS50:
+                case PROTOCOL_SERIAL_AUTO_CAS100:
+                case PROTOCOL_SERIAL_AUTO_CAS300:
+                    protocol = PROTOCOL_SERIAL_SEVEN;
+                    break;
+
+                case PROTOCOL_USB_AUTO:
+                    protocol = PROTOCOL_USB_SEVEN;
+                    break;
+
+                default:
+                    msg(link->medium.context,
+                        ll_error,
+                        "No SEVEN detected equiv. for protocol: %d",
+                        protocol);
+                    err = CAHUTE_ERROR_UNKNOWN;
+                    goto fail;
+                }
+
+                goto found;
+            }
+        } else if (err != CAHUTE_ERROR_TIMEOUT_START)
+            goto fail;
+        else {
+            msg(link->medium.context,
+                ll_info,
+                "Received possible CAS300 out-of-order error is the following:"
+            );
+            mem(link->medium.context, ll_info, buf, 3);
+
+            if (!cahute_is_ascii_hex(buf[1]) || !cahute_is_ascii_hex(buf[2])) {
+                msg(link->medium.context,
+                    ll_error,
+                    "Packet identifier is not ASCII-HEX!");
+                err = CAHUTE_ERROR_UNKNOWN;
+                goto fail;
+            }
+
+            *cas300_next_idp = (cahute_ascii_hex_to_nibble(buf[1]) << 4)
+                               | cahute_ascii_hex_to_nibble(buf[2]);
+
+            switch (protocol) {
+            case PROTOCOL_SERIAL_AUTO:
+            case PROTOCOL_SERIAL_AUTO_CAS300:
+            case PROTOCOL_SERIAL_CAS300:
+                protocol = PROTOCOL_SERIAL_CAS300;
+                break;
+
+            case PROTOCOL_USB_AUTO:
+                protocol = PROTOCOL_USB_CAS300;
+                break;
+
+            default:
+                msg(link->medium.context,
+                    ll_error,
+                    "No CAS300 detected equiv. for protocol: %d",
+                    protocol);
+                err = CAHUTE_ERROR_UNKNOWN;
+                goto fail;
+            }
+
+            goto found;
+        }
+    }
+
+    /* We want to receive as much bytes as possible to fit the buffer. */
+    err = CAHUTE_OK;
+    for (; received < sizeof(buf); received++) {
+        err = cahute_receive_on_link_medium(
+            &link->medium,
+            &buf[received],
+            1,
+            50,
+            0
+        );
+        if (err)
+            break;
     }
 
     msg(link->medium.context,
         ll_error,
-        "Unable to determine a protocol out of the received packet:");
+        "Unable to determine a protocol out of the received data:");
     mem(link->medium.context, ll_error, buf, received);
+    if (err && err != CAHUTE_ERROR_TIMEOUT_START)
+        msg(link->medium.context,
+            ll_info,
+            "Error %s (%d) was encountered while receiving more bytes.",
+            cahute_get_error_name(err),
+            err);
+
     err = CAHUTE_ERROR_UNKNOWN;
 
 fail:
@@ -673,6 +936,8 @@ open_link_from_medium(
     struct cahute_seven_state *seven_state;
     struct cahute_seven_ohp_state *seven_ohp_state;
     int exchange_cas100_model_info = 0;
+    int cas300_discovered = 0;
+    int cas300_next_id = 0;
     int err = CAHUTE_ERROR_UNKNOWN;
 
     if (!medium_type) {
@@ -738,7 +1003,12 @@ open_link_from_medium(
         if (flags & PROTOCOL_FLAG_RECEIVER)
             err = determine_protocol_as_receiver(link, &protocol);
         else
-            err = determine_protocol_as_sender(link, &protocol);
+            err = determine_protocol_as_sender(
+                link,
+                &protocol,
+                &cas300_discovered,
+                &cas300_next_id
+            );
 
         if (err)
             goto fail;
@@ -772,8 +1042,6 @@ open_link_from_medium(
     case CAHUTE_LINK_PROTOCOL_SERIAL_CAS:
     case CAHUTE_LINK_PROTOCOL_SERIAL_CAS40:
     case CAHUTE_LINK_PROTOCOL_SERIAL_CAS50:
-    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS300:
-    case CAHUTE_LINK_PROTOCOL_USB_CAS300:
         casiolink_state = &link->protocol_state.casiolink;
         casiolink_state->flags = 0;
         casiolink_state->cas300.next_id = 0;
@@ -840,6 +1108,53 @@ open_link_from_medium(
 
         if (err)
             goto fail;
+        break;
+
+    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS300:
+    case CAHUTE_LINK_PROTOCOL_USB_CAS300:
+        casiolink_state = &link->protocol_state.casiolink;
+        casiolink_state->flags = 0;
+        casiolink_state->cas300.next_id = cas300_next_id;
+
+        if (link->data_buffer_capacity < CASIOLINK_MINIMUM_BUFFER_SIZE) {
+            msg(context,
+                ll_fatal,
+                "CASIOLINK implementation expected a minimum data "
+                "buffer capacity of %" CAHUTE_PRIuSIZE
+                ", got %" CAHUTE_PRIuSIZE ".",
+                CASIOLINK_MINIMUM_BUFFER_SIZE,
+                link->data_buffer_capacity);
+            goto fail;
+        }
+
+        if (cas300_discovered) {
+            /* CAS300 device information has already been found and stored
+             * in the context of automatic protocol detection as a sender,
+             * we want to set the flags representing this fact. */
+            casiolink_state->flags |=
+                (CASIOLINK_FLAG_DEVICE_INFO_OBTAINED
+                 | CASIOLINK_FLAG_DEVICE_INFO_CAS300);
+        }
+
+        if (flags & PROTOCOL_FLAG_NOCHECK)
+            err = CAHUTE_OK;
+        else if (link->flags & CAHUTE_LINK_FLAG_RECEIVER)
+            err = cahute_cas300_initiate_as_receiver(link);
+        else
+            err = cahute_cas300_initiate_as_sender(link);
+
+        if (err)
+            goto fail;
+
+        if ((~link->flags & CAHUTE_LINK_FLAG_RECEIVER)
+            && (~flags & PROTOCOL_FLAG_NODISC)
+            && (~casiolink_state->flags & CASIOLINK_FLAG_DEVICE_INFO_OBTAINED
+            )) {
+            err = cahute_cas300_discover(link);
+            if (err)
+                goto fail;
+        }
+
         break;
 
     case CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN:
@@ -1694,15 +2009,7 @@ cahute_open_serial_link(
     switch (flags & CAHUTE_SERIAL_STOP_MASK) {
     case 0:
         /* We use a default value depending on the protocol. */
-        switch (protocol) {
-        case PROTOCOL_SERIAL_CAS300:
-        case PROTOCOL_SERIAL_AUTO_CAS300:
-            flags |= CAHUTE_SERIAL_STOP_ONE;
-            break;
-
-        default:
-            flags |= CAHUTE_SERIAL_STOP_TWO;
-        }
+        flags |= CAHUTE_SERIAL_STOP_TWO;
         break;
 
     case CAHUTE_SERIAL_STOP_ONE:

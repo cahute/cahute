@@ -1172,6 +1172,13 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_receiver(cahute_link *link);
 CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link);
 
 CAHUTE_EXTERN(int)
+cahute_casiolink_receive_first_byte(
+    cahute_link *link,
+    int *first_bytep,
+    unsigned long timeout
+);
+
+CAHUTE_EXTERN(int)
 cahute_casiolink_receive_packet(
     cahute_link *link,
     cahute_u8 *buf,
@@ -1273,6 +1280,13 @@ CAHUTE_EXTERN(int) cahute_cas100_terminate(cahute_link *link);
  * --- */
 
 CAHUTE_EXTERN(int)
+cahute_cas300_receive_packet(
+    cahute_link *link,
+    int first_byte,
+    unsigned long timeout
+);
+
+CAHUTE_EXTERN(int)
 cahute_cas300_receive_data(
     cahute_link *link,
     cahute_data **datap,
@@ -1280,6 +1294,8 @@ cahute_cas300_receive_data(
     unsigned long timeout
 );
 
+CAHUTE_EXTERN(int) cahute_cas300_initiate_as_sender(cahute_link *link);
+CAHUTE_EXTERN(int) cahute_cas300_initiate_as_receiver(cahute_link *link);
 CAHUTE_EXTERN(int) cahute_cas300_discover(cahute_link *link);
 CAHUTE_EXTERN(int) cahute_cas300_terminate(cahute_link *link);
 

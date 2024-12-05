@@ -19,7 +19,7 @@ serial settings are always the same:
 
 * Speed: **38400** bauds.
 * Parity: **none**.
-* Stop bits: **1**.
+* Stop bits: **2**.
 
 .. todo::
 

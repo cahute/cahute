@@ -241,3 +241,8 @@ listing.
 -------------------------------------
 
 No payload. Answered by a :ref:`cas300-command-0002`.
+
+.. warning::
+
+    If used twice in a given session, the calculator will answer with a
+    terminate packet instead of the device information.

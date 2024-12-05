@@ -9,6 +9,41 @@ follows it.
 
 See the following sections for more information.
 
+.. _cas300-packet-00:
+
+``0x00`` -- Serial status packet
+--------------------------------
+
+This packet is found over serial links. It has the following payload:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Offset
+      - Size
+      - Field name
+      - Description
+      - Values
+    * - 0 (0x00)
+      - 1 B
+      - Serial status (*SS*)
+      - Current serial status.
+      - 1-byte value, among the following:
+
+        .. list-table::
+            :header-rows: 1
+
+            * - Code
+              - Description
+            * - ``0x00``
+              - Communication established; equivalent to
+                :ref:`cas300-packet-13` on USB.
+            * - ``0x05``
+              - Calculator not (yet) in receive mode, or communication
+                not started.
+            * - ``0x09``
+              - Calculator switching to receive mode automatically.
+
 .. _cas300-packet-01:
 
 ``0x01`` -- Command packet
@@ -108,6 +143,41 @@ This packet has the following payload:
       - 2 B
       - Packet identifier (*ID*)
       - Identifier of the packet the other party acknowledges.
+      - 2-char :ref:`seven-ascii-hex` value.
+
+.. _cas300-packet-13:
+
+``0x13`` -- Established packet
+------------------------------
+
+This packet is single-byte, and is used by the receiver to acknowledge
+link initialization. This is common to all CASIOLINK variants.
+
+.. warning::
+
+    On serial links, instead of sending ``0x13``, the ClassPad 300 / 330 (+)
+    may send two ``0x00`` bytes. This nuance is CAS300-specific.
+
+.. _cas300-packet-15:
+
+``0x15`` -- Out-of-order packet
+-------------------------------
+
+This packet is used by either party to signal that the identifier of the packet
+sent by the other party is out-of-order. It has the following payload:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Offset
+      - Size
+      - Field name
+      - Description
+      - Values
+    * - 0 (0x00)
+      - 2 B
+      - Expected packet identifier (*EID*)
+      - Expected packet identifier.
       - 2-char :ref:`seven-ascii-hex` value.
 
 .. _cas300-packet-18:

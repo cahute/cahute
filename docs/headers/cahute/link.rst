@@ -357,7 +357,7 @@ Link management related function declarations
         * - ``CAS300``, ``AUTO_CAS300``
           - 38400
           - ``OFF``
-          - ``ONE``
+          - ``TWO``
           - ``ENABLED``
         * - ``SEVEN``, ``SEVEN_OHP``, ``AUTO``
           - 9600

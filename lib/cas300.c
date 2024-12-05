@@ -30,12 +30,14 @@
 
 #define PACKET_TYPE_COMMAND 0x01
 #define PACKET_TYPE_DATA    0x02
-#define PACKET_TYPE_CHECK   0x05
 #define PACKET_TYPE_ACK     0x06
+#define PACKET_TYPE_ORDER   0x15
 #define PACKET_TYPE_TERM    0x18
 
 #define TIMEOUT_ACK             1000
 #define TIMEOUT_PACKET_CONTENTS 500
+
+#define INIT_ATTEMPTS 10
 
 /* The 0002 command for Classpad 300 / 330 (+) used for initialization when
  * in sender / control mode. */
@@ -47,13 +49,6 @@ default_0002_payload =
 /* ---
  * Packet functions.
  * --- */
-
-CAHUTE_LOCAL(int)
-cahute_cas300_receive_packet(
-    cahute_link *link,
-    int first_byte,
-    unsigned long timeout
-);
 
 /**
  * Send a CAS300 command.
@@ -78,6 +73,7 @@ cahute_cas300_send_command(
     if (payload_size > CAS300_MAX_PAYLOAD_SIZE)
         return CAHUTE_ERROR_SIZE;
 
+restart_send_command:
     packet_id = link->protocol_state.casiolink.cas300.next_id;
     link->protocol_state.casiolink.cas300.next_id = (packet_id + 1) & 255;
 
@@ -106,7 +102,6 @@ cahute_cas300_send_command(
         return err;
 
     /* Receive the ACK with the same packet identifier. */
-    /* TODO: can we receive invalid acknowledgements here? */
     do {
         err = cahute_cas300_receive_packet(link, -1, TIMEOUT_ACK);
         if (err == CAHUTE_ERROR_TIMEOUT_START) {
@@ -128,14 +123,30 @@ cahute_cas300_send_command(
         if (err)
             return err;
 
-        if (link->protocol_state.casiolink.cas300.packet_type
-                != PACKET_TYPE_ACK
-            || memcmp(
-                link->protocol_state.casiolink.cas300.packet_id,
-                &buf[1],
-                2
-            ))
+        switch (link->protocol_state.casiolink.cas300.packet_type) {
+        case PACKET_TYPE_ACK:
+            if (memcmp(
+                    link->protocol_state.casiolink.cas300.packet_id,
+                    &buf[1],
+                    2
+                )) {
+                /* The packet is possibly not for us, in case we are sharing
+                 * the medium. */
+                continue;
+            }
+            break;
+
+        case PACKET_TYPE_ORDER:
+            /* Command has been sent out-of-order. next_id has been set
+             * by the packet reception function, we can try to resend the
+             * command. */
+            goto restart_send_command;
+
+        default:
+            /* The packet is possibly not for us, in case we are sharing the
+             * medium. */
             continue;
+        }
 
         break;
     } while (1);
@@ -223,7 +234,7 @@ cahute_cas300_send_data_packet(
  * @param timeout Timeout for the first byte.
  * @return Cahute error.
  */
-CAHUTE_LOCAL(int)
+CAHUTE_EXTERN(int)
 cahute_cas300_receive_packet(
     cahute_link *link,
     int first_byte,
@@ -241,35 +252,23 @@ cahute_cas300_receive_packet(
     for (;; first_byte = -1) {
         size_t raw_payload_size;
 
-        if (first_byte >= 0)
-            buf[0] = first_byte;
-        else {
-            err = cahute_receive_on_link_medium(
-                &link->medium,
-                buf,
-                1,
-                timeout,
+        if (first_byte < 0) {
+            err = cahute_casiolink_receive_first_byte(
+                link,
+                &first_byte,
                 timeout
             );
             if (err)
                 return err;
         }
 
-        /* Sometimes the Classpad sends NUL or CHECK bytes in a loop until
-         * it doesn't, so we want to filter for it here. */
-        packet_type = buf[0];
-        if (!packet_type || packet_type == PACKET_TYPE_CHECK) {
-            msg(link->medium.context,
-                ll_warn,
-                "Got the following packet type, skipping: 0x%02X",
-                packet_type);
-            continue;
-        }
+        buf[0] = packet_type = first_byte;
 
         payload_size = 0;
         packet_subtype = 0;
 
-        if (packet_type == PACKET_TYPE_ACK) {
+        if (packet_type == PACKET_TYPE_ACK
+            || packet_type == PACKET_TYPE_ORDER) {
             err = cahute_receive_on_link_medium(
                 &link->medium,
                 &buf[1],
@@ -279,6 +278,15 @@ cahute_cas300_receive_packet(
             );
             if (err)
                 goto fail;
+
+            if (!cahute_is_ascii_hex(buf[1]) || !cahute_is_ascii_hex(buf[2])) {
+                msg(link->medium.context,
+                    ll_error,
+                    "Invalid CAS300 %s packet:",
+                    packet_type == PACKET_TYPE_ACK ? "ack" : "order");
+                mem(link->medium.context, ll_error, buf, 3);
+                goto fail;
+            }
 
             msg(link->medium.context,
                 ll_info,
@@ -303,7 +311,7 @@ cahute_cas300_receive_packet(
                 || !cahute_is_ascii_hex(buf[6])) {
                 msg(link->medium.context,
                     ll_error,
-                    "Invalid CAS300 %s termination packet:");
+                    "Invalid CAS300 termination packet:");
                 ;
                 mem(link->medium.context, ll_error, buf, 7);
                 goto fail;
@@ -476,7 +484,7 @@ cahute_cas300_receive_packet(
     link->protocol_state.casiolink.cas300.packet_id[1] = buf[2];
 
     /* Acknowledge the received packet. */
-    if (packet_type != PACKET_TYPE_ACK) {
+    if (packet_type != PACKET_TYPE_ACK && packet_type != PACKET_TYPE_ORDER) {
         cahute_u8 ack_buf[3];
 
         ack_buf[0] = PACKET_TYPE_ACK;
@@ -495,6 +503,15 @@ cahute_cas300_receive_packet(
 
     payload_size = link->protocol_state.casiolink.cas300.packet_payload_size;
     switch (buf[0]) {
+    case PACKET_TYPE_ORDER:
+        msg(link->medium.context,
+            ll_info,
+            "Interpreted as an out-of-order signal.");
+        link->protocol_state.casiolink.cas300.next_id =
+            cahute_ascii_hex_to_nibble(buf[1]) << 4
+            | cahute_ascii_hex_to_nibble(buf[2]);
+        break;
+
     case PACKET_TYPE_TERM:
         msg(link->medium.context, ll_info, "Interpreted as termination packet."
         );
@@ -611,7 +628,125 @@ cahute_cas300_receive_data(
  * --- */
 
 /**
- * Terminate the connection, for any CASIOLINK variant.
+ * Initiate the connection as a sender, for CAS300.
+ *
+ * NOTE: This function will fail if the communication has already been
+ *       initialized!
+ *
+ * @param link Link for which to initiate the connection, as a sender.
+ * @return Cahute error, or 0 if successful.
+ */
+CAHUTE_EXTERN(int) cahute_cas300_initiate_as_sender(cahute_link *link) {
+    int err, byte = -1, retry, attempts;
+
+    for (retry = 1, attempts = INIT_ATTEMPTS; retry && --attempts >= 0;) {
+        msg(link->medium.context, ll_info, "Sending start packet 0x16.");
+        err = cahute_send_byte_on_link_medium(&link->medium, 0x16);
+        if (err)
+            return err;
+
+        err = cahute_receive_byte_on_link_medium(&link->medium, &byte, 400);
+        if (err == CAHUTE_ERROR_TIMEOUT_START)
+            continue;
+        if (err)
+            return err;
+
+        if (byte == 0x13) {
+            /* ClassPad 300 / 330 (+) calculators answer this over USB only,
+             * and Cahute answers this over both USB and serial. */
+            msg(link->medium.context,
+                ll_info,
+                "Normal init ack received (0x13).");
+            retry = 0;
+            break;
+        }
+
+        if (byte == 0x00) {
+            /* For some reason, over serial links, ClassPad 300 / 330 (+)
+             * calculators do not answer 0x13, but two 0x00 bytes.
+             * There may be errors, usually found on the second byte, e.g.
+             * {0x00, 0x05} or {0x00, 0x09}, so we need to check that the
+             * calculator indeed returns a second 0x00 byte. */
+            msg(link->medium.context,
+                ll_info,
+                "NUL byte received, checking next byte.");
+            err =
+                cahute_receive_byte_on_link_medium(&link->medium, &byte, 400);
+            if (err == CAHUTE_ERROR_TIMEOUT_START)
+                continue;
+            if (err)
+                return err;
+
+            if (byte == 0x00) {
+                msg(link->medium.context,
+                    ll_info,
+                    "Alt init ack received (0x00, 0x00).");
+                retry = 0;
+                break;
+            }
+        }
+
+        /* The initiation has yielded another byte, considered a notice
+         * we want to log about. */
+        if (byte == 0x05) {
+            /* This seems to be received when the communication has not been
+             * successfully initiated, which means we need to resend the 0x16
+             * as it may have been skipped. */
+            msg(link->medium.context, ll_info, "Uninitiated received (0x05).");
+        } else if (byte == 0x09) {
+            /* This seems to be received when wakeup mode is enabled on the
+             * calculator, and the calculator, which was not in receive mode
+             * yet, has spawned the menu and is more or less ready to receive
+             * another start packet. */
+            msg(link->medium.context,
+                ll_info,
+                "Automatic reception mode enable received (0x09)");
+        } else
+            msg(link->medium.context,
+                ll_warn,
+                "Unknown notice received (0x%02X)",
+                byte);
+    }
+
+    if (attempts < 0) {
+        msg(link->medium.context,
+            ll_warn,
+            "Could not initialize the communication after %d attempts.",
+            INIT_ATTEMPTS);
+        return CAHUTE_ERROR_TIMEOUT_START;
+    }
+
+    return CAHUTE_OK;
+}
+
+/**
+ * Initiate the connection as a receiver, for CAS300.
+ *
+ * For some reason there seems to be an asymetry between host to device
+ * communication initialization, and device to host communication
+ * initialization.
+ *
+ * @param link Link for which to initiate the connection, as a receiver.
+ * @return Cahute error, or 0 if successful.
+ */
+CAHUTE_EXTERN(int) cahute_cas300_initiate_as_receiver(cahute_link *link) {
+    int byte = -1, err;
+
+    while (byte != 0x16) {
+        err = cahute_receive_byte_on_link_medium(&link->medium, &byte, 0);
+        if (err)
+            return err;
+    }
+
+    err = cahute_send_byte_on_link_medium(&link->medium, 0x13);
+    if (err)
+        return err;
+
+    return CAHUTE_OK;
+}
+
+/**
+ * Terminate the connection, for CAS300.
  *
  * This must be called while the link is in sender / active mode.
  *
@@ -667,7 +802,10 @@ CAHUTE_EXTERN(int) cahute_cas300_terminate(cahute_link *link) {
 /**
  * Discover device information.
  *
- * Note that this function is to be called while being the sender only.
+ * NOTE: This function is to be called while being the sender only.
+ * NOTE: For some reason, when this command is called a second time on a
+ *       given session, rather than respond with a 0x0002 command, the
+ *       calculator prefers to terminate the connection...
  *
  * @param link Link in which to discover device information.
  * @return Cahute error.
