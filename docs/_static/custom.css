@@ -18,7 +18,7 @@
     padding: 0;
 }
 
-h1 img, h2 img, p img {
+h1 img, h2 img, h3 img, p img {
     vertical-align: baseline;
     width: .8em;
 }

@@ -1,7 +1,7 @@
 .. _install-linux:
 
-|linux| Installing Cahute on Linux
-==================================
+|linux| Installing Cahute on Linux distributions
+================================================
 
 In order to install Cahute's library and command-line utilities on
 your Linux distribution, the following methods are available.

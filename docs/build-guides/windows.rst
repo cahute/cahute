@@ -1,7 +1,7 @@
 .. _build-windows:
 
-|win| Building Cahute for Windows
-=================================
+|win| Building Cahute for Microsoft Windows
+===========================================
 
 .. warning::
 
@@ -32,8 +32,7 @@ Building Cahute for Windows Vista and above, using Visual Studio
     Both Windows XP and above as a target and this build method are not
     officially supported yet.
 
-    See `#10 <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_ for
-    more information.
+    See :ref:`system-windows` for more information.
 
 It is possible to build Cahute for Windows Vista and above, using Microsoft's
 `Visual Studio`_.
@@ -137,8 +136,7 @@ Building Cahute for Windows XP, using Visual Studio
     Both Windows XP and above as a target and this build method are not
     officially supported yet.
 
-    See `#10 <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_ for
-    more information.
+    See :ref:`system-windows` for more information.
 
 .. warning::
 
@@ -276,8 +274,7 @@ Building Cahute for Windows XP and above, using Visual Studio and MinGW-w64
     Both Windows XP and above as a target and this build method are not
     officially supported yet.
 
-    See `#10 <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_ for
-    more information.
+    See :ref:`system-windows` for more information.
 
 It is possible to build Cahute for Windows XP, using Microsoft's
 `Visual Studio`_ and `MinGW-w64`_.
@@ -288,7 +285,8 @@ Installing the required components
 You need to install MinGW-w64 first. Pre-built binaries are available;
 for this, go to `MinGW-w64 Downloads`_ to the ``WinLibs.com`` section,
 click on the link present in the section, then go to the ``Download``,
-``Release versions``, and select the latest archive for Win64:
+``Release versions``, ``MSVCRT runtime``, and select the latest archive for
+Win64:
 
 .. figure:: winvsmingw1.png
 
@@ -400,8 +398,7 @@ Building Cahute for Windows XP and above, using |mingw-w64| MinGW-w64 on Archlin
     Both Windows XP and above as a target and this build method are not
     officially supported yet.
 
-    See `#10 <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_ for
-    more information.
+    See :ref:`system-windows` for more information.
 
 Building Cahute for Windows XP and above from Archlinux_
 using `MinGW-w64`_ is possible, as described in `Cross Compiling With CMake`_.

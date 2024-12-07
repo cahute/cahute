@@ -32,8 +32,7 @@ Building Cahute for AmigaOS 3.2 and above, using Linux
     Both AmigaOS 3.2 and above as a target and this build method are not
     officially supported yet.
 
-    See `#26 <https://gitlab.com/cahuteproject/cahute/-/issues/26>`_ for
-    more information.
+    See :ref:`system-amigaos` for more information.
 
 Building Cahute for AmigaOS 3.2 and above from Linux distributions
 using `m68k-amigaos-gcc`_, including the Native Development Kit (NDK),

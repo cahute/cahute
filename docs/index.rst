@@ -33,12 +33,12 @@ Officially supported systems are the following:
 .. system-list::
 
     * - |system-arch|
-      - Archlinux_ and derivatives
+      - :ref:`system-arch`
       - :ref:`Install from the AUR <install-linux-aur>`
       - :ref:`Install using GiteaPC <install-linux-giteapc>`
       - :ref:`Build natively <build-linux-sh>`
     * - |system-apple|
-      - macOS_
+      - :ref:`system-macos`
       - :ref:`Install using Homebrew <install-macos-homebrew>`
       - :ref:`Build natively <build-macos-sh>`
 
@@ -50,25 +50,21 @@ Officially supported systems are the following:
     .. system-list::
 
         * - |system-debian|
-          - Debian_ and derivatives (`#8
-            <https://gitlab.com/cahuteproject/cahute/-/issues/8>`_)
+          - :ref:`system-debian`
           - :ref:`Install using GiteaPC <install-linux-giteapc>`
           - :ref:`Build natively <build-linux-sh>`
         * - |system-voidlinux|
-          - `Void Linux`_ (`#72
-            <https://gitlab.com/cahuteproject/cahute/-/issues/72>`_)
+          - :ref:`system-void`
           - :ref:`Install using GiteaPC <install-linux-giteapc>`
           - :ref:`Build natively <build-linux-sh>`
         * - |system-win|
-          - `Microsoft Windows`_ XP and above (`#10
-            <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_)
+          - :ref:`system-windows`
           - :ref:`Build for Vista+ using Visual Studio <build-windows-vs>`
           - :ref:`Build for XP using Visual Studio <build-windows-vs-xp>`
           - :ref:`Build for XP+ using Visual Studio and MinGW-w64 <build-windows-vs-mingw>`
           - :ref:`Build using MinGW-w64 from Archlinux <build-windows-mingw>`
         * - |system-amigaos|
-          - AmigaOS_ 3.2 and above (`#26
-            <https://gitlab.com/cahuteproject/cahute/-/issues/26>`_)
+          - :ref:`system-amigaos`
           - :ref:`Build from Linux <build-amigaos-linux>`
 
 The project is being worked on `on Gitlab <Cahute on Gitlab_>`_.
@@ -139,7 +135,7 @@ and provide useful background information and explanation.
 
     data-formats
     communication-protocols
-    abstractions
+    features
     internals
 
 References
@@ -182,13 +178,6 @@ is based on.
 .. |system-debian| image:: install-guides/debian.svg
 .. |system-voidlinux| image:: install-guides/voidlinux.svg
 .. |system-amigaos| image:: install-guides/amigaos.png
-
-.. _Archlinux: https://archlinux.org/
-.. _macOS: https://www.apple.com/macos/
-.. _Microsoft Windows: http://windows.microsoft.com/
-.. _Debian: https://www.debian.org/
-.. _Void Linux: https://voidlinux.org/
-.. _AmigaOS: https://www.amigaos.net/
 
 .. _Cahute on Gitlab: https://gitlab.com/cahuteproject/cahute
 .. _Thomas Touhey: https://thomas.touhey.fr/

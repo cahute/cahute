@@ -1,7 +1,7 @@
 .. _build-linux:
 
-|linux| Building Cahute for Linux
-=================================
+|linux| Building Cahute for Linux distributions
+===============================================
 
 .. warning::
 
