@@ -150,8 +150,8 @@ Building Cahute for Windows XP, using Visual Studio
 It is possible to build Cahute for Windows XP, using Microsoft's
 `Visual Studio`_.
 
-Installing the required components
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Installing the MSVC v141_xp toolset for Visual Studio
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default, Visual Studio Installer selects MSVC v143 or later, which does not
 support Windows XP. In order to support Windows XP, you will need to open
@@ -165,6 +165,19 @@ Visual Studio Installer, modify your existing installation, go to
 
 You can then select "Modify" at the bottom right of the window in order to
 download and configure MSVC v141.
+
+Installing the Windows 8.1 SDK
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default, Visual Studio with the MSVC v141_xp toolset does not select the
+correct SDK version, so Cahute makes an effort to find a compatible SDK it
+can use for some features. For XP compatibility, you need to download
+and install the Windows 8.1 SDK in `Windows SDK and emulator archive`_:
+
+.. figure:: winvsxp1_1.png
+
+    Section in which to find the Windows 8.1 SDK on the
+    `Windows SDK and emulator archive`_.
 
 Setting up the project and configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -232,12 +245,6 @@ of the IDE, or using the Ctrl+S shortcut.
 
 Building the project
 ~~~~~~~~~~~~~~~~~~~~
-
-.. todo::
-
-    Currently, as reported in `VS community bug 4974`_, the project may not
-    build due to SDK issues. See `comment 2244287184 on #68`_ for alternative
-    solutions to the one found in the bug report.
 
 From here, you can select the target you want to build next to the green arrow
 on the top, and the architecture you're targetting. By leaving the default
@@ -486,9 +493,6 @@ one of the following command depending on the architecture you're targetting::
 .. _Installing and using packages (vcpkg):
     https://github.com/microsoft/vcpkg-docs/blob/main/vcpkg/examples/
     installing-and-using-packages.md#-step-2-use
-.. _VS Community bug 4974:
-    https://developercommunity.visualstudio.com/t/
-    macros-vc-includepath-and-vc-librarypath-x86-expan/4974
-.. _`Comment 2244287184 on #68`:
-    https://gitlab.com/cahuteproject/cahute/-/issues/68#note_2244287184
+.. _Windows SDK and emulator archive:
+    https://developer.microsoft.com/en-us/windows/downloads/sdk-archive/
 .. _MinGW-w64 Downloads: https://www.mingw-w64.org/downloads/

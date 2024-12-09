@@ -1,4 +1,9 @@
-cmake_minimum_required(VERSION 3.16)
+if(WIN32)
+    # CMake 3.24 is required to read the Windows registry.
+    cmake_minimum_required(VERSION 3.24)
+else()
+    cmake_minimum_required(VERSION 3.16)
+endif()
 
 project(
     cahute
@@ -183,7 +188,7 @@ set(CLI_INCLUDE_DIRS
 )
 
 # CLI_LIBRARIES represent the libraries against which to link for any
-# command-line utility.
+# command-line utility.
 set(CLI_LIBRARIES
     cahute
 )
@@ -202,7 +207,95 @@ endif()
 find_package(Python3 REQUIRED)
 
 if(WIN32 OR MINGW)
-    list(APPEND CLI_LIBRARIES cfgmgr32 uuid)
+    if(
+        CMAKE_HOST_WIN32
+        AND CMAKE_GENERATOR MATCHES "Visual Studio"
+        AND "${CMAKE_GENERATOR_TOOLSET}" MATCHES ".*_xp"
+    )
+        # In case of VS toolset v141_xp for Visual Studio, an incorrect
+        # Windows SDK is loaded that may not include <wdmguid.h> or
+        # cfgmgr32.lib, so we add them manually.
+        string(REGEX REPLACE "-.*" "" WIN_SDK_ARCH "${VCPKG_TARGET_TRIPLET}")
+
+        # Start by trying to match the Windows 8.1 SDK.
+        cmake_host_system_information(
+            RESULT WIN_SDK_PATH
+            QUERY WINDOWS_REGISTRY "HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Microsoft SDKs\\Windows\\v8.1"
+            VALUE "InstallationFolder"
+        )
+        string(REGEX REPLACE "[\\/]$" "" WIN_SDK_PATH "${WIN_SDK_PATH}")
+
+        if(NOT WIN_SDK_PATH STREQUAL "" AND EXISTS "${WIN_SDK_PATH}/Include/shared/wdmguid.h")
+            set(WIN_SDK_INCLUDE_DIR "${WIN_SDK_PATH}/Include/shared")
+            set(WIN_SDK_LIBRARY_DIR "${WIN_SDK_PATH}/Lib/winv6.3/um/${WIN_SDK_ARCH}")
+            set(WIN_SDK_CFGMGR32_LIB "cfgmgr32")
+        endif()
+
+        # Otherwise, try to match the Windows 7 SDK.
+        if(NOT DEFINED WIN_SDK_INCLUDE_DIR)
+            foreach(WIN_SDK_MAJOR IN ITEMS "V7.1A\\XPSupport" "V7.1A")
+                cmake_host_system_information(
+                    RESULT WIN_SDK_PATH
+                    QUERY WINDOWS_REGISTRY "HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Microsoft SDKs\\Windows\\${CAHUTE_WIN_SDK_MAJOR}"
+                    VALUE "InstallationFolder"
+                )
+                string(REGEX REPLACE "[\\/]$" "" WIN_SDK_PATH "${WIN_SDK_PATH}")
+
+                if(NOT WIN_SDK_PATH STREQUAL "" AND EXISTS "${WIN_SDK_PATH}/Include/wdmguid.h")
+                    set(WIN_SDK_INCLUDE_DIR "${WIN_SDK_PATH}/Include")
+                    if("${WIN_SDK_ARCH}" EQUALS "x64")
+                        set(WIN_SDK_LIBRARY_DIR "${WIN_SDK_PATH}/Lib/x64")
+                    else()
+                        set(WIN_SDK_LIBRARY_DIR "${WIN_SDK_PATH}/Lib")
+                    endif()
+                    set(WIN_SDK_CFGMGR32_LIB "setupapi")
+                endif()
+            endforeach()
+        endif()
+
+        # If Windows 8.1 SDK was not found, we try to match the Windows 10 SDK.
+        if(NOT DEFINED WIN_SDK_INCLUDE_DIR)
+            cmake_host_system_information(
+                RESULT WIN_SDK_PATH
+                QUERY WINDOWS_REGISTRY "HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Microsoft SDKs\\Windows\\v10.0"
+                VALUE "InstallationFolder"
+            )
+            string(REGEX REPLACE "[\\/]$" "" WIN_SDK_PATH "${WIN_SDK_PATH}")
+
+            # Both "Include/" and "Lib/" are subdivided with the SDK version, so we want to look
+            # for the first available version that actually works and go with that.
+            file(GLOB WIN_SDK_VERSIONS LIST_DIRECTORIES TRUE RELATIVE "${WIN_SDK_PATH}/Include" "${WIN_SDK_PATH}/Include/*")
+            foreach(WIN_SDK_VERSION IN LISTS WIN_SDK_VERSIONS)
+                if(
+                    EXISTS "${WIN_SDK_PATH}/Include/${WIN_SDK_VERSION}/shared/wdmguid.h"
+                    AND EXISTS "${WIN_SDK_PATH}/Lib/${WIN_SDK_VERSION}/um/${WIN_SDK_ARCH}/cfgmgr32.lib"
+                )
+                    set(WIN_SDK_INCLUDE_DIR "${WIN_SDK_PATH}/Include/${WIN_SDK_VERSION}/shared")
+                    set(WIN_SDK_LIBRARY_DIR "${WIN_SDK_PATH}/Lib/${WIN_SDK_VERSION}/um/${WIN_SDK_ARCH}")
+                    break()
+                endif()
+            endforeach()
+
+            set(WIN_SDK_CFGMGR32_LIB "cfgmgr32")
+        endif()
+
+        if(NOT DEFINED WIN_SDK_INCLUDE_DIR)
+            message(FATAL_ERROR "Windows SDK could not be found.")
+        endif()
+
+        set(WIN_SDK_CFGMGR32_LIB "${WIN_SDK_LIBRARY_DIR}/${WIN_SDK_CFGMGR32_LIB}.lib")
+
+        message("Using the following overrides for Windows SDK:")
+        message("* cfgmgr32 library: ${WIN_SDK_CFGMGR32_LIB}")
+        message("* include directory: ${WIN_SDK_INCLUDE_DIR}")
+
+        list(APPEND CLI_LIBRARIES "${WIN_SDK_CFGMGR32_LIB}")
+        list(APPEND LIB_INCLUDE_DIRS "${WIN_SDK_INCLUDE_DIR}")
+    else()
+        list(APPEND CLI_LIBRARIES cfgmgr32)
+    endif()
+
+    list(APPEND CLI_LIBRARIES uuid)
     set(SDL2_NO_MWINDOWS 1)
 endif()
 
