@@ -55,7 +55,7 @@ html_theme_options = {
 }
 html_extra_path = [str(Path("_static") / "cover-temp.png")]
 
-if environ.get("CI_COMMIT_BRANCH") == "develop" or environ.get("IS_PREVIEW"):
+if environ.get("IS_PREVIEW"):
     html_theme_options["announcement"] = (
         "<p>This is a <b>preview</b> of the documentation for the next "
         + "version of Cahute.</p><p>It may describe features that are not "

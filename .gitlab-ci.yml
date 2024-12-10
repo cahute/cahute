@@ -1,15 +1,14 @@
 stages:
   - lint
   - build
+  - package
   - publish
 
 pre-commit:
     stage: lint
     rules:
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    image: python:3.11
-    before_script:
-        - pip install pre-commit==3.6.0
+    image: registry.gitlab.com/cahuteproject/docker-images/pre-commit:latest
     script:
         - pre-commit run -v --all-files
 
@@ -133,32 +132,17 @@ build (m68k-amigaos):
         - cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
         - cmake --build build
 
-build tarball:
+.build docs:
     stage: build
-    rules:
-        - if: $CI_COMMIT_BRANCH == "develop"
-        - if: $CI_COMMIT_TAG
-        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-          changes:
-          - "chars/*"
-          - "cli/*"
-          - "common/*"
-          - "include/*"
-          - "lib/*"
-          - ".gitlab-ci.yml"
-    image: debian:bookworm-slim
-    before_script:
-        - apt-get update -y
-        - apt-get install -y cmake pkg-config gcc libusb-1.0-0-dev libsdl2-dev
+    image: registry.gitlab.com/cahuteproject/docker-images/sphinx:latest
     script:
-        - cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
-        - cpack --config build/CPackSourceConfig.cmake
+        - sphinx-build -M html docs docs/_build
     artifacts:
         paths:
-            - cahute-*.tar.gz
+            - docs/_build/html
 
-build docs:
-    stage: build
+build next docs:
+    extends: .build docs
     rules:
         - if: $CI_COMMIT_BRANCH == "develop"
         - if: $CI_COMMIT_TAG
@@ -166,56 +150,78 @@ build docs:
           changes:
           - "docs/**/*"
           - ".gitlab-ci.yml"
-    image: python:3.11
-    before_script:
-        - pip install -r docs/requirements.txt
+    variables:
+        IS_PREVIEW: "y"
+
+build release docs:
+    extends: .build docs
+    rules:
+        - if: $CI_COMMIT_TAG
+
+package source:
+    stage: package
+    rules:
+        - if: $CI_COMMIT_BRANCH == "develop"
+        - if: $CI_COMMIT_TAG
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          changes:
+          - ".gitlab-ci.yml"
+    image: registry.gitlab.com/cahuteproject/docker-images/package-source:latest
     script:
-        - sphinx-build -M html docs docs/_build
+        - >
+            cmake -B build -S .
+            -DCAHUTE_CLI=OFF -DCAHUTE_GIT=OFF -DCAHUTE_LIBUSB=OFF
+            -DCAHUTE_PKGCONF=OFF -DCAHUTE_SDL=OFF -DCAHUTE_UDEV=OFF
+        - cpack --config build/CPackSourceConfig.cmake
     artifacts:
         paths:
-            - docs/_build/html
+            - cahute-*.tar.gz
 
-publish docs:
+.publish docs:
     stage: publish
-    rules:
-      - if: $CI_COMMIT_TAG
-        variables:
-            UPLOAD_PATH: /var/www/cahuteproject/www
-      - if: $CI_COMMIT_BRANCH == "develop"
-        variables:
-            UPLOAD_PATH: /var/www/cahuteproject/next
-    image: debian:bookworm-slim
+    image: registry.gitlab.com/cahuteproject/docker-images/rsync:latest
     before_script:
-        - apt-get update -y
-        - apt-get install -y rsync openssh-client
-        - eval $(ssh-agent -s)
-        - mkdir ~/.ssh && chmod 700 ~/.ssh
-        - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >~/.ssh/config
         - chmod 400 "$SSH_PRIVATE_KEY"
         - ssh-add "$SSH_PRIVATE_KEY"
     script:
-        - rsync -Prlt --delete docs/_build/html/ gitlab-cahute@cahuteproject.org:$UPLOAD_PATH
+        - rsync -Prlt --delete docs/_build/html/ $UPLOAD_PATH
     dependencies:
         - build docs
 
-publish tarball:
+publish next docs:
+    extends: .publish docs
+    rules:
+        - if: $CI_COMMIT_BRANCH == "develop"
+        - if: $CI_COMMIT_TAG
+    variables:
+        UPLOAD_PATH: "$CAHUTE_NEXT_UPLOAD_PATH"
+    dependencies:
+        - build next docs
+
+publish release docs:
+    extends: .publish docs
+    rules:
+        - if: $CI_COMMIT_TAG
+    variables:
+        UPLOAD_PATH: "$CAHUTE_DOCS_UPLOAD_PATH"
+    dependencies:
+        - build release docs
+
+publish source:
     stage: publish
     rules:
         - if: $CI_COMMIT_TAG
           when: always
-    image: debian:bookworm-slim
+    image: registry.gitlab.com/cahuteproject/docker-images/rsync:latest
     before_script:
-        - apt-get update -y
-        - apt-get install -y openssh-client
-        - eval $(ssh-agent -s)
-        - mkdir ~/.ssh && chmod 700 ~/.ssh
-        - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >~/.ssh/config
         - chmod 400 "$SSH_PRIVATE_KEY"
         - ssh-add "$SSH_PRIVATE_KEY"
     script:
         - export RELEASE_FILE=$(ls cahute-*.tar.gz)
         - sha256sum $RELEASE_FILE >$RELEASE_FILE.sha256
         - b2sum $RELEASE_FILE >$RELEASE_FILE.b2
-        - scp $RELEASE_FILE $RELEASE_FILE.sha256 $RELEASE_FILE.b2 gitlab-cahute@cahuteproject.org:/var/www/cahuteproject/ftp/releases
+        - >
+            scp $RELEASE_FILE $RELEASE_FILE.sha256 $RELEASE_FILE.b2
+            $CAHUTE_FTP_UPLOAD_PATH/releases
     dependencies:
-        - build tarball
+        - package source
