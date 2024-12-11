@@ -63,6 +63,18 @@
 #define PROTOCOL_FLAG_NODISC   0x00000400 /* Should not run discovery. */
 #define PROTOCOL_FLAG_RECEIVER 0x00000800 /* Act as a receiver. */
 
+#if LIBUSB_ENABLED
+# if LIBUSB_API_VERSION >= 0x01000108 /* libusb 1.0.24 */
+#  define IS_LIBUSB_BULK_ENDPOINT(EP) \
+      (((EP)->bmAttributes & LIBUSB_TRANSFER_TYPE_MASK) \
+       != LIBUSB_ENDPOINT_TRANSFER_TYPE_BULK)
+# else
+#  define IS_LIBUSB_BULK_ENDPOINT(EP) \
+      (((EP)->bmAttributes & LIBUSB_TRANSFER_TYPE_MASK) \
+       != LIBUSB_TRANSFER_TYPE_BULK)
+# endif
+#endif
+
 /* Protocol 7.00 packets for detection. */
 CAHUTE_LOCAL_DATA(cahute_u8)
 seven_check_packet[] = {5, '0', '0', '0', '7', '0'};
@@ -2526,8 +2538,7 @@ cahute_open_usb_link(
              j = interface_descriptor->bNumEndpoints;
              j;
              endpoint_descriptor++, j--) {
-            if ((endpoint_descriptor->bmAttributes & 3)
-                != LIBUSB_ENDPOINT_TRANSFER_TYPE_BULK)
+            if (IS_LIBUSB_BULK_ENDPOINT(endpoint_descriptor))
                 continue;
 
             switch (endpoint_descriptor->bEndpointAddress & 128) {
