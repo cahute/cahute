@@ -197,6 +197,10 @@ set(CLI_LIBRARIES
 # pkgconf / pkg-config configuration file when installing the library.
 set(PKGCONFIG_DEPS "")
 
+# PKGCONFIG_LIBS represent the additional includes to place in the
+# pkgconf / pkg-config configuration file when installing the library.
+set(PKGCONFIG_LIBS "")
+
 include(GNUInstallDirs)
 include(CheckTypeSize)
 
@@ -304,18 +308,33 @@ if(CAHUTE_FEATURE_CLI_P7SCREEN)
 endif()
 
 if(CAHUTE_LIBUSB)
-    pkg_check_modules(libusb REQUIRED libusb-1.0 IMPORTED_TARGET)
-    list(APPEND LIB_INCLUDE_DIRS
-        "${libusb_INCLUDE_DIRS}"
-    )
+    if(WIN32 AND DEFINED VCPKG_INSTALLED_DIR)
+        # With vcpkg, libusb <=1.0.23 does not include a pkgconf file,
+        # so we need to add the options manually, hoping it will be enough.
+        pkg_check_modules(libusb libusb-1.0 IMPORTED_TARGET)
+        if(NOT TARGET PkgConfig::libusb)
+            list(APPEND LIB_INCLUDE_DIRS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/libusb-1.0")
+            list(APPEND CLI_LIBRARIES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/libusb-1.0.lib")
+            list(APPEND PKGCONFIG_LIBS "-lusb-1.0")
+        endif()
+    else()
+        pkg_check_modules(libusb REQUIRED libusb-1.0 IMPORTED_TARGET)
+    endif()
+
+    if(TARGET PkgConfig::libusb)
+        list(APPEND LIB_INCLUDE_DIRS
+            "${libusb_INCLUDE_DIRS}"
+        )
+        list(APPEND CLI_LIBRARIES
+            PkgConfig::libusb
+        )
+        list(APPEND PKGCONFIG_DEPS
+            "libusb-1.0"
+        )
+    endif()
+
     list(APPEND LIB_COMPILE_DEFS
         "-DLIBUSB_ENABLED=1"
-    )
-    list(APPEND CLI_LIBRARIES
-        PkgConfig::libusb
-    )
-    list(APPEND PKGCONFIG_DEPS
-        "libusb-1.0"
     )
 else()
     list(APPEND LIB_COMPILE_DEFS

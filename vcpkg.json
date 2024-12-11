@@ -1,9 +1,15 @@
 {
-  "builtin-baseline": "0857a4b08c14030bbe41e80accb2b1fddb047a74",
+  "builtin-baseline": "b7601ed37e1e1ce11a4f61b4b94a23e39d465f1d",
   "dependencies": [
     "libusb",
     "pkgconf",
     "python3",
     "sdl2"
+  ],
+  "overrides": [
+    {
+      "name": "libusb",
+      "version": "1.0.23"
+    }
   ]
 }
