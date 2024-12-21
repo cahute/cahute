@@ -45,7 +45,7 @@ figcaption > p {
 .title-container {
     margin: 1em 0;
     padding: 0 1em 1em;
-    background: url("/cover-temp.png");
+    background: url("/cover.svg");
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;

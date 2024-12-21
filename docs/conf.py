@@ -53,7 +53,7 @@ html_theme_options = {
         },
     ],
 }
-html_extra_path = [str(Path("_static") / "cover-temp.png")]
+html_extra_path = [str(Path("_static") / "cover.svg")]
 
 if environ.get("IS_PREVIEW"):
     html_theme_options["announcement"] = (
@@ -70,7 +70,7 @@ html_use_index = False
 html_copy_source = False
 html_show_sourcelink = False
 html_domain_indices = False
-html_css_files = ["custom.css"]
+html_css_files = ["custom2.css"]
 
 intersphinx_mapping = {}
 
