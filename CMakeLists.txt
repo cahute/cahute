@@ -7,7 +7,7 @@ endif()
 
 project(
     cahute
-    VERSION 0.5
+    VERSION 0.6
     DESCRIPTION "Communication and file format handling tools for CASIO calculators"
     HOMEPAGE_URL "https://cahuteproject.org/"
     LANGUAGES C
