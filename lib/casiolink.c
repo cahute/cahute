@@ -72,7 +72,7 @@ cahute_casiolink_check_file_data(
             return err;
 
         if (buf[0] != desc->packet_type) {
-            msg(file->medium.context,
+            msg(file->context,
                 ll_error,
                 "In part %" CAHUTE_PRIuSIZE "/%" CAHUTE_PRIuSIZE
                 ": invalid "
@@ -88,8 +88,8 @@ cahute_casiolink_check_file_data(
          * `cahute_casiolink_receive_packet()`, with the alt checksum
          * for CAS40 screenshots. */
         if (part_size > 1) {
-            err = cahute_checksum_from_file_medium(
-                &file->medium,
+            err = cahute_checksum_from_file(
+                file,
                 offset + 1,
                 part_size - 1,
                 &checksum_alt
@@ -118,7 +118,7 @@ cahute_casiolink_check_file_data(
             return err;
 
         if (buf[1] != checksum && buf[1] != checksum_alt) {
-            msg(file->medium.context,
+            msg(file->context,
                 ll_error,
                 "In part %" CAHUTE_PRIuSIZE "/%" CAHUTE_PRIuSIZE
                 ": invalid checksum (obtained: 0x%02X, computed: 0x%02X)",
@@ -198,8 +198,7 @@ cahute_casiolink_receive_first_byte(
     int byte = -1, err;
 
     do {
-        err =
-            cahute_receive_byte_on_link_medium(&link->medium, &byte, timeout);
+        err = cahute_receive_byte_on_link_transport(link, &byte, timeout);
         if (err)
             return err;
 
@@ -207,7 +206,7 @@ cahute_casiolink_receive_first_byte(
             /* The sender is either re-initializing the connection, or
              * starting the connection and we did not check when creating
              * the link, either way we can just answer here and restart. */
-            err = cahute_send_byte_on_link_medium(&link->medium, 0x13);
+            err = cahute_send_byte_on_link_transport(link, 0x13);
             if (err)
                 return err;
 
@@ -250,7 +249,7 @@ cahute_casiolink_receive_packet(
 
     err = cahute_casiolink_receive_first_byte(link, &first_byte, timeout);
     if (err == CAHUTE_ERROR_TIMEOUT_START) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Timeout received while reading the packet type.");
         return CAHUTE_ERROR_TIMEOUT;
@@ -258,7 +257,7 @@ cahute_casiolink_receive_packet(
         return err;
 
     if (first_byte != expected_type) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Expected 0x%02X packet type, got 0x%02X.",
             expected_type,
@@ -274,8 +273,8 @@ cahute_casiolink_receive_packet(
         while (size_left) {
             size_t to_read = size_left > 512 ? 512 : size_left;
 
-            err = cahute_receive_on_link_medium(
-                &link->medium,
+            err = cahute_receive_on_link_transport(
+                link,
                 p,
                 to_read,
                 CASIOLINK_TIMEOUT_PACKET_CONTENTS,
@@ -305,13 +304,13 @@ cahute_casiolink_receive_packet(
 
     /* Check the checksum. */
     if (checksum != buf[1 + size] && checksum_alt != buf[1 + size]) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_warn,
             "Invalid checksum (obtained: 0x%02X, computed: "
             "0x%02X).",
             buf[1 + size],
             checksum);
-        mem(link->medium.context, ll_info, buf, size);
+        mem(link->context, ll_info, buf, size);
 
         return CAHUTE_ERROR_CORRUPT;
     }
@@ -338,10 +337,7 @@ cahute_casiolink_decode_data(
     int err;
 
     /* Read the header start. */
-    msg(file->medium.context,
-        ll_info,
-        "Reading new header at offset %lu.",
-        *offsetp);
+    msg(file->context, ll_info, "Reading new header at offset %lu.", *offsetp);
     err = cahute_read_from_file(file, *offsetp, header_buf, 40);
     if (err)
         return err;
@@ -355,7 +351,7 @@ cahute_casiolink_decode_data(
     }
 
     CAHUTE_RETURN_IMPL(
-        file->medium.context,
+        file->context,
         "Cannot decode CAS100 data from a CASIOLINK file."
     );
 }
@@ -516,7 +512,7 @@ cahute_casiolink_receive_raw_data(
             cahute_casiolink_compute_data_description_size(desc);
 
         if (total_size > *buf_sizep) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Cannot get %" CAHUTE_PRIuSIZE "o into a %" CAHUTE_PRIuSIZE
                 "o data buffer.",
@@ -525,8 +521,8 @@ cahute_casiolink_receive_raw_data(
 
             /* We actually send like we don't recognize the data, in
              * order not to make the link irrecoverable. */
-            err = cahute_send_byte_on_link_medium(
-                &link->medium,
+            err = cahute_send_byte_on_link_transport(
+                link,
                 PACKET_TYPE_INVALID_DATA
             );
             if (err)
@@ -537,7 +533,7 @@ cahute_casiolink_receive_raw_data(
     }
 
     /* We can acknowledge the header so we can actually receive it. */
-    err = cahute_send_byte_on_link_medium(&link->medium, PACKET_TYPE_ACK);
+    err = cahute_send_byte_on_link_transport(link, PACKET_TYPE_ACK);
     if (err)
         return err;
 
@@ -546,7 +542,7 @@ cahute_casiolink_receive_raw_data(
         size_t part_size =
             desc->part_sizes[i >= desc->part_count ? desc->part_count - 1 : i];
 
-        msg(link->medium.context,
+        msg(link->context,
             ll_info,
             "Reading data part %d/%d (%" CAHUTE_PRIuSIZE "o).",
             i + 1,
@@ -563,11 +559,11 @@ cahute_casiolink_receive_raw_data(
         if (err == CAHUTE_ERROR_CORRUPT) {
             int sub_err;
 
-            msg(link->medium.context, ll_error, "Transfer will abort.");
+            msg(link->context, ll_error, "Transfer will abort.");
             link->flags |= CAHUTE_LINK_FLAG_IRRECOVERABLE;
 
-            sub_err = cahute_send_byte_on_link_medium(
-                &link->medium,
+            sub_err = cahute_send_byte_on_link_transport(
+                link,
                 PACKET_TYPE_INVALID_DATA
             );
             if (sub_err)
@@ -578,18 +574,18 @@ cahute_casiolink_receive_raw_data(
             return err;
 
         /* Acknowledge the data. */
-        err = cahute_send_byte_on_link_medium(&link->medium, PACKET_TYPE_ACK);
+        err = cahute_send_byte_on_link_transport(link, PACKET_TYPE_ACK);
         if (err)
             return err;
 
-        msg(link->medium.context,
+        msg(link->context,
             ll_info,
             "Data part %d/%d received and acknowledged.",
             i + 1,
             nparts);
         if ((~desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_NO_LOG)
             && part_size <= 4096) /* Let's not flood the terminal. */
-            mem(link->medium.context, ll_info, buf, part_size);
+            mem(link->context, ll_info, buf, part_size);
 
         buf += part_size + 2;
         received += part_size + 2;
@@ -630,16 +626,13 @@ cahute_casiolink_receive_data(
         }
 
         if (byte != 0x3A) {
-            msg(link->medium.context,
-                ll_error,
-                "Unknown packet type 0x%02X.",
-                byte);
+            msg(link->context, ll_error, "Unknown packet type 0x%02X.", byte);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
         buf[0] = byte;
-        err = cahute_receive_on_link_medium(
-            &link->medium,
+        err = cahute_receive_on_link_transport(
+            link,
             &buf[1],
             39,
             CASIOLINK_TIMEOUT_PACKET_CONTENTS,
@@ -654,8 +647,8 @@ cahute_casiolink_receive_data(
             break;
 
         case VARIANT_CAS50:
-            err = cahute_receive_on_link_medium(
-                &link->medium,
+            err = cahute_receive_on_link_transport(
+                link,
                 &buf[40],
                 10,
                 CASIOLINK_TIMEOUT_PACKET_CONTENTS,
@@ -697,13 +690,13 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_receiver(cahute_link *link) {
     /* On CAS300 serial links, the calculator may send invalid 0x00 bytes
      * until it sends something else, so we want to ignore such cases. */
     while (byte <= 0) {
-        err = cahute_receive_byte_on_link_medium(&link->medium, &byte, 0);
+        err = cahute_receive_byte_on_link_transport(link, &byte, 0);
         if (err)
             return err;
     }
 
     if (byte != PACKET_TYPE_START) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Expected START packet (0x%02X), got 0x%02X.",
             PACKET_TYPE_START,
@@ -712,16 +705,12 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_receiver(cahute_link *link) {
         return CAHUTE_ERROR_UNKNOWN;
     }
 
-    err = cahute_send_byte_on_link_medium(
-        &link->medium,
-        PACKET_TYPE_ESTABLISHED
-    );
+    err = cahute_send_byte_on_link_transport(link, PACKET_TYPE_ESTABLISHED);
     if (err)
         return err;
 
-    msg(link->medium.context,
-        ll_info,
-        "CASIOLINK initiation successful as receiver!");
+    msg(link->context, ll_info, "CASIOLINK initiation successful as receiver!"
+    );
     return CAHUTE_OK;
 }
 
@@ -734,27 +723,26 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_receiver(cahute_link *link) {
 CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link) {
     int initial_attempts = 6, attempts, err, byte;
 
-    msg(link->medium.context,
+    msg(link->context,
         ll_info,
         "Making the initial handshake (%d attempts, %lums for each).",
         initial_attempts,
         TIMEOUT_INIT);
     for (attempts = initial_attempts; attempts > 0; attempts--) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_info,
             "Sending 0x%02X start packet.",
             PACKET_TYPE_START);
 
-        err =
-            cahute_send_byte_on_link_medium(&link->medium, PACKET_TYPE_START);
+        err = cahute_send_byte_on_link_transport(link, PACKET_TYPE_START);
         if (err)
             return err;
 
         /* On CAS300 serial links, the calculator may send invalid 0x00 bytes
          * until it sends something else, so we want to ignore such cases. */
         for (byte = -1; !err && byte <= 0;) {
-            err = cahute_receive_byte_on_link_medium(
-                &link->medium,
+            err = cahute_receive_byte_on_link_transport(
+                link,
                 &byte,
                 TIMEOUT_INIT
             );
@@ -764,7 +752,7 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link) {
             continue;
 
         if (byte != PACKET_TYPE_ESTABLISHED) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Expected ESTABLISHED packet (0x%02X), got 0x%02X.",
                 PACKET_TYPE_ESTABLISHED,
@@ -777,7 +765,7 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link) {
     }
 
     if (attempts <= 0) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "No response after %d attempts.",
             initial_attempts);

@@ -8,7 +8,7 @@ custom protocol for your CASIO calculator, and do not want to deal with
 system-specific complexities Cahute has already implemented.
 
 In order to open a link to a calculator plugged in over serial in order to
-use the link medium access functions, the steps are the following:
+use the link transport access functions, the steps are the following:
 
 #. Create a context using :c:func:`cahute_create_context`.
 #. Open the link using :c:func:`cahute_open_serial_link` with the
@@ -18,7 +18,7 @@ use the link medium access functions, the steps are the following:
 #. Call :c:func:`cahute_destroy_context` to destroy the context.
 
 The functions you can use with generic links are described
-in :ref:`header-cahute-link-medium`.
+in :ref:`header-cahute-link-transport`.
 
 An example program that uses generic links to read two characters, then write
 two characters, is the following:

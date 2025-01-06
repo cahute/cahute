@@ -200,7 +200,7 @@ CAHUTE_WUR CAHUTE_EXTERN(int) cahute_open_simple_usb_link(
 CAHUTE_EXTERN(void) cahute_close_link(cahute_link *cahute__link);
 
 /* ---
- * Link medium access.
+ * Link transport access.
  * --- */
 
 CAHUTE_EXTERN(int)

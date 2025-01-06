@@ -36,6 +36,7 @@
  */
 CAHUTE_EXTERN(int) cahute_create_context(cahute_context **contextp) {
     cahute_context *context;
+    int i;
 
     *contextp = NULL;
     context = malloc(sizeof(cahute_context));
@@ -45,14 +46,8 @@ CAHUTE_EXTERN(int) cahute_create_context(cahute_context **contextp) {
     cahute_reset_log_func(context);
     context->log_level = CAHUTE_DEFAULT_LOGLEVEL;
 
-#if LIBUSB_ENABLED
-    context->libusb_context = NULL;
-#endif
-
-#if AMIGAOS_ENABLED
-    context->amiga_timer_msg_port = NULL;
-    context->amiga_timer_request = NULL;
-#endif
+    for (i = 0; i < CAHUTE_CONTEXT_POINTER_COUNT; i++)
+        context->pointers[i].flags = 0;
 
     *contextp = context;
     return CAHUTE_OK;
@@ -64,120 +59,58 @@ CAHUTE_EXTERN(int) cahute_create_context(cahute_context **contextp) {
  * @param context Context to destroy.
  */
 CAHUTE_EXTERN(void) cahute_destroy_context(cahute_context *context) {
+    int i;
+
     if (!context)
         return;
 
-#if LIBUSB_ENABLED
-    if (context->libusb_context)
-        libusb_exit(context->libusb_context);
-#endif
+    for (i = 0; i < CAHUTE_CONTEXT_POINTER_COUNT; i++) {
+        cahute_context_pointer *p = &context->pointers[i];
 
-#if AMIGAOS_ENABLED
-    if (context->amiga_timer_msg_port) {
-        AbortIO((struct IORequest *)context->amiga_timer_request);
-        WaitIO((struct IORequest *)context->amiga_timer_request);
-        CloseDevice((struct IORequest *)context->amiga_timer_request);
-        DeleteIORequest(context->amiga_timer_request);
-        DeleteMsgPort(context->amiga_timer_msg_port);
+        if (~p->flags & CAHUTE_CONTEXT_POINTER_FLAG_INIT || !p->destroy_func)
+            continue;
+
+        (*p->destroy_func)(context, p->value);
     }
-#endif
 
     free(context);
 }
 
-#if LIBUSB_ENABLED
 /**
- * Get or instantiate the libusb context for a given context.
+ * Get or instantiate a context pointer.
  *
- * @param context Context for which to get the libusb context.
- * @param contextp Pointer to set to the libusb context.
- * @return Cahute error, or 0 if successful.
+ * @param context Context for which to get the pointer.
+ * @param valuep Pointer to the value to set.
+ * @param key Key of the pointer to get.
+ * @param init_func Initialization function, if the value is not yet
+ *        initialized.
+ * @return Cahute error, or 0 if ok.
  */
 CAHUTE_EXTERN(int)
-cahute_get_libusb_context(cahute_context *context, libusb_context **contextp) {
+cahute_get_context_pointer(
+    cahute_context *context,
+    void **valuep,
+    int key,
+    cahute_context_init_func *init_func
+) {
+    cahute_context_pointer *p = &context->pointers[key];
+    cahute_context_destroy_func *destroy_func = NULL;
+    void *value = NULL;
     int err;
 
-    *contextp = NULL;
-    if (!context->libusb_context) {
-        err = libusb_init(&context->libusb_context);
-        if (err) {
-            context->libusb_context = NULL;
-            msg(context,
-                ll_fatal,
-                "Could not create a libusb context: %s (%d)",
-                libusb_error_name(err),
-                err);
-            return CAHUTE_ERROR_UNKNOWN;
-        }
-    }
-
-    *contextp = context->libusb_context;
-    return CAHUTE_OK;
-}
-#endif
-
-#if AMIGAOS_ENABLED
-/**
- * Get or instantiate the common AmigaOS timer for a given context.
- *
- * @param context Context for which to get the AmigaOS timer.
- * @param msg_portp Pointer to set to the timer message port, if set.
- * @param timerp Pointer to set to the timer request, if set.
- * @return Cahute error, or 0 if successful.
- */
-CAHUTE_EXTERN(int)
-cahute_get_amiga_timer(
-    cahute_context *context,
-    struct MsgPort **msg_portp,
-    struct timerequest **timerp
-) {
-    struct MsgPort *msg_port;
-    struct timerequest *timer_io;
-    int ret;
-
-    if (context->amiga_timer_request)
+    if (p->flags & CAHUTE_CONTEXT_POINTER_FLAG_INIT)
         goto end;
 
-    msg_port = CreateMsgPort();
-    if (!msg_port) {
-        msg(context,
-            ll_error,
-            "An error has occurred while creating the port for the timer.");
-        return CAHUTE_ERROR_UNKNOWN;
-    }
+    err = (*init_func)(context, &value, &destroy_func);
+    if (err)
+        return err;
 
-    timer_io = CreateIORequest(msg_port, sizeof(struct timerequest));
-    if (!timer_io) {
-        msg(context,
-            ll_error,
-            "An error has occurred while creating the timer I/O.");
-        DeleteMsgPort(msg_port);
-        return CAHUTE_ERROR_UNKNOWN;
-    }
-
-    ret = OpenDevice(
-        (CONST_STRPTR)TIMERNAME,
-        UNIT_VBLANK,
-        (struct IORequest *)timer_io,
-        0L
-    );
-    if (ret) {
-        msg(context,
-            ll_error,
-            "An error has occurred while creating the timer I/O.");
-        DeleteIORequest(timer_io);
-        DeleteMsgPort(msg_port);
-        return CAHUTE_ERROR_UNKNOWN;
-    }
-
-    context->amiga_timer_msg_port = msg_port;
-    context->amiga_timer_request = timer_io;
+    p->flags = CAHUTE_CONTEXT_POINTER_FLAG_INIT;
+    p->value = value;
+    p->destroy_func = destroy_func;
 
 end:
-    if (msg_portp)
-        *msg_portp = context->amiga_timer_msg_port;
-    if (timerp)
-        *timerp = context->amiga_timer_request;
+    if (valuep)
+        *valuep = p->value;
     return CAHUTE_OK;
 }
-#endif

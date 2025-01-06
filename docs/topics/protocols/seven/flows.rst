@@ -68,7 +68,7 @@ Reporting invalid checksums
 ---------------------------
 
 In case a packet has an invalid checksum, it may mean that the packet has
-been corrupted by the medium lying under the link. In such cases, a specific
+been corrupted by the transport lying under the link. In such cases, a specific
 flow takes place so that the sender of the packet can resend the packet.
 
 An example flow where the active side sends the corrupted packet
@@ -355,7 +355,7 @@ usual solution applied for this case:
 Updating serial parameters
 --------------------------
 
-If the link is established on a serial medium, it is possible to negotiate
+If the link is established on a serial transport, it is possible to negotiate
 different serial parameters with the calculator dynamically using
 :ref:`seven-command-02`, using the following flow:
 

@@ -77,7 +77,9 @@ Building Cahute
 The following guides cover how to build Cahute for various platforms,
 using Visual Studio:
 
-* :ref:`build-windows-vs`.
+* :ref:`build-windows-vs`;
+* :ref:`build-windows-vs-xp`;
+* :ref:`build-windows-vs-mingw`.
 
 .. _Visual Studio: https://visualstudio.microsoft.com/fr/
 .. _Visual Studio Code: https://visualstudio.microsoft.com/fr/

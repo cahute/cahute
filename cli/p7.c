@@ -164,7 +164,7 @@ static int confirm_overwrite(void *cookie) {
  * Open a link depending on the parsed command-line.
  *
  * This function also takes care of changing the serial attributes, if the
- * opened link is on a serial medium.
+ * opened link is on a serial transport.
  *
  * @param context Context in which the link must be opened.
  * @param linkp Pointer to the link to initialize.

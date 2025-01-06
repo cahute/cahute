@@ -8,230 +8,252 @@ A file only requires one memory allocation (except for system resources that
 are allocated / opened using different functions), and the medium is
 initialized with the file opening functions.
 
-Mediums
--------
+Mediums / system interface
+--------------------------
 
-Mediums define a common set of interfaces that can be used by the rest of
-the library to read or write on the opened file, thereby exploiting the
-system interfaces.
+Platform (system) specific code is isolated in conditionally included source
+code within ``lib/platform``, with "public" functions (accessible to the
+platform-independent portion of the library, but inaccessible to external code)
+declared in ``lib/internals.h`` (search for ``Platform-specific functions.``).
 
-A medium is represented by the following type:
+Public entry points for files, being :c:func:`cahute_create_file`,
+:c:func:`cahute_open_file` and :c:func:`cahute_open_stdout`,
+call system-specific file opening functions depending on platform detection,
+which in turn call the following platform-independent utilities:
 
-.. c:struct:: cahute_file_medium
+.. c:function:: int cahute_create_file_from_interface( \
+    cahute_file_create_params *create_params, \
+    cahute_file_create_interface const *interface, \
+    void *cookie, size_t cookie_size)
 
-    File medium representation.
+    Create a file (internal platform-independent interface).
 
-    This structure is usually directly allocated with the file, i.e.
-    :c:type:`cahute_file` instance, and is accessed through ``file->medium``.
+    ``create_params`` is computed by :c:func:`cahute_create_file` and
+    **must be treated as opaque** (as it is defined by
+    :c:func:`cahute_create_file` for its underlying platform-independent
+    utility).
 
-    .. c:member:: int type
+    ``interface`` must be defined by the platform-specific code, can be defined
+    as static / constant, and its type is defined as follows:
 
-        Type of medium, among the ``CAHUTE_FILE_MEDIUM_*`` constants documented
-        in :ref:`internals-file-available-mediums`.
+    .. c:struct:: cahute_file_create_interface
 
-    .. c:member:: unsigned long flags
+        .. c:member:: cahute_file_close_func *close_func
 
-        Flags, which represent the kind of operations the underlying medium
-        can do, influencing how the generic parts of the medium interactions
-        will behave, among:
+            Function to use to close the file.
 
-        .. c:macro:: CAHUTE_FILE_MEDIUM_FLAG_WRITE
+            Can be set to ``NULL``; if this is the case, no platform-specific
+            code will be called to close the file.
 
-            Whether the medium is writable, i.e. writing to the medium type
-            is implemented and the underlying resources have been opened
-            in a way that allows writing.
+        .. c:member:: cahute_file_write_func *write_func
 
-        .. c:macro:: CAHUTE_FILE_MEDIUM_FLAG_READ
+            Function to use to write data on the current position of the file.
 
-            Whether the medium is readable, i.e. reading to the medium type
-            is implemented and the underlying resources have been opened
-            in a way that allows reading.
+        .. c:member:: cahute_file_seek_func *seek_func
 
-        .. c:macro:: CAHUTE_FILE_MEDIUM_FLAG_SEEK
+            Function to use to set the cursor's position on the file.
 
-            Whether the medium is seekable, i.e. seeking on the medium type
-            is implemented and the underlying resources have been opened
-            in a way that allows seeking.
+    ``cookie`` is the cookie that will be passed to the platform-specific
+    functions defined in the interface.
 
-        .. c:macro:: CAHUTE_FILE_MEDIUM_FLAG_SIZE
+    .. warning::
 
-            Whether the size has been computed on opening the medium, i.e.
-            :c:member:`cahute_file_medium.file_size` is exploitable.
+        ``cookie`` will not be used directly, but will be **copied** on
+        a new memory area reserved with all other requirements for the file.
 
-    .. c:member:: unsigned long offset
+        As such, if you need to allocate memory that is shared with your
+        file's medium for communication, you must allocate the shared memory
+        separately, and include a pointer to it in the cookie, that will
+        be copied to the new memory area.
 
-        Current offset of the underlying resource, if relevant.
-        This is used on writing to a stream, whether seekable or not,
-        and on refreshing the read buffer if need be.
+    .. warning::
 
-    .. c:member:: unsigned long file_size
+        Either ``cookie`` is defined and ``cookie_size`` is greater than 0,
+        or ``cookie`` is ``NULL`` and ``cookie_size`` is equal to 0.
+        Any other case is considered a bug in the platform-specific
+        implementation by the library, and the initialization will fail.
 
-        File size, computed when the file was being opened.
+    :param create_params: Opaque parameter transmitted by
+        :c:func:`cahute_create_file`, to consider opaque and send
+        to the function.
+    :param interface: Interface defined on a platform basis.
+    :param cookie: Cookie to copy on the file, and transmit to the
+        platform-specific functions set in the interface.
+    :param cookie_size: Size of the cookie to copy.
+    :return: The error, or 0 if the operation was successful.
 
-    .. c:member:: unsigned long read_offset
+.. c:function:: int cahute_open_file_from_interface( \
+    cahute_file_open_params *create_params, \
+    cahute_file_open_interface const *interface, \
+    void *cookie, size_t cookie_size, \
+    unsigned long file_size)
 
-        Offset of the current read buffer.
+    Open a file (internal platform-independent interface).
 
-    .. c:member:: size_t read_size
+    ``open_params`` is computed by :c:func:`cahute_open_file` and
+    **must be treated as opaque** (as it is defined by
+    :c:func:`cahute_open_file` for its underlying platform-independent
+    utility).
 
-        Size of the data contained within the read buffer.
+    ``interface`` must be defined by the platform-specific code, can be defined
+    as static / constant, and its type is defined as follows:
 
-        .. warning::
+    .. c:struct:: cahute_file_open_interface
 
-            Note that this only represents the number of bytes that are
-            actually set to something exploitable in :c:member:`read_buffer`,
-            **not** the read buffer capacity.
+        .. c:member:: cahute_file_close_func *close_func
 
-    .. c:member:: cahute_u8 *read_buffer
+            Function to use to close the file.
 
-        Read buffer, for which the main purpose is to serve as a cache.
+            Can be set to ``NULL``; if this is the case, no platform-specific
+            code will be called to close the file.
 
-        In normal circumstances, this buffer is
-        :c:macro:`CAHUTE_FILE_MEDIUM_READ_BUFFER_SIZE` bytes long.
+        .. c:member:: cahute_file_read_func *read_func
 
-    .. c:member:: union cahute_file_medium_state state
+            Function to use to read data from the current position of the file.
 
-        State of the file medium, which contains the underlying resources
-        depending on the file medium type.
+        .. c:member:: cahute_file_seek_func *seek_func
 
-Medium interface
+            Function to use to set the cursor's position on the file.
+
+    ``cookie`` is the cookie that will be passed to the platform-specific
+    functions defined in the interface.
+
+    .. warning::
+
+        ``cookie`` will not be used directly, but will be **copied** on
+        a new memory area reserved with all other requirements for the file.
+
+        As such, if you need to allocate memory that is shared with your
+        file's medium for communication, you must allocate the shared memory
+        separately, and include a pointer to it in the cookie, that will
+        be copied to the new memory area.
+
+    .. warning::
+
+        Either ``cookie`` is defined and ``cookie_size`` is greater than 0,
+        or ``cookie`` is ``NULL`` and ``cookie_size`` is equal to 0.
+        Any other case is considered a bug in the platform-specific
+        implementation by the library, and the initialization will fail.
+
+    :param open_params: Opaque parameter transmitted by
+        :c:func:`cahute_open_file`, to consider opaque and send
+        to the function.
+    :param interface: Interface defined on a platform basis.
+    :param cookie: Cookie to copy on the file, and transmit to the
+        platform-specific functions set in the interface.
+    :param cookie_size: Size of the cookie to copy.
+    :param file_size: Size of the file, i.e. first invalid offset.
+    :return: The error, or 0 if the operation was successful.
+
+.. c:function:: int cahute_open_stdout_from_interface( \
+    cahute_stdout_open_params *create_params, \
+    cahute_stdout_open_interface const *interface, \
+    void *cookie, size_t cookie_size)
+
+    Open standard output (internal platform-independent interface).
+
+    ``open_params`` is computed by :c:func:`cahute_open_stdout` and
+    **must be treated as opaque** (as it is defined by
+    :c:func:`cahute_open_stdout` for its underlying platform-independent
+    utility).
+
+    ``interface`` must be defined by the platform-specific code, can be defined
+    as static / constant, and its type is defined as follows:
+
+    .. c:struct:: cahute_file_open_interface
+
+        .. c:member:: cahute_file_close_func *close_func
+
+            Function to use to close the file.
+
+            Can be set to ``NULL``; if this is the case, no platform-specific
+            code will be called to close the file.
+
+        .. c:member:: cahute_file_write_func *write_func
+
+            Function to use to write data on the output.
+
+    ``cookie`` is the cookie that will be passed to the platform-specific
+    functions defined in the interface.
+
+    .. warning::
+
+        ``cookie`` will not be used directly, but will be **copied** on
+        a new memory area reserved with all other requirements for the file.
+
+        As such, if you need to allocate memory that is shared with your
+        file's medium for communication, you must allocate the shared memory
+        separately, and include a pointer to it in the cookie, that will
+        be copied to the new memory area.
+
+    .. warning::
+
+        Either ``cookie`` is defined and ``cookie_size`` is greater than 0,
+        or ``cookie`` is ``NULL`` and ``cookie_size`` is equal to 0.
+        Any other case is considered a bug in the platform-specific
+        implementation by the library, and the initialization will fail.
+
+    :param open_params: Opaque parameter transmitted by
+        :c:func:`cahute_open_stdout`, to consider opaque and send
+        to the function.
+    :param interface: Interface defined on a platform basis.
+    :param cookie: Cookie to copy on the file, and transmit to the
+        platform-specific functions set in the interface.
+    :param cookie_size: Size of the cookie to copy.
+    :return: The error, or 0 if the operation was successful.
+
+Medium functions
 ~~~~~~~~~~~~~~~~
 
-Mediums support a generic memory read/write interface with the following
-functions:
+The medium interface functions are defined as the following:
 
-.. c:function:: int cahute_read_from_file_medium(cahute_file_medium *medium, \
-    unsigned long off, cahute_u8 *buf, size_t size)
+.. c:type:: void (cahute_file_close_func)(cahute_context *context, \
+    void *cookie)
 
-    Read from the file medium, starting at a provided offset.
+    Function that, if defined, is called to close file-specific resources.
 
-    Errors to be expected from this function are the following:
+    :param context: Context in which the function is loaded.
+        Can be used for logging purposes, or to get context-specific resources.
+    :param cookie: File-specific cookie.
 
-    :c:macro:`CAHUTE_ERROR_TRUNC`
-        The parameters would lead to moving out-of-bounds, or reading at
-        least one byte out-of-bounds.
+.. c:type:: int (cahute_file_read_func)(cahute_context *context, \
+    void *cookie, cahute_u8 *buf, size_t capacity, size_t *readp)
 
-    :param medium: Medium from which to read.
-    :param off: Offset at which to start reading.
-    :param buf: Buffer in which to store the read data.
-    :param size: Size of the data to read.
-    :return: Error, or :c:macro:`CAHUTE_OK`.
+    Function called to read data from the current position on the file's
+    medium.
 
-.. c:function:: int cahute_write_to_file_medium(cahute_file_medium *medium, \
-    unsigned long off, void const *data, size_t size)
+    :param context: Context in which the function is loaded.
+        Can be used for logging purposes, or to get context-specific resources.
+    :param cookie: File-specific cookie.
+    :param buf: Buffer in which to read data.
+    :param capacity: Buffer capacity, in bytes.
+    :param readp: Pointer to the number of read bytes to set.
+    :return: The error, or 0 if the operation was successful.
 
-    Write to the file medium, starting at a provided offset.
+.. c:type:: int (cahute_file_write_func)(cahute_context *context, \
+    void *cookie, cahute_u8 const *buf, size_t size, size_t *writtenp)
 
-    Errors to be expected from this function are the following:
+    Function called to write data at the current position on the file's
+    underlying medium.
 
-    :c:macro:`CAHUTE_ERROR_SIZE`
-        The parameters would lead to moving out-of-bounds, or writing at
-        least one byte out-of-bounds.
+    :param context: Context in which the function is loaded.
+        Can be used for logging purposes, or to get context-specific resources.
+    :param cookie: File-specific cookie.
+    :param buf: Buffer in which the data to write is defined.
+    :param size: Length of the data to write in the provided buffer, in bytes.
+    :param sentp: Pointer to the number of written bytes to set.
+    :return: The error, or 0 if the operation was successful.
 
-    :param medium: Medium into which to write.
-    :param off: Offset at which to start writing.
-    :param data: Data to write.
-    :param size: Size of the data to write.
-    :return: Error, or :c:macro:`CAHUTE_OK`.
+.. c:type:: int (cahute_file_seek_func)(cahute_context *context, \
+    void *cookie, unsigned long pos, unsigned long *new_posp)
 
-Internal medium logic
-~~~~~~~~~~~~~~~~~~~~~
+    Function called to set the position on the file's underlying medium.
 
-The internal logic for file mediums is implemented in ``lib/filemedium.c``.
-While the medium interface presents a memory-like interface, most internal
-mediums actually work using streams with a current offset that is updated
-when making a read, write or seek operation.
-
-.. note::
-
-    This implementation is optimized for reading with increasing file offsets,
-    since the rationale behind most file formats allows us to do this.
-
-This section documents the internal logics behind the interface functions.
-
-:c:func:`cahute_read_from_file_medium`
-    First, we check if there is an intersection between our current read
-    buffer and the requested data on the left boundary. If there is, we copy
-    the intersection into the user-provided buffer.
-
-    If there is still some data to read, this means we need to refresh the
-    read buffer at least once, i.e. we need to move the underlying cursor
-    to match the first byte we want to read. If the cursor is not already at
-    the correct position, this is done by one of these methods:
-
-    * If seeking is supported, we seek to that offset.
-    * Otherwise, if the targeted offset is after the current offset, we
-      read and ignore bytes from the underlying stream.
-    * Otherwise, we fail, since we can't seek backwards in the stream.
-
-    Once this is done, we do :c:macro:`CAHUTE_FILE_MEDIUM_READ_BUFFER_SIZE`
-    bytes long reads until the user-provided buffer has been completely
-    filled.
-
-:c:func:`cahute_write_to_file_medium`
-    There is no write buffering, so we directly want to check that we're
-    at the right offset on the underlying cursor. If the cursor is not already
-    at the correct position, this is done by one of these methods:
-
-    * If seeking is supported, we seek to that offset.
-    * Otherwise, if the targeted offset is after the current offset, we
-      write zeroes and ignore bytes from the underlying stream.
-    * Otherwise, we fail, since we can't seek backwards in the stream.
-
-    Once this is done, we do :c:macro:`CAHUTE_FILE_MEDIUM_WRITE_CHUNK_SIZE`
-    bytes long writes until the user-provided buffer has been completely
-    written.
-
-    We also check if there is an intersection between the user-provided
-    boundaries and the read buffer boundaries, and if it's the case, write
-    the user-provided data to the correct offset in the read buffer to ensure
-    reads from the same offsets will return the updated data, and not the
-    data before the write.
-
-.. _internals-file-available-mediums:
-
-Available medium types
-~~~~~~~~~~~~~~~~~~~~~~
-
-File medium types are represented as ``CAHUTE_FILE_MEDIUM_*`` constants
-internally.
-
-.. warning::
-
-    The file medium constants are only represented **if they are available in
-    the current configuration**. This is a simple way for medium-specific
-    implementations to be defined or not, with ``#ifdef``.
-
-Available mediums are the following:
-
-.. c:macro:: CAHUTE_FILE_MEDIUM_NONE
-
-    Internal in-memory file medium; see :ref:`internals-file-inmem` for
-    more information.
-
-.. c:macro:: CAHUTE_FILE_MEDIUM_POSIX
-
-    POSIX file API medium, with a file descriptor (*fd*):
-
-    * Closing using `close(2) <https://linux.die.net/man/2/close>`_;
-    * Reading uses `read(2) <https://linux.die.net/man/2/read>`_;
-    * Writing uses `write(2) <https://linux.die.net/man/2/write>`_;
-    * Seeking uses `lseek(2) <https://linux.die.net/man/2/lseek>`_.
-
-    Only available on platforms considered POSIX, including Apple’s OS X
-    explicitely (since they do not define the ``__unix__`` constant like
-    Linux does).
-
-.. c:macro:: CAHUTE_FILE_MEDIUM_WIN32
-
-    Serial medium using the Windows API, with a file |HANDLE|_:
-
-    * Closing uses |CloseHandle|_;
-    * Reading uses |ReadFile|_;
-    * Writing uses |WriteFile|_;
-    * Seeking uses |SetFilePointer|_.
-
-    Only available with Windows.
+    :param context: Context in which the function is loaded.
+    :param cookie: File-specific cookie.
+    :param pos: Position to set on the file.
+    :param new_posp: Pointer to the current position to set, as an offset.
+    :return: The error, or 0 if the operation was successful.
 
 .. _internals-file-inmem:
 
@@ -293,69 +315,6 @@ operations become the following:
     correct offset in the read buffer to ensure reads from the same offsets
     will return the updated data, and not the data before the write.
 
-File opening behaviours
------------------------
-
-In this section, we will describe the behaviour of file opening functions.
-
-:c:func:`cahute_open_file`
-    Depending on the platform:
-
-    * On POSIX and compatible, it attempts at opening the file
-      using `open(2) <https://linux.die.net/man/2/open>`_.
-      If this succeeds, it calls
-      `lseek(2) <https://linux.die.net/man/2/lseek>`_ to seek 0 bytes from
-      ``SEEK_END``, which returns the current file size, then uses the
-      same function to seek 0 bytes from ``SEEK_SET``.
-
-      The created file handle will have the :c:macro:`CAHUTE_FILE_MEDIUM_POSIX`
-      medium type.
-    * On Win32, it attempts at opening the file using |CreateFile|_.
-      If this succeeds, it calls |SetFilePointer|_ to seek 0 bytes from
-      ``FILE_END``, which returns the current file size, then uses the
-      same function to seek 0 bytes from ``FILE_BEGIN``.
-
-      The created file handle will have the :c:macro:`CAHUTE_FILE_MEDIUM_WIN32`
-      medium type.
-    * Otherwise, it will return :c:macro:`CAHUTE_ERROR_IMPL`.
-
-    If the obtained file size is too big, i.e. more than
-    :c:macro:`CAHUTE_MAX_FILE_OFFSET`, the function will fail with
-    error :c:macro:`CAHUTE_ERROR_SIZE`.
-
-:c:func:`cahute_create_file`
-    Depending on the platform:
-
-    * On POSIX and compatible, it attempts at creating and opening the file
-      using `open(2) <https://linux.die.net/man/2/open>`_.
-      If this suceeds, it calls
-      `ftruncate(2) <https://linux.die.net/man/2/ftruncate>`_ to set
-      the file size explicitely to the provided size.
-
-      The created file handle will have the :c:macro:`CAHUTE_FILE_MEDIUM_POSIX`
-      medium type.
-    * On Win32, it attempts at creating and opening the file using
-      |CreateFile|_.
-      If this succeeds, it calls |SetFilePointer|_ to seek the provided file
-      size from ``FILE_BEGIN``, calls |SetEndOfFile|_ to set the file size
-      explicitely, then uses |SetFilePointer|_ again to seek to ``FILE_BEGIN``
-      again.
-
-      The created file handle will have the :c:macro:`CAHUTE_FILE_MEDIUM_WIN32`
-      medium type.
-    * Otherwise, it will return :c:macro:`CAHUTE_ERROR_IMPL`.
-
-:c:func:`cahute_open_stdout`
-    Depending on the platform:
-
-    * On POSIX and compatible, it creates a file handle with medium type
-      :c:macro:`CAHUTE_FILE_MEDIUM_POSIX` and *fd* set to ``1``.
-    * On Win32, it calls |GetStdHandle|_ with ``STD_OUTPUT_HANDLE``.
-
-      The created file handle will have the :c:macro:`CAHUTE_FILE_MEDIUM_WIN32`
-      medium type.
-    * Otherwise, it will return :c:macro:`CAHUTE_ERROR_IMPL`.
-
 File metadata retrieval
 -----------------------
 
@@ -370,35 +329,3 @@ For any of the file reading functions that requires file type and metadata,
 if the :c:macro:`CAHUTE_FILE_FLAG_EXAMINED` flag is not present in the
 file flags yet, the :c:func:`cahute_examine_file` function is called to
 determine it and set the flag.
-
-.. |HANDLE| replace:: ``HANDLE``
-.. |CreateFile| replace:: ``CreateFile``
-.. |GetStdHandle| replace:: ``GetStdHandle``
-.. |ReadFile| replace:: ``ReadFile``
-.. |WriteFile| replace:: ``WriteFile``
-.. |SetFilePointer| replace:: ``WriteFile``
-.. |SetEndOfFile| replace:: ``SetEndOfFile``
-.. |CloseHandle| replace:: ``CloseHandle``
-
-.. _HANDLE:
-    https://learn.microsoft.com/en-us/windows/win32/sysinfo/handles-and-objects
-.. _CreateFile:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    fileapi/nf-fileapi-createfilea
-.. _GetStdHandle:
-    https://learn.microsoft.com/en-us/windows/console/getstdhandle
-.. _ReadFile:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    fileapi/nf-fileapi-readfile
-.. _WriteFile:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    fileapi/nf-fileapi-writefile
-.. _SetFilePointer:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    fileapi/nf-fileapi-setfilepointer
-.. _SetEndOfFile:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    fileapi/nf-fileapi-setendoffile
-.. _CloseHandle:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    handleapi/nf-handleapi-closehandle

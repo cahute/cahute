@@ -14,6 +14,8 @@ happening in this project, and why it is happening.
     :maxdepth: 2
 
     internals/compat
+    internals/contexts
     internals/links
     internals/files
     internals/text
+    internals/platforms

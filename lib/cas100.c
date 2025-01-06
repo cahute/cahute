@@ -53,8 +53,8 @@ CAHUTE_LOCAL(int) cahute_cas100_send_model_information(cahute_link *link) {
 
     /* NOTE: sprintf() adds a terminating zero, but we don't care,
      * since we do not copy serial_params[6] afterwards. */
-    sprintf(serial_params, "%06lu", link->medium.serial_speed);
-    switch (link->medium.serial_flags & CAHUTE_SERIAL_PARITY_MASK) {
+    sprintf(serial_params, "%06lu", link->transport_serial_speed);
+    switch (link->transport_serial_flags & CAHUTE_SERIAL_PARITY_MASK) {
     case CAHUTE_SERIAL_PARITY_EVEN:
         serial_params[6] = 'E';
         break;
@@ -72,7 +72,7 @@ CAHUTE_LOCAL(int) cahute_cas100_send_model_information(cahute_link *link) {
 
     buf[39] = cahute_checksub(&buf[1], 38);
 
-    return cahute_send_on_link_medium(&link->medium, buf, 40);
+    return cahute_send_on_link_transport(link, buf, 40);
 }
 
 /**
@@ -110,12 +110,12 @@ cahute_cas100_handle_mdl1(cahute_link *link, cahute_u8 const *header) {
             return err;
 
         header = buf;
-        msg(link->medium.context, ll_info, "Received the following header:");
-        mem(link->medium.context, ll_info, header, 40);
+        msg(link->context, ll_info, "Received the following header:");
+        mem(link->context, ll_info, header, 40);
     }
 
     if (memcmp(header, "\x3AMDL1", 5)) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Did not receive an MDL1 header as expected.");
         return CAHUTE_ERROR_UNKNOWN;
@@ -131,21 +131,18 @@ cahute_cas100_handle_mdl1(cahute_link *link, cahute_u8 const *header) {
         CASIOLINK_FLAG_DEVICE_INFO_OBTAINED;
 
     /* Send the MDL1 answer now. */
-    err = cahute_send_on_link_medium(&link->medium, header, 40);
+    err = cahute_send_on_link_transport(link, header, 40);
     if (err)
         return err;
 
     /* We should actually be receiving an acknowledgement, since we are
      * sending the same packet the calculator sent. */
-    err = cahute_receive_byte_on_link_medium(&link->medium, &byte, 0);
+    err = cahute_receive_byte_on_link_transport(link, &byte, 0);
     if (err)
         return err;
 
     if (byte != PACKET_TYPE_ACK) {
-        err = cahute_send_byte_on_link_medium(
-            &link->medium,
-            PACKET_TYPE_CORRUPTED
-        );
+        err = cahute_send_byte_on_link_transport(link, PACKET_TYPE_CORRUPTED);
         if (err)
             return err;
 
@@ -154,7 +151,7 @@ cahute_cas100_handle_mdl1(cahute_link *link, cahute_u8 const *header) {
 
     /* We can now send an acknowledgement.
      * The acknowledgement is already in our buffer, we can use that. */
-    err = cahute_send_byte_on_link_medium(&link->medium, PACKET_TYPE_ACK);
+    err = cahute_send_byte_on_link_transport(link, PACKET_TYPE_ACK);
     if (err)
         return err;
 
@@ -263,7 +260,7 @@ cahute_cas100_decode_data_direct(
         size_t size = ((size_t)header[8] << 8) | header[9];
 
         err = cahute_mcs_decode_data(
-            file->medium.context,
+            file->context,
             datap,
             &header[19],
             8,
@@ -282,10 +279,8 @@ cahute_cas100_decode_data_direct(
         goto data_ready;
     }
 
-    msg(file->medium.context,
-        ll_error,
-        "Unhandled data with the following header:");
-    mem(file->medium.context, ll_error, header, 40);
+    msg(file->context, ll_error, "Unhandled data with the following header:");
+    mem(file->context, ll_error, header, 40);
 
 fail:
     cahute_destroy_data(data);
@@ -323,7 +318,7 @@ cahute_cas100_receive_raw_data(
     int err;
 
     if (data_capacity < 40) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Data capacity was expected to be at least 40 bytes.");
         return CAHUTE_ERROR_UNKNOWN;
@@ -345,7 +340,7 @@ cahute_cas100_receive_raw_data(
         }
 
         err = cahute_cas100_determine_data_description(
-            link->medium.context,
+            link->context,
             data,
             desc
         );
@@ -353,9 +348,7 @@ cahute_cas100_receive_raw_data(
             return err;
 
         if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_END) {
-            msg(link->medium.context,
-                ll_info,
-                "CAS100 data type is an END packet.");
+            msg(link->context, ll_info, "CAS100 data type is an END packet.");
             link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
             return CAHUTE_ERROR_TERMINATED;
         } else if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_MDL) {
@@ -408,7 +401,7 @@ cahute_cas100_receive_data(
 
     cahute_populate_file_from_memory(
         &memory_file,
-        link->medium.context,
+        link->context,
         link->data_buffer,
         link->data_buffer_size
     );
@@ -445,10 +438,10 @@ CAHUTE_EXTERN(int) cahute_cas100_terminate(cahute_link *link) {
     buf[4] = '1';
     buf[39] = cahute_checksub(&buf[1], 38);
 
-    msg(link->medium.context, ll_info, "Sending the following end packet:");
-    mem(link->medium.context, ll_info, buf, 40);
+    msg(link->context, ll_info, "Sending the following end packet:");
+    mem(link->context, ll_info, buf, 40);
 
-    err = cahute_send_on_link_medium(&link->medium, buf, 40);
+    err = cahute_send_on_link_transport(link, buf, 40);
     if (err)
         return err;
 
@@ -481,19 +474,17 @@ cahute_cas100_exchange_model_information(cahute_link *link) {
     if (err)
         return err;
 
-    msg(link->medium.context, ll_info, "Received the following header:");
-    mem(link->medium.context, ll_info, buf, 40);
+    msg(link->context, ll_info, "Received the following header:");
+    mem(link->context, ll_info, buf, 40);
 
     if (memcmp(buf, "\x3AMDL1", 5)) {
         int sub_err;
 
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Did not receive an MDL1 header as expected.");
-        sub_err = cahute_send_byte_on_link_medium(
-            &link->medium,
-            PACKET_TYPE_CORRUPTED
-        );
+        sub_err =
+            cahute_send_byte_on_link_transport(link, PACKET_TYPE_CORRUPTED);
         if (sub_err)
             return sub_err;
 
@@ -510,12 +501,12 @@ cahute_cas100_exchange_model_information(cahute_link *link) {
         CASIOLINK_FLAG_DEVICE_INFO_OBTAINED;
 
     /* Send the acknowledgement. */
-    err = cahute_send_byte_on_link_medium(&link->medium, PACKET_TYPE_ACK);
+    err = cahute_send_byte_on_link_transport(link, PACKET_TYPE_ACK);
     if (err)
         return err;
 
     /* Receive the acknowledgement. */
-    err = cahute_receive_byte_on_link_medium(&link->medium, &byte, 0);
+    err = cahute_receive_byte_on_link_transport(link, &byte, 0);
     if (err)
         return err;
 

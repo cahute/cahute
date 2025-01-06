@@ -27,148 +27,6 @@
  * ************************************************************************* */
 
 #include "internals.h"
-#define EXAMINE(CAHUTE_FILE) \
-    { \
-        if (~(CAHUTE_FILE)->flags & CAHUTE_FILE_FLAG_EXAMINED) { \
-            int examine_err = cahute_examine_file((CAHUTE_FILE)); \
-\
-            if (examine_err) \
-                return examine_err; \
-        } \
-    } \
-    (void)0
-
-/**
- * Get the size of the file referenced by a file object.
- *
- * @param file File object.
- * @param sizep Pointer to the size to set.
- * @return Error, or 0 if successful.
- */
-CAHUTE_EXTERN(int)
-cahute_get_file_size(cahute_file *file, unsigned long *sizep) {
-    if (~file->medium.flags & CAHUTE_FILE_MEDIUM_FLAG_SIZE)
-        CAHUTE_RETURN_IMPL(
-            file->medium.context,
-            "File does not support size computation."
-        );
-
-    *sizep = file->medium.file_size;
-    return CAHUTE_OK;
-}
-
-/**
- * Read data from a file.
- *
- * @param file File object.
- * @param off Offset at which to read data.
- * @param buf Buffer in which to write the result.
- * @param size Size of the data to read.
- * @return Error, or 0 if successful.
- */
-CAHUTE_EXTERN(int)
-cahute_read_from_file(
-    cahute_file *file,
-    unsigned long off,
-    void *buf,
-    size_t size
-) {
-    return cahute_read_from_file_medium(&file->medium, off, buf, size);
-}
-
-/**
- * Write data to a file.
- *
- * @param file File object.
- * @param off Offset at which to write data.
- * @param data Data to write.
- * @param size Size of the data to write.
- * @return Error, or 0 if successful.
- */
-CAHUTE_EXTERN(int)
-cahute_write_to_file(
-    cahute_file *file,
-    unsigned long off,
-    void const *data,
-    size_t size
-) {
-    return cahute_write_to_file_medium(&file->medium, off, data, size);
-}
-
-/**
- * Determine the file type and store it within the file.
- *
- * @param file File object.
- * @return Error, or 0 if successful.
- */
-CAHUTE_LOCAL(int) cahute_examine_file(cahute_file *file) {
-    cahute_u8 buf[32], *p, *q;
-    cahute_u8 std[32];
-    int err;
-
-    /* Read the first 32 (0x20) bytes to try to find a StandardHeader. */
-    err = cahute_read_from_file(file, 0, buf, 32);
-    if (err == CAHUTE_ERROR_TRUNC)
-        goto examined;
-    else if (err)
-        return err;
-
-    /* We can try to determine a standard header. */
-    for (p = &buf[31], q = &std[31]; p >= buf; p--, q--)
-        *q = ~*p & 255;
-
-    if (!memcmp(std, "USBPower\x62\0\x10\0\x10\0", 14)    /* G1M, G1R */
-        || !memcmp(std, "USBPower\x31\0\x10\0\x10\0", 14) /* G2M, G2R */
-        || !memcmp(std, "USBPower\x75\0\x10\0\x10\0", 14) /* G3M, G3R */
-    ) {
-        file->type = CAHUTE_FILE_TYPE_MAINMEM;
-        goto examined;
-    }
-
-    /* We can try to see if we have a CASIOLINK archive. */
-    if (buf[0] == 0x3A) {
-        file->type = CAHUTE_FILE_TYPE_CASIOLINK;
-        goto examined;
-    }
-
-    /* TODO: There are many, many more file types to test for. */
-
-    /* TODO: By compatibility with CaS, the following extensions must be
-     * matched:
-     *
-     * - '.ctf', '.txt': CTF;
-     * - '.fxp': FX-Program;
-     * - '.bmp': Bitmap;
-     * - '.gif': GIF. */
-
-examined:
-    file->flags |= CAHUTE_FILE_FLAG_EXAMINED;
-    return CAHUTE_OK;
-}
-
-/**
- * Guess the file type.
- *
- * @param file File object.
- * @param typep Type to set with the found file type.
- * @return Error, or 0 if successful.
- */
-CAHUTE_EXTERN(int)
-cahute_guess_file_type(cahute_file *file, unsigned long *typep) {
-    *typep = CAHUTE_FILE_TYPE_UNKNOWN;
-
-    EXAMINE(file);
-
-    if (!file->type)
-        return CAHUTE_ERROR_NOT_FOUND;
-
-    *typep = file->type;
-    return CAHUTE_OK;
-}
-
-/* ---
- * Decode data from a file.
- * --- */
 
 /**
  * Get data from a CASIOLINK main memory archive.
@@ -252,11 +110,11 @@ cahute_get_data_from_mainmem_file(
         group_count = (group_header[16] << 24) | (group_header[17] << 16)
                       | (group_header[18] << 8) | group_header[19];
 
-        msg(file->medium.context,
+        msg(file->context,
             ll_info,
             "(0x%04lX) Group header:",
             offset - sizeof(group_header));
-        mem(file->medium.context, ll_info, group_header, sizeof(group_header));
+        mem(file->context, ll_info, group_header, sizeof(group_header));
 
         for (; group_count; group_count--) {
             unsigned long data_size;
@@ -274,16 +132,15 @@ cahute_get_data_from_mainmem_file(
             data_size = (file_header[17] << 24) | (file_header[18] << 16)
                         | (file_header[19] << 8) | file_header[20];
 
-            msg(file->medium.context, ll_info, "File header:");
-            mem(file->medium.context, ll_info, file_header, sizeof(file_header)
-            );
-            msg(file->medium.context,
+            msg(file->context, ll_info, "File header:");
+            mem(file->context, ll_info, file_header, sizeof(file_header));
+            msg(file->context,
                 ll_info,
                 "  Data size: %" CAHUTE_PRIuSIZE,
                 data_size);
 
             err = cahute_mcs_decode_data(
-                file->medium.context,
+                file->context,
                 datap,
                 group_header,
                 16,
@@ -351,7 +208,7 @@ cahute_get_data_from_file(cahute_file *file, cahute_data **datap) {
         break;
 
     default:
-        msg(file->medium.context,
+        msg(file->context,
             ll_error,
             "Invalid file type 0x%02X for extracting data from the file.",
             file->type);

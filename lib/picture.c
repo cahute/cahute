@@ -166,10 +166,11 @@ cahute_convert_picture(
         break;
 
     case CAHUTE_PICTURE_FORMAT_1BIT_TRIPLE_CAS50:
+        ++src;
         color1 = multiple_cas50_colors[*src++];
-        src2 = src + height * ((width >> 3) + !!(width & 7));
+        src2 = src + height * ((width >> 3) + !!(width & 7)) + 2;
         color2 = multiple_cas50_colors[*src2++];
-        src3 = src2 + height * ((width >> 3) + !!(width & 7));
+        src3 = src2 + height * ((width >> 3) + !!(width & 7)) + 2;
         color3 = multiple_cas50_colors[*src3++];
 
         for (y = 0; y < height; y++) {

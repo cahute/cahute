@@ -130,3 +130,42 @@ data_ready:
     *final_datap = data;
     return CAHUTE_OK;
 }
+
+/**
+ * Get the name of a link protocol.
+ *
+ * @param protocol Protocol identifier, as a constant.
+ * @return Textual name of the protocol.
+ */
+CAHUTE_EXTERN(char const *) cahute_get_protocol_name(int protocol) {
+    switch (protocol) {
+    case CAHUTE_LINK_PROTOCOL_SERIAL_NONE:
+        return "Generic (serial)";
+    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS:
+        return "CASIOLINK (serial)";
+    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS40:
+        return "CAS40 (serial)";
+    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS50:
+        return "CAS50 (serial)";
+    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS100:
+        return "CAS100 (serial)";
+    case CAHUTE_LINK_PROTOCOL_SERIAL_CAS300:
+        return "CAS300 (serial)";
+    case CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN:
+        return "Protocol 7.00 (serial)";
+    case CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN_OHP:
+        return "Protocol 7.00 Screenstreaming (serial)";
+    case CAHUTE_LINK_PROTOCOL_USB_NONE:
+        return "Generic (USB)";
+    case CAHUTE_LINK_PROTOCOL_USB_CAS300:
+        return "CAS300 (USB)";
+    case CAHUTE_LINK_PROTOCOL_USB_SEVEN:
+        return "Protocol 7.00 (USB)";
+    case CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP:
+        return "Protocol 7.00 Screenstreaming (USB)";
+    case CAHUTE_LINK_PROTOCOL_USB_MASS_STORAGE:
+        return "USB Mass Storage";
+    default:
+        return "(unknown)";
+    }
+}

@@ -144,7 +144,7 @@ typedef unsigned long long cahute_uintptr;
 # endif
 #endif
 
-#if defined(_WIN32) || defined(_WIN64) || defined(__WINDOWS__)
+#if defined(_MSC_VER)
 # define CAHUTE_PSIZE "I"
 #else
 # define CAHUTE_PSIZE "z"

@@ -222,7 +222,7 @@ cahute_cas50_decode_data_direct(
     }
 
 fail:
-    msg(file->medium.context,
+    msg(file->context,
         ll_error,
         "Failed to decode data: %s (%d)",
         cahute_get_error_name(err),
@@ -273,7 +273,7 @@ cahute_cas50_decode_data(
     /* Only check the header if not already checked, i.e. in the case of files
      * and not in the case of links. */
     if (header_buf[0] != PACKET_TYPE_DATA) {
-        msg(file->medium.context,
+        msg(file->context,
             ll_error,
             "Header type 0x%02X is not the expected 0x%02X.",
             header_buf[0],
@@ -284,7 +284,7 @@ cahute_cas50_decode_data(
     obtained_checksum = header_buf[49];
     expected_checksum = cahute_checksub(&header_buf[1], 48);
     if (obtained_checksum != expected_checksum) {
-        msg(file->medium.context,
+        msg(file->context,
             ll_error,
             "Header checksum 0x%02X is different from expected checksum "
             "%02X.",
@@ -302,7 +302,7 @@ cahute_cas50_decode_data(
      * ``offset`` is actually used in data decoding later on in the
      * function. */
     err = cahute_cas50_determine_data_description(
-        file->medium.context,
+        file->context,
         header_buf,
         &desc
     );
@@ -351,7 +351,7 @@ cahute_cas50_receive_raw_data(
     int err;
 
     if (data_capacity < 50) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Data capacity was expected to be at least 50 bytes.");
         return CAHUTE_ERROR_UNKNOWN;
@@ -371,21 +371,16 @@ cahute_cas50_receive_raw_data(
             return err;
     }
 
-    err = cahute_cas50_determine_data_description(
-        link->medium.context,
-        data,
-        desc
-    );
+    err = cahute_cas50_determine_data_description(link->context, data, desc);
     if (err)
         return err;
 
     if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_END) {
-        msg(link->medium.context, ll_info, "CAS50 data type is an END packet."
-        );
+        msg(link->context, ll_info, "CAS50 data type is an END packet.");
         link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
         return CAHUTE_ERROR_TERMINATED;
     } else if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_FINAL) {
-        msg(link->medium.context, ll_info, "CAS50 data type is final.");
+        msg(link->context, ll_info, "CAS50 data type is final.");
         link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
     }
 
@@ -429,7 +424,7 @@ cahute_cas50_receive_data(
 
         cahute_populate_file_from_memory(
             &memory_file,
-            link->medium.context,
+            link->context,
             link->data_buffer,
             link->data_buffer_size
         );
@@ -471,14 +466,10 @@ CAHUTE_EXTERN(int) cahute_cas50_terminate(cahute_link *link) {
     if (link->flags & CAHUTE_LINK_FLAG_TERMINATED)
         return CAHUTE_OK;
 
-    msg(link->medium.context, ll_info, "Sending the following end packet:");
-    mem(link->medium.context, ll_info, end_packet, sizeof(end_packet));
+    msg(link->context, ll_info, "Sending the following end packet:");
+    mem(link->context, ll_info, end_packet, sizeof(end_packet));
 
-    err = cahute_send_on_link_medium(
-        &link->medium,
-        end_packet,
-        sizeof(end_packet)
-    );
+    err = cahute_send_on_link_transport(link, end_packet, sizeof(end_packet));
     if (err)
         return err;
 

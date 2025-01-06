@@ -1,284 +1,333 @@
-Links and medium internals
-==========================
+Link internals
+==============
 
-This document describes the internals behind links and mediums; see
+This document describes the internals behind links; see
 :ref:`topic-links` for more information.
 
 A link only requires one memory allocation (except for system resources that
-are allocated / opened using different functions), and the medium
+are allocated / opened using different functions), and the transport
 and the protocol are initialized together using link opening functions.
 
-Mediums
--------
+Transports / system interface
+-----------------------------
 
-Mediums define a common set of interfaces that can be used by protocols to
-communicate with the device or host.
+Platform (system) specific code is isolated in conditionally included source
+code within ``lib/platform``, with "public" functions (accessible to the
+platform-independent portion of the library, but inaccessible to external code)
+declared in ``lib/internals.h`` (search for ``Platform-specific functions.``).
 
-A medium is represented by the following type:
+Public entry points for links, being :c:func:`cahute_open_usb_link`,
+:c:func:`cahute_open_simple_usb_link` and :c:func:`cahute_open_serial_link`,
+call system-specific link opening functions depending on platform detection,
+which in turn call the following platform-independent utilities:
 
-.. c:struct:: cahute_link_medium
+.. c:function:: int cahute_open_serial_link_from_interface( \
+    cahute_serial_link_open_params *open_params, \
+    cahute_serial_link_interface const *interface, \
+    void *cookie, size_t cookie_size)
 
-    Link medium representation.
+    Open a serial link (internal platform-independent interface);
+    see :ref:`transport-serial` for more information.
 
-    This structure is usually directly allocated with the link, i.e.
-    :c:struct:`cahute_link` instance, and is accessed through ``link->medium``.
+    ``open_params`` is computed by :c:func:`cahute_open_serial_link` and
+    **must be treated as opaque** (as it is defined by
+    :c:func:`cahute_open_serial_link` for its underlying platform-independent
+    utility).
 
-Medium interface
-~~~~~~~~~~~~~~~~
+    ``interface`` must be defined by the platform-specific code, can be defined
+    as static / constant, and its type is defined as follows:
 
-Most mediums support a stream-like interface with the following functions:
+    .. c:struct:: cahute_serial_link_interface
 
-.. c:function:: int cahute_receive_on_link_medium(cahute_link_medium *medium, \
-    cahute_u8 *buf, size_t size, unsigned long first_timeout, \
-    unsigned long next_timeout)
+        .. c:member:: char const *name
 
-    Read exactly ``size`` bytes of data into the buffer.
+            Name of the interface for logging purposes.
 
-    This function uses the medium read buffer to store any incoming excess
-    data, for it to be processed first next time before using the underlying
-    buffer to read more data.
+        .. c:member:: cahute_link_close_func *close_func
+
+            Function to use to close the link.
+
+            Can be set to ``NULL``; if this is the case, no platform-specific
+            code will be called to close the link.
+
+        .. c:member:: cahute_link_receive_func *receive_func
+
+            Function to use to receive data on the link.
+
+        .. c:member:: cahute_link_send_func *send_func
+
+            Function to use to send data on the link.
+
+        .. c:member:: cahute_link_set_serial_params_func \
+            *set_serial_params_func
+
+            Function to use to set the serial parameters on the serial link.
+
+    ``cookie`` is the cookie that will be passed to the platform-specific
+    functions defined in the interface.
 
     .. warning::
 
-        This function does not provide the number of bytes that have been
-        read in case of error (with the exception of
-        :c:macro:`CAHUTE_ERROR_TIMEOUT_START`, which implies that no bytes
-        have been read).
+        ``cookie`` will not be used directly, but will be **copied** on
+        a new memory area reserved with all other requirements for the link.
 
-        This is to simplify as much as possible protocol
-        implementations, but it also means that the medium should be
-        considered irrecoverable in such cases.
+        As such, if you need to allocate memory that is shared with your
+        link's transport for communication, you must allocate the shared memory
+        separately, and include a pointer to it in the cookie, that will
+        be copied to the new memory area.
 
-    Errors to be expected from this function are the following:
+    .. warning::
 
-    :c:macro:`CAHUTE_ERROR_TIMEOUT_START`
-        The first byte was not received in a timely manner.
-        This can only occur if ``first_timeout`` was not set to 0.
+        Either ``cookie`` is defined and ``cookie_size`` is greater than 0,
+        or ``cookie`` is ``NULL`` and ``cookie_size`` is equal to 0.
+        Any other case is considered a bug in the platform-specific
+        implementation by the library, and the initialization will fail.
 
-    :c:macro:`CAHUTE_ERROR_TIMEOUT`
-        A byte past the first one was not received in a timely manner.
-        This can only occur if ``next_timeout`` was not set to 0.
+    :param open_params: Opaque parameter transmitted by
+        :c:func:`cahute_open_serial_link`, to consider opaque and send
+        to the function.
+    :param interface: Interface defined on a platform basis.
+    :param cookie: Cookie to copy on the link, and transmit to the
+        platform-specific functions set in the interface.
+    :param cookie_size: Size of the cookie to copy.
+    :return: The error, or 0 if the operation was successful.
 
-    :c:macro:`CAHUTE_ERROR_GONE`
-        The device is no longer present, usually either because the USB
-        cable has been unplugged on one end or the other, or the serial
-        adapter has been unplugged from the host.
+.. c:function:: int cahute_open_serial_over_usb_bulk_link_from_interface( \
+    cahute_usb_link_open_params *open_params, \
+    cahute_serial_over_usb_bulk_link_interface const *interface, \
+    void *cookie, size_t cookie_size)
 
-    :c:macro:`CAHUTE_ERROR_UNKNOWN`
-        The medium-specific operations have yielded an error code that
-        Cahute did not interpret. Some details can usually be found in
-        the logs.
+    Open a USB bulk link (internal platform-independent interface);
+    see :ref:`transport-serial-over-usb-bulk` for more information.
 
-    :param medium: Link medium to receive data from.
-    :param buf: Buffer in which to write the received data.
-    :param size: Size of the data to write to the buffer.
-    :param first_timeout: Maximum delay to wait before the first byte of the
-        data, in milliseconds. If this is set to 0, the first byte will be
-        awaited indefinitely.
-    :param next_timeout: Maximum delay to wait between two bytes of the data,
-        or before the last byte, in milliseconds. If this is set to 0, next
-        bytes will be awaited indefinitely.
-    :return: Error, or :c:macro:`CAHUTE_OK`.
+    ``open_params`` is computed by :c:func:`cahute_open_usb_link` and
+    **must be treated as opaque** (as it is defined by
+    :c:func:`cahute_open_usb_link` for its underlying platform-independent
+    utilities).
 
-.. c:function:: int cahute_send_on_link_medium(cahute_link_medium *medium, \
-    cahute_u8 const *buf, size_t size)
+    ``interface`` must be defined by the platform-specific code, can be defined
+    as static / constant, and its type is defined as follows:
 
-    Write exactly ``size`` bytes of data to the link.
+    .. c:struct:: cahute_serial_over_usb_bulk_link_interface
 
-    Errors to be expected from this function are the following:
+        .. c:member:: char const *name
 
-    :c:macro:`CAHUTE_ERROR_GONE`
-        The device is no longer present, usually either because the USB
-        cable has been unplugged on one end or the other, or the serial
-        adapter has been unplugged from the host.
+            Name of the interface for logging purposes.
 
-    :c:macro:`CAHUTE_ERROR_UNKNOWN`
-        The medium-specific operations have yielded an error code that
-        Cahute did not interpret. Some details can usually be found in
-        the logs.
+        .. c:member:: cahute_link_close_func *close_func
 
-    :param medium: Link medium to send data to.
-    :param buf: Buffer from which to read the data to send.
-    :param size: Size of the data to read and send.
-    :return: Error, or :c:macro:`CAHUTE_OK`.
+            Function to use to close the link.
 
-Serial mediums such as :c:macro:`CAHUTE_LINK_MEDIUM_POSIX_SERIAL` or
-:c:macro:`CAHUTE_LINK_MEDIUM_WIN32_SERIAL` support changing the parameters
-of the serial link using the following function:
+            Can be set to ``NULL``; if this is the case, no platform-specific
+            code will be called to close the link.
 
-.. c:function:: int cahute_set_serial_params_to_link_medium( \
-    cahute_link_medium *medium, unsigned long flags, unsigned long speed)
+        .. c:member:: cahute_link_receive_func *receive_func
 
-    Set the serial parameters to the medium.
+            Function to use to receive data on the link.
 
-    Accepted flags are a subset of the flags for
-    :c:func:`cahute_open_serial_link`:
+        .. c:member:: cahute_link_send_func *send_func
 
-    * ``CAHUTE_SERIAL_STOP_*`` (stop bits);
-    * ``CAHUTE_SERIAL_PARITY_*`` (parity);
-    * ``CAHUTE_SERIAL_XONXOFF_*`` (XON/XOFF software control);
-    * ``CAHUTE_SERIAL_DTR_*`` (DTR hardware control);
-    * ``CAHUTE_SERIAL_RTS_*`` (RTS hardware control).
+            Function to use to send data on the link.
 
-    :param medium: Link medium to set the serial parameters to.
-    :param flags: Flags to set to the medium.
-    :param speed: Speed to set to the medium.
-    :return: Error, or :c:macro:`CAHUTE_OK`.
+    ``cookie`` is the cookie that will be passed to the platform-specific
+    functions defined in the interface.
 
-USB Mass Storage mediums support an interface capable of making SCSI requests,
-with the following functions:
+    .. warning::
 
-.. c:function:: int cahute_scsi_request_to_link_medium( \
-    cahute_link_medium *medium, cahute_u8 const *command,\
-    size_t command_size, cahute_u8 const *data, size_t data_size, int *statusp)
+        ``cookie`` will not be used directly, but will be **copied** on
+        a new memory area reserved with all other requirements for the link.
 
-    Emit an SCSI request to the medium, with or without data.
+        As such, if you need to allocate memory that is shared with your
+        link's transport for communication, you must allocate the shared memory
+        separately, and include a pointer to it in the cookie, that will
+        be copied to the new memory area.
 
-    :param medium: Link medium to send the command and optional payload to,
-        and receive the status from.
-    :param command: Command to send.
-    :param command_size: Size of the command to send.
-    :param data: Optional data to send along with the command.
-        This can be set to ``NULL`` if ``data_size`` is set to 0.
-    :param data_size: Size of the data to send along with the command.
-    :param statusp: Pointer to the status code to set to the one returned by
-        the device.
-    :return: Error, or :c:macro:`CAHUTE_OK`.
+    .. warning::
 
-.. c:function:: int cahute_scsi_request_from_link_medium( \
-    cahute_link_medium *medium, cahute_u8 const *command, \
-    size_t command_size, cahute_u8 *buf, size_t buf_size, int *statusp)
+        Either ``cookie`` is defined and ``cookie_size`` is greater than 0,
+        or ``cookie`` is ``NULL`` and ``cookie_size`` is equal to 0.
+        Any other case is considered a bug in the platform-specific
+        implementation by the library, and the initialization will fail.
 
-    Emit an SCSI request to the medium, while requesting data.
+    :param open_params: Opaque parameter transmitted by
+        :c:func:`cahute_open_serial_link`, to consider opaque and send
+        to the function.
+    :param interface: Interface defined on a platform basis.
+    :param cookie: Cookie to copy on the link, and transmit to the
+        platform-specific functions set in the interface.
+    :param cookie_size: Size of the cookie to copy.
+    :return: The error, or 0 if the operation was successful.
 
-    :param medium: Link medium to send the command to, and receive the data
-        and status from.
-    :param command: Command to send.
-    :param command_size: Size of the command to send.
-    :param buf: Buffer to fill with the requested data.
-    :param buf_size: Size of the data to request.
-    :param statusp: Pointer to the status code to set to the one returned by
-        the device.
-    :return: Error, or :c:macro:`CAHUTE_OK`.
+.. c:function:: int cahute_open_ums_link_from_interface( \
+    cahute_usb_link_open_params *open_params, \
+    cahute_ums_link_interface const *interface, \
+    void *cookie, size_t cookie_size)
 
-Available medium types
-~~~~~~~~~~~~~~~~~~~~~~
+    Open a USB Mass Storage (UMS) link (internal platform-independent
+    interface); see :ref:`transport-ums` for more information.
 
-Medium types are represented as ``CAHUTE_LINK_MEDIUM_*`` constants internally.
+    ``open_params`` is computed by :c:func:`cahute_open_usb_link` and
+    **must be treated as opaque** (as it is defined by
+    :c:func:`cahute_open_usb_link` for its underlying platform-independent
+    utilities).
 
-.. warning::
+    ``interface`` must be defined by the platform-specific code, can be defined
+    as static / constant, and its type is defined as follows:
 
-    The medium constants are only represented **if they are available on the
-    current configuration**. This is a simple way for medium-specific
-    implementations to be defined or not, with ``#ifdef``.
+    .. c:struct:: cahute_ums_link_interface
 
-Available mediums are the following:
+        .. c:member:: char const *name
 
-.. c:macro:: CAHUTE_LINK_MEDIUM_POSIX_SERIAL
+            Name of the interface for logging purposes.
 
-    :ref:`transport-serial` using the POSIX API, with a file descriptor (*fd*):
+        .. c:member:: cahute_link_close_func *close_func
 
-    * Closing using `close(2) <https://linux.die.net/man/2/close>`_;
-    * Receiving uses `select(2) <https://linux.die.net/man/2/select>`_ and
-      `read(2) <https://linux.die.net/man/2/read>`_;
-    * Sending uses `write(2) <https://linux.die.net/man/2/write>`_;
-    * Serial params setting uses
-      `termios(3) <https://linux.die.net/man/3/termios>`_, including
-      ``tcdrain()``, and
-      `tty_ioctl(4) <https://linux.die.net/man/4/tty_ioctl>`_, especially
-      ``TIOCMGET`` and ``TIOCMSET``.
+            Function to use to close the link.
 
-    Only available on platforms considered POSIX, including Apple's OS X
-    explicitely (since they do not define the ``__unix__`` constant like
-    Linux does).
+            Can be set to ``NULL``; if this is the case, no platform-specific
+            code will be called to close the link.
 
-.. c:macro:: CAHUTE_LINK_MEDIUM_AMIGAOS_SERIAL
+        .. c:member:: cahute_link_scsi_request_to_func *request_to_func
 
-    :ref:`transport-serial` using AmigaOS serial I/O, as described in the
-    `AmigaOS Serial Device Guide`_.
+            Function to use to send a command, accompanied with optional data.
 
-.. c:macro:: CAHUTE_LINK_MEDIUM_WIN32_SERIAL
+        .. c:member:: cahute_link_scsi_request_from_func *request_from_func
 
-    :ref:`transport-serial` using the Windows API, with a |HANDLE|_ and
-    `Overlapped I/O`_:
+            Function to use to receive a command, and receive data.
 
-    * Closing uses |CloseHandle|_;
-    * Receiving uses |ReadFile|_ and |WaitForSingleObject|_, and depending
-      on whether the second function succeeded or not, either
-      |GetOverlappedResult|_ or |CancelIo|_, to ensure we don't have any
-      buffer writes post-freeing the link;
-    * Sending uses |WriteFile|_ and |WaitForSingleObject|_, and depending
-      on whether the second function succeeded or not, either
-      |GetOverlappedResult|_ or |CancelIo|_, to ensure we don't have any
-      buffer reads post-freeing the link;
-    * Serial params setting uses |SetCommState|_.
+    .. note::
 
-    For more information, see `Serial Communications in Win32`_.
+        From these functions, the "receive" and "send" callbacks implement
+        receiving and sending through :ref:`CASIO's custom SCSI commands
+        <ums-custom-commands>`.
 
-.. c:macro:: CAHUTE_LINK_MEDIUM_WIN32_CESG
+    ``cookie`` is the cookie that will be passed to the platform-specific
+    functions defined in the interface.
 
-    :ref:`transport-serial-over-usb-bulk` or stream-only operations for
-    :ref:`transport-ums` using CASIO's CESG502 driver
-    through the Windows API.
+    .. warning::
 
-    As described in :ref:`windows-usb-drivers`, we must detect if the
-    device driver is CESG502 or a libusb-compatible driver by using
-    SetupAPI_ or CfgMgr32_, and use this medium in the first case.
+        ``cookie`` will not be used directly, but will be **copied** on
+        a new memory area reserved with all other requirements for the link.
 
-    It is used with a |HANDLE|_ and `Overlapped I/O`_:
+        As such, if you need to allocate memory that is shared with your
+        link's transport for communication, you must allocate the shared memory
+        separately, and include a pointer to it in the cookie, that will
+        be copied to the new memory area.
 
-    * Closing uses |CloseHandle|_;
-    * Receiving uses |ReadFile|_ and |WaitForSingleObject|_, and depending
-      on whether the second function succeeded or not, either
-      |GetOverlappedResult|_ or |CancelIo|_, to ensure we don't have any
-      buffer writes post-freeing the link;
-    * Sending uses |WriteFile|_ and |WaitForSingleObject|_, and depending
-      on whether the second function succeeded or not, either
-      |GetOverlappedResult|_ or |CancelIo|_, to ensure we don't have any
-      buffer reads post-freeing the link.
+    .. warning::
 
-    Note that CESG502 waits for calculator input by default, and always
-    requires a buffer bigger than the actual input it receives (4 KiB is
-    usually enough). It also abstracts away whether it using bulk transfers
-    directly, or USB Mass Storage, into a stream interface; this however
-    does not allow you to make SCSI requests directly.
+        Either ``cookie`` is defined and ``cookie_size`` is greater than 0,
+        or ``cookie`` is ``NULL`` and ``cookie_size`` is equal to 0.
+        Any other case is considered a bug in the platform-specific
+        implementation by the library, and the initialization will fail.
 
-.. c:macro:: CAHUTE_LINK_MEDIUM_WIN32_UMS
+    :param open_params: Opaque parameter transmitted by
+        :c:func:`cahute_open_serial_link`, to consider opaque and send
+        to the function.
+    :param interface: Interface defined on a platform basis.
+    :param cookie: Cookie to copy on the link, and transmit to the
+        platform-specific functions set in the interface.
+    :param cookie_size: Size of the cookie to copy.
+    :return: The error, or 0 if the operation was successful.
 
-    :ref:`transport-ums` using the Windows API.
+Transport functions
+~~~~~~~~~~~~~~~~~~~
 
-    It is used with a |HANDLE|_:
+The transport interface functions are defined as the following:
 
-    * Closing uses |CloseHandle|_;
-    * Requesting using SCSI uses |DeviceIoControl|_ with
-      |IOCTL_SCSI_PASS_THROUGH_DIRECT|_.
+.. c:type:: void (cahute_link_close_func)(cahute_context *context, \
+    void *cookie)
 
-.. c:macro:: CAHUTE_LINK_MEDIUM_LIBUSB
+    Function that, if defined, is called to close link-specific resources.
 
-    :ref:`transport-serial-over-usb-bulk` using libusb.
+    :param context: Context in which the function is loaded.
+        Can be used for logging purposes, or to get context-specific resources.
+    :param cookie: Link-specific cookie.
 
-    It is used with a |libusb_device_handle|_, opened using a
-    |libusb_context|_:
+.. c:type:: int (cahute_link_receive_func)(cahute_context *context, \
+    void *cookie, cahute_u8 *buf, size_t capacity, size_t *receivedp, \
+    unsigned long timeout)
 
-    * Closing uses |libusb_close|_ on the device handle, and |libusb_exit|_
-      on the libusb context;
-    * Receiving and sending uses |libusb_bulk_transfer|_.
+    Function called to receive bytes on the link's underlying transport.
 
-.. c:macro:: CAHUTE_LINK_MEDIUM_LIBUSB_UMS
+    :param context: Context in which the function is loaded.
+        Can be used for logging purposes, or to get context-specific resources.
+    :param cookie: Link-specific cookie.
+    :param buf: Buffer in which to receive data.
+    :param capacity: Buffer capacity, in bytes.
+    :param receivedp: Pointer to the number of received bytes to set.
+    :param timeout: Maximum amount of time to wait input for, in
+        milliseconds.
+    :return: The error, or 0 if the operation was successful.
 
-    :ref:`transport-ums` using libusb.
+.. c:type:: int (cahute_link_send_func)(cahute_context *context, \
+    void *cookie, cahute_u8 const *buf, size_t size, size_t *sentp)
 
-    As for :c:macro:`CAHUTE_LINK_MEDIUM_LIBUSB`, it is used with a
-    |libusb_device_handle|_, opened using a |libusb_context|_:
+    Function called to send bytes on the link's underlying transport.
 
-    * Closing uses |libusb_close|_ on the device handle, and |libusb_exit|_
-      on the libusb context;
-    * Requesting using SCSI uses |libusb_bulk_transfer|_ with manual reading
-      and writing of the Command Block Wrapper (CBW) and
-      Command Status Wrapper (CSW).
+    :param context: Context in which the function is loaded.
+        Can be used for logging purposes, or to get context-specific resources.
+    :param cookie: Link-specific cookie.
+    :param buf: Buffer in which the data to send is defined.
+    :param size: Number of bytes to send in the provided buffer, in bytes.
+    :param sentp: Pointer to the number of sent bytes to set.
+    :return: The error, or 0 if the operation was successful.
 
-    See `USB Mass Storage Class, Bulk-Only Transport`_ for more information
-    on CBW and CSW format and protocol in general.
+.. c:type:: int (cahute_link_set_serial_params_func)(cahute_context *context, \
+    void *cookie, unsigned long flags, unsigned long speed)
+
+    Function called to set serial parameters on the link's underlying
+    transport.
+
+    :param context: Context in which the function is loaded.
+        Can be used for logging purposes, or to get context-specific resources.
+    :param cookie: Link-specific cookie.
+    :param flags: Flags containing the serial parameters; see
+        :c:func:`cahute_set_serial_params_to_link` for available flags.
+    :param speed: Speed to set to the serial transport, in bauds (e.g.
+        ``9600``).
+    :return: The error, or 0 if the operation was successful.
+
+.. c:type:: int (cahute_link_scsi_request_to_func)(cahute_context *context, \
+    void *cookie, cahute_u8 const *command, size_t command_size, \
+    cahute_u8 const *data, size_t data_size, int *statusp)
+
+    Function called to send an SCSI request to the link's underlying
+    transport, and optionally send data.
+
+    :param context: Context in which the function is loaded.
+        Can be used for logging purposes, or to get context-specific resources.
+    :param cookie: Link-specific cookie.
+    :param command: Buffer to the command to send.
+    :param command_size: Command size (6, 10 or 12), in bytes.
+    :param data: Pointer to the data to send following the command.
+        If no data is to be sent, this is set to ``NULL``.
+    :param data_size: Size of the data to send, in bytes.
+        If no data is to be sent, this is set to ``0``.
+    :param statusp: Pointer to the command's status code to set.
+    :return: The error, or 0 if the operation was successful.
+
+.. c:type:: int (cahute_link_scsi_request_from_func)(cahute_context *context, \
+    void *cookie, cahute_u8 const *command, size_t command_size, \
+    cahute_u8 *buf, size_t buf_size, int *statusp)
+
+    Function called to send an SCSI request to the link's underlying
+    transport, and receive data.
+
+    :param context: Context in which the function is loaded.
+        Can be used for logging purposes, or to get context-specific resources.
+    :param cookie: Link-specific cookie.
+    :param command: Buffer to the command to send.
+    :param command_size: Command size (6, 10 or 12), in bytes.
+    :param buf: Buffer to fill with the received data.
+        This is always defined.
+    :param buf_size: Buffer capacity, in bytes.
+        This is always greater than ``0``, and guaranteed to be aligned
+        at the 32-byte mark.
+        If this is insufficient compared to the actual received data,
+        the function should return :c:macro:`CAHUTE_ERROR_SIZE`.
+    :param statusp: Pointer to the command's status code to set.
+    :return: The error, or 0 if the operation was successful.
 
 Protocols
 ---------
@@ -293,15 +342,15 @@ Available protocols are:
 
 .. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_NONE
 
-    No protocol on a serial medium.
+    No protocol on a serial transport.
 
-    This can be selected by the user in order to use the medium functions
+    This can be selected by the user in order to use the transport functions
     more directly, through the ones referenced in
-    :ref:`header-cahute-link-medium`.
+    :ref:`header-cahute-link-transport`.
 
 .. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_CAS
 
-    Generic CASIOLINK on a serial medium.
+    Generic CASIOLINK on a serial transport.
 
     This can only be used when in receiver mode, i.e.
     :c:macro:`CAHUTE_LINK_FLAG_RECEIVER` must be present for this protocol
@@ -311,31 +360,31 @@ Available protocols are:
 
 .. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_CAS40
 
-    CAS40 on a serial medium.
+    CAS40 on a serial transport.
 
     See :ref:`protocol-cas40` for more information.
 
 .. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_CAS50
 
-    CAS50 on a serial medium.
+    CAS50 on a serial transport.
 
     See :ref:`protocol-cas50` for more information.
 
 .. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_CAS100
 
-    CAS100 on a serial medium.
+    CAS100 on a serial transport.
 
     See :ref:`protocol-cas100` for more information.
 
 .. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_CAS300
 
-    CAS300 on a serial medium.
+    CAS300 on a serial transport.
 
     See :ref:`protocol-cas300` for more information.
 
 .. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN
 
-    Protocol 7.00 over a serial medium.
+    Protocol 7.00 over a serial transport.
 
     See :ref:`protocol-seven` for more information.
 
@@ -344,17 +393,17 @@ Available protocols are:
 
 .. c:macro:: CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN_OHP
 
-    Protocol 7.00 Screenstreaming over a serial medium.
+    Protocol 7.00 Screenstreaming over a serial transport.
 
     See :ref:`protocol-seven-ohp` for more information.
 
 .. c:macro:: CAHUTE_LINK_PROTOCOL_USB_NONE
 
-    No protocol on a USB medium.
+    No protocol on a USB transport.
 
-    This can be selected by the user in order to use the medium functions
+    This can be selected by the user in order to use the transport functions
     more directly, through the ones referenced in
-    :ref:`header-cahute-link-medium`.
+    :ref:`header-cahute-link-transport`.
 
 .. c:macro:: CAHUTE_LINK_PROTOCOL_USB_CAS300
 
@@ -405,21 +454,9 @@ In this section, we will describe the behaviour of link opening functions.
         * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN`;
         * :c:macro:`CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN_OHP`.
 
-    Then, depending on the platform:
+    It will then use platform-specific functions to open the serial link.
 
-    * On POSIX and compatible, it will attempt to open the serial device
-      using `open(2) <https://linux.die.net/man/2/open>`_.
-      If this succeeds, the medium of the created link will be set to
-      :c:macro:`CAHUTE_LINK_MEDIUM_POSIX_SERIAL`;
-    * On Windows, it will attempt to open the serial device using
-      |CreateFile|_, then, if it succeeds, call |SetCommTimeouts|_
-      with ``ReadTimeoutInterval`` set to ``MAXDWORD`` in order to only read
-      what is directly available, and create the event for the overlapped
-      object using |CreateEvent|_. If this succeeds, the medium of the
-      created link will be set to :c:macro:`CAHUTE_LINK_MEDIUM_WIN32_SERIAL`;
-    * Otherwise, it will return :c:macro:`CAHUTE_ERROR_IMPL`.
-
-    If the underlying medium has successfully been opened, it will allocate
+    If the underlying transport has successfully been opened, it will allocate
     the link and call :c:func:`cahute_set_serial_params_to_link` to set
     the initial serial parameters to it.
 
@@ -431,116 +468,9 @@ In this section, we will describe the behaviour of link opening functions.
     This function first validates all params to ensure compatibility, e.g.
     throws an error in case of unsupported flag or combination.
 
-    If libusb support has been disabled, the function returns
-    :c:macro:`CAHUTE_ERROR_IMPL`.
+    Then, the platform-specific USB device opening method is used.
 
-    Otherwise, on all platforms, this function creates a context using
-    |libusb_init|_, gets the device list using |libusb_get_device_list|_,
-    and finds one matching the provided bus and address numbers using
-    |libusb_get_bus_number|_ and |libusb_get_device_address|_ on every entry.
-
-    If a matching device is found, the configuration is obtained using
-    |libusb_get_device_descriptor|_ and |libusb_get_active_config_descriptor|_,
-    in order to:
-
-    * Get the vendor (VID) and product (PID) identifiers, to ensure they match
-      one of the known combinations for CASIO calculators.
-    * Get the interface class (``bInterfaceClass``) to determine the protocol
-      and medium type.
-    * In both cases, ensure that the bulk IN and OUT endpoints exist, and
-      get their endpoint identifiers.
-
-    .. note::
-
-        While historical implementations of CASIO's protocols using libusb
-        hardcode 0x82 as Bulk IN and 0x01 as Bulk OUT, this has proven to
-        change on other platforms such as OS X; see `#3 (comment 1823215641)
-        <https://gitlab.com/cahuteproject/cahute/-/issues/3#note_1823215641>`_
-        for more context.
-
-    The interface class, :c:macro:`CAHUTE_USB_OHP` flag presence, and
-    :c:macro:`CAHUTE_USB_SEVEN` or :c:macro:`CAHUTE_USB_CAS300` flag presence
-    to protocol and medium type mapping is the following:
-
-    .. list-table::
-        :header-rows: 1
-        :width: 100%
-
-        * - (in) Intf. class
-          - (in) ``OHP`` flag
-          - (in) ``SEVEN`` or ``CAS300``
-          - (out) Medium
-          - (out) Protocol
-        * - 8
-          - absent
-          -
-          - :c:macro:`CAHUTE_LINK_MEDIUM_LIBUSB_UMS`
-          - :c:macro:`CAHUTE_LINK_PROTOCOL_USB_MASS_STORAGE`
-        * - 8
-          - present
-          -
-          - :c:macro:`CAHUTE_LINK_MEDIUM_LIBUSB_UMS`
-          - :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP`
-        * - 255
-          - present
-          -
-          - :c:macro:`CAHUTE_LINK_MEDIUM_LIBUSB`
-          - :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP`
-        * - 255
-          - absent
-          - ``CAS300``
-          - :c:macro:`CAHUTE_LINK_MEDIUM_LIBUSB`
-          - :c:macro:`CAHUTE_LINK_PROTOCOL_USB_CAS300`
-        * - 255
-          - absent
-          - ``SEVEN``
-          - :c:macro:`CAHUTE_LINK_MEDIUM_LIBUSB`
-          - :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN`
-        * - 255
-          - absent
-          - none
-          - :c:macro:`CAHUTE_LINK_MEDIUM_LIBUSB`
-          - :c:macro:`CAHUTE_LINK_PROTOCOL_USB_CAS300`,
-            :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN` or
-            :c:macro:`CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP`.
-
-    See :ref:`usb-detection` for more information.
-
-    .. warning::
-
-        If :c:macro:`CAHUTE_USB_NOPROTO` flag is passed, the medium is kept,
-        but the protocol is replaced by
-        :c:macro:`CAHUTE_LINK_PROTOCOL_USB_NONE`.
-
-    Once all metadata has been gathered, the function opens the device using
-    |libusb_open|_, and attempt to claim its interface using
-    |libusb_claim_interface|_ and |libusb_detach_kernel_driver|_.
-
-    .. note::
-
-        Access errors, i.e. any of these two functions returning
-        ``LIBUSB_ERROR_ACCESS``, are ignored, since libusb is still
-        able to communicate with the device on some platforms afterwards.
-
-        See `#3 <https://gitlab.com/cahuteproject/cahute/-/issues/3>`_
-        for more context.
-
-    If the device opening yields ``LIBUSB_ERROR_NOT_SUPPORTED``,
-    it means that the device is running a driver that is not supported by
-    libusb.
-
-        On Windows, in this case, we look for a USB device with a device
-        address equal to the libusb port number, obtained using
-        |libusb_get_port_number|_, then:
-
-        * If the underlying driver to the device is identified as CESG502,
-          we use the USB device interface as a
-          :c:macro:`CAHUTE_LINK_MEDIUM_WIN32_CESG` medium;
-        * Otherwise, we look for disk drive then volume devices via bus
-          relations, and use the volume device interface as a
-          :c:macro:`CAHUTE_LINK_MEDIUM_WIN32_UMS` medium.
-
-    Once all is done, the link is created with the selected medium and
+    Once all is done, the link is created with the selected transport and
     protocol. The function will then initialize the protocol using the
     common protocol initialization procedure; see
     :ref:`internals-link-protocol-initialization`.
@@ -574,7 +504,7 @@ Protocol initialization
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 The common protocol initialization procedure is defined by a function named
-``init_link`` in ``link/open.c``.
+``cahute_initialize_link_protocol`` in ``link/open/init.c``.
 
 First of all, if the selected protocol is automatic detection,
 the communication initialization is used to determine the protocol in which
@@ -594,133 +524,3 @@ Then, the initialization sequence is run depending on the protocol and role
 (sender or receiver, depending on the presence of the
 :c:macro:`CAHUTE_SERIAL_RECEIVER` :c:macro:`CAHUTE_USB_RECEIVER` in the flags
 of the original function).
-
-.. |HANDLE| replace:: ``HANDLE``
-.. |CreateFile| replace:: ``CreateFile``
-.. |SetCommTimeouts| replace:: ``SetCommTimeouts``
-.. |CreateEvent| replace:: ``CreateEvent``
-.. |ReadFile| replace:: ``ReadFile``
-.. |WriteFile| replace:: ``WriteFile``
-.. |WaitForSingleObject| replace:: ``WaitForSingleObject``
-.. |GetOverlappedResult| replace:: ``GetOverlappedResult``
-.. |CancelIo| replace:: ``CancelIo``
-.. |CloseHandle| replace:: ``CloseHandle``
-.. |SetCommState| replace:: ``SetCommState``
-.. |DeviceIoControl| replace:: ``DeviceIoControl``
-.. |IOCTL_SCSI_PASS_THROUGH_DIRECT| replace:: ``IOCTL_SCSI_PASS_THROUGH_DIRECT``
-
-.. |libusb_context| replace:: ``libusb_context``
-.. |libusb_init| replace:: ``libusb_init``
-.. |libusb_exit| replace:: ``libusb_exit``
-.. |libusb_device_handle| replace:: ``libusb_device_handle``
-.. |libusb_get_device_list| replace:: ``libusb_get_device_list``
-.. |libusb_get_bus_number| replace:: ``libusb_get_bus_number``
-.. |libusb_get_device_address| replace:: ``libusb_get_device_address``
-.. |libusb_get_device_descriptor| replace:: ``libusb_get_device_descriptor``
-.. |libusb_get_port_number| replace:: ``libusb_get_port_number``
-.. |libusb_get_active_config_descriptor|
-   replace:: ``libusb_get_active_config_descriptor``
-.. |libusb_detach_kernel_driver| replace:: ``libusb_detach_kernel_driver``
-.. |libusb_claim_interface| replace:: ``libusb_claim_interface``
-.. |libusb_open| replace:: ``libusb_open``
-.. |libusb_close| replace:: ``libusb_close``
-.. |libusb_bulk_transfer| replace:: ``libusb_bulk_transfer``
-
-.. _HANDLE:
-    https://learn.microsoft.com/en-us/windows/win32/sysinfo/handles-and-objects
-.. _Overlapped I/O:
-    https://learn.microsoft.com/en-us/windows/win32/sync/
-    synchronization-and-overlapped-input-and-output
-.. _CreateFile:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    fileapi/nf-fileapi-createfilea
-.. _SetCommTimeouts:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    winbase/nf-winbase-setcommtimeouts
-.. _CreateEvent:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    synchapi/nf-synchapi-createeventa
-.. _ReadFile:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    fileapi/nf-fileapi-readfile
-.. _WriteFile:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    fileapi/nf-fileapi-writefile
-.. _WaitForSingleObject:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    synchapi/nf-synchapi-waitforsingleobject
-.. _GetOverlappedResult:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    ioapiset/nf-ioapiset-getoverlappedresult
-.. _CancelIo:
-    https://learn.microsoft.com/en-us/windows/win32/fileio/cancelio
-.. _CloseHandle:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    handleapi/nf-handleapi-closehandle
-.. _SetCommState:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    winbase/nf-winbase-setcommstate
-.. _DeviceIoControl:
-    https://learn.microsoft.com/en-us/windows/win32/api/
-    ioapiset/nf-ioapiset-deviceiocontrol
-.. _IOCTL_SCSI_PASS_THROUGH_DIRECT:
-    https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddscsi/
-    ni-ntddscsi-ioctl_scsi_pass_through_direct
-.. _Serial Communications in Win32:
-    https://learn.microsoft.com/en-us/previous-versions/ms810467(v=msdn.10)
-
-.. _SetupAPI:
-    https://learn.microsoft.com/en-us/windows-hardware/drivers/install/setupapi
-.. _cfgmgr32:
-    https://learn.microsoft.com/en-us/windows/win32/api/cfgmgr32/
-
-.. _libusb_context:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
-    #ga4ec088aa7b79c4a9599e39bf36a72833
-.. _libusb_init:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
-    #ga7deaef521cfb1a5b3f8d6c01be11a795
-.. _libusb_exit:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
-    #gadc174de608932caeb2fc15d94fa0844d
-.. _libusb_device_handle:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__dev.html
-    #ga7df95821d20d27b5597f1d783749d6a4
-.. _libusb_get_device_list:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__dev.html
-    #gac0fe4b65914c5ed036e6cbec61cb0b97
-.. _libusb_get_bus_number:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__dev.html
-    #gaf2718609d50c8ded2704e4051b3d2925
-.. _libusb_get_device_address:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__dev.html
-    #gab6d4e39ac483ebaeb108f2954715305d
-.. _libusb_get_port_number:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__dev.html
-    #ga14879a0ea7daccdcddb68852d86c00c4
-.. _libusb_get_device_descriptor:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__desc.html
-    #ga5e9ab08d490a7704cf3a9b0439f16f00
-.. _libusb_get_active_config_descriptor:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__desc.html
-    #ga425885149172b53b3975a07629c8dab3
-.. _libusb_detach_kernel_driver:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__dev.html
-    #ga5e0cc1d666097e915748593effdc634a
-.. _libusb_claim_interface:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__dev.html
-    #gaee5076addf5de77c7962138397fd5b1a
-.. _libusb_open:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__dev.html
-    #ga3f184a8be4488a767b2e0ae07e76d1b0
-.. _libusb_close:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__dev.html
-    #ga779bc4f1316bdb0ac383bddbd538620e
-.. _libusb_bulk_transfer:
-    https://libusb.sourceforge.io/api-1.0/group__libusb__syncio.html
-    #ga2f90957ccc1285475ae96ad2ceb1f58c
-
-.. _AmigaOS Serial Device Guide:
-    https://wiki.amigaos.net/wiki/Serial_Device
-.. _USB Mass Storage Class, Bulk-Only Transport:
-    https://www.usb.org/sites/default/files/usbmassbulk_10.pdf

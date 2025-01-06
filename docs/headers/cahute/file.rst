@@ -70,12 +70,15 @@ Function declarations
 ---------------------
 
 .. c:function:: int cahute_open_file(cahute_context *context, \
-    cahute_file **filep, void const *path, int path_type)
+    cahute_file **filep, unsigned long flags, void const *path, int path_type)
 
     Open a file from a path, in order to read it.
 
+    No flags are currently available.
+
     :param context: Context in which to open the file.
     :param filep: Pointer to the file object to create.
+    :param flags: Flags to use to decode the file.
     :param path: Path to the file to open, with the file type.
     :param path_type: Type of the path to the file to open.
     :return: Error, or 0 if the operation was successful.

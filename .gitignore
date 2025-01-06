@@ -69,6 +69,8 @@ CTestTestfile.cmake
 _deps
 
 ### CMake Patch ###
+CMakeUserPresets.json
+
 # External projects
 *-prefix/
 
@@ -749,6 +751,7 @@ FodyWeavers.xsd
 # End of https://www.toptal.com/developers/gitignore/api/linux,osx,macos,sublimetext,kate,kdevelop4,visualstudio,vcpkg,cmake,c,python
 
 !/lib
+!/lib/platform/win32
 
 # Additional user configuration.
 /.envrc

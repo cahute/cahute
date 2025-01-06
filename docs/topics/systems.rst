@@ -119,6 +119,54 @@ Cahute does not yet provide a package repository for Void Linux, nor
 endorses any external package repository; one must build Cahute to use
 it on such systems for now.
 
+.. _system-macos:
+
+|apple| macOS, OS X
+-------------------
+
+`macOS / OS X`_ is, in this context, an alias for Darwin_, a system based on
+XNU_ developed by Apple_ for its Mac_ computers, among others.
+It is derived from BSD_, among other systems.
+
+Support for this platform is mostly common with other UNIX-like platforms
+such as Linux_, and most of the platform-specific code is handled by libusb_.
+The following is implemented in Cahute directly:
+
+* macOS does not allow detaching the kernel driver for USB devices, unless
+  it is `code signed <Apple code signing_>`_. Cahute ignores access-related
+  errors on kernel driver detaching for this reason;
+* Like for other BSD_ systems, serial devices are present in ``/dev`` as
+  ``cu.*`` and ``cuad.*`` devices, instead of ``ttyUSB*`` for Linux.
+
+Installation on macOS / OS X of Cahute is done via Homebrew_, which requires
+macOS Ventura (13) or higher; see :ref:`install-macos` and `Homebrew macOS
+requirements`_ for more information.
+
+For now, Cahute is only built natively for this platform; see
+:ref:`build-macos` for more information.
+
+.. _system-freebsd:
+
+|freebsd| FreeBSD
+-----------------
+
+.. warning::
+
+    MS-DOS is not yet supported as an official target by Cahute.
+
+FreeBSD_ is a BSD-derived system.
+
+.. _system-netbsd:
+
+|netbsd| NetBSD
+---------------
+
+.. warning::
+
+    MS-DOS is not yet supported as an official target by Cahute.
+
+NetBSD_ is a BSD-derived system.
+
 .. _system-windows:
 
 |win| Microsoft Windows
@@ -184,32 +232,6 @@ while originally compatible NT 5.1 (Windows XP) onwards, has dropped
 compatibility with Windows XP in version 1.0.24; see `libusb supported
 environments`_ for more information.
 
-.. _system-macos:
-
-|apple| macOS, OS X
--------------------
-
-`macOS / OS X`_ is, in this context, an alias for Darwin_, a system based on
-XNU_ developed by Apple_ for its Mac_ computers, among others.
-It is derived from BSD_, among other systems.
-
-Support for this platform is mostly common with other UNIX-like platforms
-such as Linux_, and most of the platform-specific code is handled by libusb_.
-The following is implemented in Cahute directly:
-
-* macOS does not allow detaching the kernel driver for USB devices, unless
-  it is `code signed <Apple code signing_>`_. Cahute ignores access-related
-  errors on kernel driver detaching for this reason;
-* Like for other BSD_ systems, serial devices are present in ``/dev`` as
-  ``cu.*`` and ``cuad.*`` devices, instead of ``ttyUSB*`` for Linux.
-
-Installation on macOS / OS X of Cahute is done via Homebrew_, which requires
-macOS Ventura (13) or higher; see :ref:`install-macos` and `Homebrew macOS
-requirements`_ for more information.
-
-For now, Cahute is only built natively for this platform; see
-:ref:`build-macos` for more information.
-
 .. _system-msdos:
 
 |msdos| MS-DOS
@@ -265,6 +287,8 @@ which can be found in the `Hyperion Entertainment Downloads`_. See
 .. |void| image:: ../install-guides/voidlinux.svg
 .. |win| image:: ../install-guides/win.png
 .. |win95| image:: ../install-guides/win95.svg
+.. |freebsd| image:: ../install-guides/freebsd.png
+.. |netbsd| image:: ../install-guides/netbsd.png
 .. |apple| image:: ../install-guides/apple.svg
 .. |msdos| image:: ../install-guides/msdos.svg
 .. |amigaos| image:: ../install-guides/amigaos.png
@@ -322,6 +346,9 @@ which can be found in the `Hyperion Entertainment Downloads`_. See
 .. _libusb supported environments:
     https://github.com/libusb/libusb/wiki/Windows/
     0a6dc490c1766b8fc5a2d14e90efa8957663f0f0#supported-environments
+
+.. _FreeBSD: https://www.freebsd.org/
+.. _NetBSD: https://www.netbsd.org/
 
 .. _`macOS / OS X`: https://www.apple.com/macos/
 .. _Darwin: https://en.wikipedia.org/wiki/Darwin_(operating_system)

@@ -81,8 +81,8 @@ cahute_seven_ohp_receive(cahute_link *link, int align, unsigned long timeout) {
          *
          * The sequences we can be expecting */
         while (1) {
-            err = cahute_receive_on_link_medium(
-                &link->medium,
+            err = cahute_receive_on_link_transport(
+                link,
                 &buf[6 - to_complete],
                 to_complete,
                 timeout,
@@ -114,8 +114,8 @@ sequence_found:
         }
     } else {
         /* We just need to fill the initial 6 bytes in the buffer. */
-        err = cahute_receive_on_link_medium(
-            &link->medium,
+        err = cahute_receive_on_link_transport(
+            link,
             buf,
             6,
             TIMEOUT_PACKET_CONTENTS,
@@ -146,8 +146,8 @@ sequence_found:
         } else if (!memcmp(&buf[1], "TYPZ1", 5) || !memcmp(&buf[1], "TYPZ2", 5)) {
             if (buf[5] == '1') {
                 /* The Frame Length (FL) field is 6 bytes long. */
-                err = cahute_receive_on_link_medium(
-                    &link->medium,
+                err = cahute_receive_on_link_transport(
+                    link,
                     &buf[6],
                     18,
                     TIMEOUT_PACKET_CONTENTS,
@@ -176,8 +176,8 @@ sequence_found:
                      | cahute_ascii_hex_to_nibble(buf[11]));
             } else {
                 /* The Frame Length (FL) field is 8 bytes long. */
-                err = cahute_receive_on_link_medium(
-                    &link->medium,
+                err = cahute_receive_on_link_transport(
+                    link,
                     &buf[6],
                     20,
                     TIMEOUT_PACKET_CONTENTS,
@@ -222,8 +222,8 @@ sequence_found:
                  * We however still want to skip the frame length and the
                  * checksum in order to fall back on our feet on next
                  * packet reception. */
-                err = cahute_receive_on_link_medium(
-                    &link->medium,
+                err = cahute_receive_on_link_transport(
+                    link,
                     NULL,
                     frame_length + 2,
                     TIMEOUT_PACKET_CONTENTS,
@@ -259,22 +259,18 @@ sequence_found:
                 format = CAHUTE_PICTURE_FORMAT_1BIT_DUAL;
                 expected_size = ((width >> 3) + !!(width & 7)) * height << 1;
             } else {
-                msg(link->medium.context,
+                msg(link->context,
                     ll_warn,
                     "The following Frame Format was unknown:");
-                mem(link->medium.context, ll_warn, &buf[packet_size - 4], 4);
+                mem(link->context, ll_warn, &buf[packet_size - 4], 4);
             }
         } else {
-            msg(link->medium.context,
-                ll_error,
-                "The following subtype was unknown:");
-            mem(link->medium.context, ll_error, &buf[1], 5);
-            msg(link->medium.context,
+            msg(link->context, ll_error, "The following subtype was unknown:");
+            mem(link->context, ll_error, &buf[1], 5);
+            msg(link->context,
                 ll_error,
                 "The format and length could not be determined.");
-            msg(link->medium.context,
-                ll_error,
-                "This will likely break the link.");
+            msg(link->context, ll_error, "This will likely break the link.");
         }
 
         /* We now have the following data:
@@ -303,8 +299,8 @@ sequence_found:
         if (!frame_length) {
             /* The message has likely already been displayed here, we don't
              * need to print another one. */
-            err = cahute_receive_on_link_medium(
-                &link->medium,
+            err = cahute_receive_on_link_transport(
+                link,
                 NULL,
                 2,
                 TIMEOUT_PACKET_CONTENTS,
@@ -320,8 +316,8 @@ sequence_found:
 
         if (format < 0) {
             /* Same as above, the message has likely already been displayed. */
-            err = cahute_receive_on_link_medium(
-                &link->medium,
+            err = cahute_receive_on_link_transport(
+                link,
                 NULL,
                 frame_length + 2,
                 TIMEOUT_PACKET_CONTENTS,
@@ -347,15 +343,15 @@ sequence_found:
         else {
             /* This may be an implementation oversight, it's targeted towards
              * contributors to this function / protocol :-) */
-            msg(link->medium.context, ll_info, "Picture type is: %d", format);
+            msg(link->context, ll_info, "Picture type is: %d", format);
             CAHUTE_RETURN_IMPL(
-                link->medium.context,
+                link->context,
                 "No size estimation method for found format."
             );
         }
 
         if (expected_size != frame_length) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Frame length %" CAHUTE_PRIuSIZE
                 "o did not match expected "
@@ -366,8 +362,8 @@ sequence_found:
                 height,
                 format);
 
-            err = cahute_receive_on_link_medium(
-                &link->medium,
+            err = cahute_receive_on_link_transport(
+                link,
                 NULL,
                 frame_length + 2,
                 TIMEOUT_PACKET_CONTENTS,
@@ -382,7 +378,7 @@ sequence_found:
         }
 
         if (frame_length > link->data_buffer_capacity) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_info,
                 "Frame length %" CAHUTE_PRIuSIZE
                 "o exceeded data buffer "
@@ -393,8 +389,8 @@ sequence_found:
             /* We still want to skip the frame length and the
              * checksum in order to fall back on our feet on next
              * packet reception. */
-            err = cahute_receive_on_link_medium(
-                &link->medium,
+            err = cahute_receive_on_link_transport(
+                link,
                 NULL,
                 frame_length + 2,
                 TIMEOUT_PACKET_CONTENTS,
@@ -410,8 +406,8 @@ sequence_found:
 
         /* We are now able to read the data from the link to the protocol
          * buffer! */
-        err = cahute_receive_on_link_medium(
-            &link->medium,
+        err = cahute_receive_on_link_transport(
+            link,
             state_data,
             frame_length,
             TIMEOUT_PACKET_CONTENTS,
@@ -427,15 +423,15 @@ sequence_found:
         state->picture_format = format;
         link->data_buffer_size = frame_length;
     } else {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Unknown packet type %d (0x%02X).",
             buf[0],
             buf[0]);
 
         /* Skip the checksum. */
-        err = cahute_receive_on_link_medium(
-            &link->medium,
+        err = cahute_receive_on_link_transport(
+            link,
             NULL,
             2,
             TIMEOUT_PACKET_CONTENTS,
@@ -449,15 +445,14 @@ sequence_found:
         return CAHUTE_ERROR_UNKNOWN;
     }
 
-    msg(link->medium.context, ll_info, "Received the following packet header:"
-    );
-    mem(link->medium.context, ll_info, buf, packet_size);
+    msg(link->context, ll_info, "Received the following packet header:");
+    mem(link->context, ll_info, buf, packet_size);
 
     /* We can now compute the checksum.
      * Note that adding checksums works, i.e.
      * checksum(A) + checksum(B) == checksum(AB). */
-    err = cahute_receive_on_link_medium(
-        &link->medium,
+    err = cahute_receive_on_link_transport(
+        link,
         &buf[packet_size],
         2,
         TIMEOUT_PACKET_CONTENTS,
@@ -486,7 +481,7 @@ sequence_found:
         }
 
         if (obtained_checksum != computed_checksum) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Obtained checksum 0x%02X does not match computed "
                 "checksum 0x%02X.",
@@ -520,10 +515,10 @@ cahute_seven_ohp_send_basic(
     memcpy(&buf[1], subtype, 5);
     cahute_set_ascii_hex(&buf[6], cahute_checksub(&buf[1], 5));
 
-    msg(link->medium.context, ll_info, "Sending the following packet:");
-    mem(link->medium.context, ll_info, buf, 8);
+    msg(link->context, ll_info, "Sending the following packet:");
+    mem(link->context, ll_info, buf, 8);
 
-    return cahute_send_on_link_medium(&link->medium, buf, 8);
+    return cahute_send_on_link_transport(link, buf, 8);
 }
 
 /**
@@ -553,9 +548,7 @@ cahute_seven_ohp_receive_screen(
         case CAHUTE_ERROR_CORRUPT:
             /* In case of checksum error, we just continue receiving
              * packets. */
-            msg(link->medium.context,
-                ll_warn,
-                "Missed a frame due to corruption.");
+            msg(link->context, ll_warn, "Missed a frame due to corruption.");
             continue;
 
         default:
@@ -583,7 +576,7 @@ cahute_seven_ohp_receive_screen(
             break;
 
         default:
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Unexpected packet of type %d (0x%02X), exiting.",
                 state->last_packet_type,

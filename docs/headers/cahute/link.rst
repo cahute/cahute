@@ -207,8 +207,8 @@ Link management related function declarations
 
         Do not use a protocol.
 
-        This renders all of the functions from :ref:`header-cahute-link-medium`
-        accessible on the created link.
+        This renders all of the functions from
+        :ref:`header-cahute-link-transport` accessible on the created link.
 
     .. c:macro:: CAHUTE_SERIAL_PROTOCOL_CAS40
 
@@ -442,7 +442,7 @@ Link management related function declarations
           handshake is no longer required from the sender or active side,
           albeit still accepted.
         * Otherwise, the initial handshake will not be done when the
-          link is established on the underlying medium.
+          link is established on the underlying transport.
 
         This flag is mostly useful when resuming a connection initiated by
         another process, or when the passive process does not require or
@@ -512,7 +512,7 @@ Link management related function declarations
           handshake is no longer required from the sender or active side,
           albeit still accepted.
         * Otherwise, the initial handshake will not be done when the link
-          is established on the underlying medium.
+          is established on the underlying transport.
 
         This flag is mostly useful when resuming a connection initiated by
         another process, or when the passive process does not require or
@@ -593,8 +593,8 @@ Link management related function declarations
 
         Do not use a protocol.
 
-        This renders all of the functions from :ref:`header-cahute-link-medium`
-        accessible on the created link.
+        This renders all of the functions from
+        :ref:`header-cahute-link-transport` accessible on the created link.
 
     :param context: Context in which to open the link.
     :param linkp: The pointer to set the opened link to.
@@ -668,10 +668,10 @@ Link management related function declarations
 
     :param link: The link to close.
 
-.. _header-cahute-link-medium:
+.. _header-cahute-link-transport:
 
-Link medium access related function declarations
-------------------------------------------------
+Link transport access related function declarations
+---------------------------------------------------
 
 .. warning::
 
@@ -711,7 +711,7 @@ Link medium access related function declarations
         adapter has been unplugged from the host.
 
     :c:macro:`CAHUTE_ERROR_UNKNOWN`
-        The medium-specific operations have yielded an error code that
+        The transport-specific operations have yielded an error code that
         Cahute did not interpret. Some details can usually be found in
         the logs.
 
@@ -739,7 +739,7 @@ Link medium access related function declarations
         adapter has been unplugged from the host.
 
     :c:macro:`CAHUTE_ERROR_UNKNOWN`
-        The medium-specific operations have yielded an error code that
+        The transport-specific operations have yielded an error code that
         Cahute did not interpret. Some details can usually be found in
         the logs.
 
@@ -751,9 +751,10 @@ Link medium access related function declarations
 .. c:function:: int cahute_set_serial_params_to_link(cahute_link *link, \
     unsigned long flags, unsigned long speed)
 
-    Set the serial parameters to the link medium.
+    Set the serial parameters to the link transport.
 
-    Accepted flags are a subset of the flags for :c:func:`cahute_open_serial`:
+    Accepted flags are a subset of the flags for
+    :c:func:`cahute_open_serial_link`:
 
     * ``CAHUTE_SERIAL_STOP_*`` (stop bits);
     * ``CAHUTE_SERIAL_PARITY_*`` (parity);
@@ -762,8 +763,8 @@ Link medium access related function declarations
     * ``CAHUTE_SERIAL_RTS_*`` (RTS hardware control).
 
     :param link: Generic link to set the serial parameters to.
-    :param flags: Flags to set to the link medium.
-    :param speed: Speed to set to the link medium.
+    :param flags: Flags to set to the link transport.
+    :param speed: Speed to set to the link transport.
     :return: Error, or :c:macro:`CAHUTE_OK`.
 
 Device metadata access related function declarations
@@ -827,7 +828,7 @@ Link control related function declarations
 .. c:function:: int cahute_negotiate_serial_params(cahute_link *link, \
     unsigned long flags, unsigned long speed)
 
-    Negotiate new parameters for a serial link, and update the medium
+    Negotiate new parameters for a serial link, and update the transport
     parameters to these.
 
     The accepted flags here are among ``CAHUTE_SERIAL_STOP_*`` and

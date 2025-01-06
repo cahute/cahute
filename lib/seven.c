@@ -79,7 +79,7 @@
 #define EXPECT_PACKET(TYPE, SUBTYPE) \
     if (link->protocol_state.seven.last_packet_type != (TYPE) \
         || link->protocol_state.seven.last_packet_subtype != (SUBTYPE)) { \
-        msg(link->medium.context, \
+        msg(link->context, \
             ll_info, \
             "Expected a packet of type %02X and subtype %02X, " \
             "got a packet of type %02X and subtype %02X.", \
@@ -93,7 +93,7 @@
 #define EXPECT_PACKET_OR_FAIL(TYPE, SUBTYPE) \
     if (link->protocol_state.seven.last_packet_type != (TYPE) \
         || link->protocol_state.seven.last_packet_subtype != (SUBTYPE)) { \
-        msg(link->medium.context, \
+        msg(link->context, \
             ll_info, \
             "Expected a packet of type %02X and subtype %02X, " \
             "got a packet of type %02X and subtype %02X.", \
@@ -251,8 +251,8 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
          *
          * If we have 4 bytes to complete, we are to read 4 bytes starting
          * at &buf[2], since the first 2 bytes are already present. */
-        err = cahute_receive_on_link_medium(
-            &link->medium,
+        err = cahute_receive_on_link_transport(
+            link,
             &buf[6 - to_complete],
             to_complete,
             timeout,
@@ -279,12 +279,11 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
      * packet, and check the checksum before any other treatment. */
     if (!cahute_is_ascii_hex(buf[1]) || !cahute_is_ascii_hex(buf[2])
         || (buf[3] != '0' && buf[3] != '1')) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Invalid format for the usual packet header.");
-        msg(link->medium.context, ll_info, "Data read so far is the following:"
-        );
-        mem(link->medium.context, ll_info, buf, 6);
+        msg(link->context, ll_info, "Data read so far is the following:");
+        mem(link->context, ll_info, buf, 6);
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -294,8 +293,8 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
         /* Packet is extended, there is at least 10 bytes: Type (1 B)
          * + Subtype (2 B) + Extended (1 B) + Data size (4 B)
          * + Checksum (2 B). */
-        err = cahute_receive_on_link_medium(
-            &link->medium,
+        err = cahute_receive_on_link_transport(
+            link,
             &buf[6],
             4,
             TIMEOUT_PACKET_CONTENTS,
@@ -308,13 +307,9 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
 
         if (!cahute_is_ascii_hex(buf[4]) || !cahute_is_ascii_hex(buf[5])
             || !cahute_is_ascii_hex(buf[6]) || !cahute_is_ascii_hex(buf[7])) {
-            msg(link->medium.context,
-                ll_error,
-                "Invalid format for the data size.");
-            msg(link->medium.context,
-                ll_info,
-                "Data read so far is the following:");
-            mem(link->medium.context, ll_info, buf, 10);
+            msg(link->context, ll_error, "Invalid format for the data size.");
+            msg(link->context, ll_info, "Data read so far is the following:");
+            mem(link->context, ll_info, buf, 10);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -325,19 +320,17 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
              | cahute_ascii_hex_to_nibble(buf[7]));
 
         if (data_size == 0 || data_size > SEVEN_MAX_ENCODED_PACKET_DATA_SIZE) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Invalid data size %" CAHUTE_PRIuSIZE
                 " for the extended packet.",
                 data_size);
-            msg(link->medium.context,
-                ll_info,
-                "Data read so far is the following:");
-            mem(link->medium.context, ll_info, buf, 10);
+            msg(link->context, ll_info, "Data read so far is the following:");
+            mem(link->context, ll_info, buf, 10);
 
             if (data_size)
-                cahute_receive_on_link_medium(
-                    &link->medium,
+                cahute_receive_on_link_transport(
+                    link,
                     NULL,
                     data_size,
                     TIMEOUT_PACKET_CONTENTS,
@@ -349,8 +342,8 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
 
         /* We want to read the rest of the packet here, with the rest of the
          * data (since we've already read 2 bytes of data) and the checksum. */
-        err = cahute_receive_on_link_medium(
-            &link->medium,
+        err = cahute_receive_on_link_transport(
+            link,
             &buf[10],
             data_size,
             TIMEOUT_PACKET_CONTENTS,
@@ -364,16 +357,15 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
         packet_size = 10 + data_size;
     }
 
-    msg(link->medium.context, ll_info, "Received packet data is the following:"
-    );
-    mem(link->medium.context, ll_info, buf, packet_size);
+    msg(link->context, ll_info, "Received packet data is the following:");
+    mem(link->context, ll_info, buf, packet_size);
 
     if (!cahute_is_ascii_hex(buf[packet_size - 2])
         || !cahute_is_ascii_hex(buf[packet_size - 1])) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Invalid checksum format for the following packet:");
-        mem(link->medium.context, ll_error, buf, packet_size);
+        mem(link->context, ll_error, buf, packet_size);
         return CAHUTE_ERROR_CORRUPT;
     }
 
@@ -386,7 +378,7 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
             cahute_checksub(&buf[1], packet_size - 3);
 
         if (obtained_checksum != computed_checksum) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Obtained checksum 0x%02X does not match computed checksum "
                 "0x%02X.",
@@ -455,16 +447,12 @@ cahute_seven_send_and_receive(
     }
 
     for (attempts = initial_attempts; attempts > 0; attempts--) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_info,
             "Sending the following packet to the device:");
-        mem(link->medium.context, ll_info, raw_packet, raw_packet_size);
+        mem(link->context, ll_info, raw_packet, raw_packet_size);
 
-        err = cahute_send_on_link_medium(
-            &link->medium,
-            raw_packet,
-            raw_packet_size
-        );
+        err = cahute_send_on_link_transport(link, raw_packet, raw_packet_size);
         if (err)
             return err;
 
@@ -475,7 +463,7 @@ cahute_seven_send_and_receive(
             break;
         }
 
-        msg(link->medium.context,
+        msg(link->context,
             ll_info,
             "Packet sent successfully, now waiting for response.");
         err = cahute_seven_receive(link, timeout);
@@ -483,23 +471,19 @@ cahute_seven_send_and_receive(
             && (~flags & SEND_FLAG_DISABLE_TIMEOUT)) {
             /* We are about to continue, but if the timeout recovery flow
              * succeeds, we want to restore the number of attempts. */
-            msg(link->medium.context,
+            msg(link->context,
                 ll_info,
                 "Link did not respond in a timely manner; sending timeout "
                 "check:");
-            mem(link->medium.context, ll_info, timeout_check_packet, 6);
+            mem(link->context, ll_info, timeout_check_packet, 6);
 
-            err = cahute_send_on_link_medium(
-                &link->medium,
-                timeout_check_packet,
-                6
-            );
+            err = cahute_send_on_link_transport(link, timeout_check_packet, 6);
             if (err)
                 return err;
 
             err = cahute_seven_receive(link, TIMEOUT_PACKET_TIMEOUT);
             if (err == CAHUTE_ERROR_TIMEOUT_START) {
-                msg(link->medium.context,
+                msg(link->context,
                     ll_info,
                     "Link did not respond on sent packet nor timeout check.");
                 link->flags |= CAHUTE_LINK_FLAG_IRRECOVERABLE;
@@ -516,7 +500,7 @@ cahute_seven_send_and_receive(
             if (link->protocol_state.seven.last_packet_type != PACKET_TYPE_NAK
                 || link->protocol_state.seven.last_packet_subtype
                        != PACKET_SUBTYPE_NAK_RESEND) {
-                msg(link->medium.context,
+                msg(link->context,
                     ll_info,
                     "Expected a resend error on timeout check, got a packet "
                     "of type %02X and subtype %02X.",
@@ -536,7 +520,7 @@ cahute_seven_send_and_receive(
         if (link->protocol_state.seven.last_packet_type == PACKET_TYPE_NAK
             && link->protocol_state.seven.last_packet_subtype
                    == PACKET_SUBTYPE_NAK_RESEND) {
-            /* The checksum may have been invalidated by the medium, we want
+            /* The checksum may have been invalidated by the transport, we want
              * to try to resend. */
             continue;
         }
@@ -617,7 +601,7 @@ cahute_seven_send_extended(
     cahute_u8 packet[SEVEN_MAX_PACKET_SIZE];
 
     if (data_size > SEVEN_MAX_PACKET_DATA_SIZE) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Tried to send an extended Protocol 7.00 packet with more "
             "than " CAHUTE_PRIuSIZE "o: %" CAHUTE_PRIuSIZE "o!",
@@ -699,7 +683,7 @@ cahute_seven_send_command(
     }
 
     if (length1 + length2 + length3 + length4 + length5 + length6 > 232) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Combined lengths of the parameters cannot exceed 232 bytes!");
         return CAHUTE_ERROR_UNKNOWN;
@@ -812,7 +796,7 @@ cahute_seven_decode_command(
         goto end;
 
     if (link->protocol_state.seven.last_packet_data_size < 24) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Data buffer too small (%" CAHUTE_PRIuSIZE " < 24).",
             link->protocol_state.seven.last_packet_data_size);
@@ -954,7 +938,7 @@ CAHUTE_EXTERN(int) cahute_seven_initiate(cahute_link *link) {
         if (link->protocol_state.seven.last_packet_type != PACKET_TYPE_ACK
             || link->protocol_state.seven.last_packet_subtype
                    != PACKET_SUBTYPE_ACK_BASIC) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Calculator did not answer a basic ACK.");
             return CAHUTE_ERROR_UNKNOWN;
@@ -963,9 +947,7 @@ CAHUTE_EXTERN(int) cahute_seven_initiate(cahute_link *link) {
         return CAHUTE_OK;
     }
 
-    msg(link->medium.context,
-        ll_error,
-        "Link did not respond to the initial check.");
+    msg(link->context, ll_error, "Link did not respond to the initial check.");
     return CAHUTE_ERROR_TIMEOUT_START;
 }
 
@@ -1007,7 +989,7 @@ CAHUTE_EXTERN(int) cahute_seven_terminate(cahute_link *link) {
  *
  * Note that packet shifting is enabled only when not disabled explicitely
  * (e.g. for sensitive payloads, such as with command 0x56 "Upload and run"),
- * or when not on a reliable enough medium (i.e. not serial).
+ * or when not on a reliable enough transport (i.e. not serial).
  *
  * Also note that the command code to use as data packet subtypes has already
  * been set as `link->protocol_state.seven.last_command` by
@@ -1089,7 +1071,7 @@ cahute_seven_send_data(
         err = cahute_read_from_file(file, offset, &buf[8], 256);
         if (err) {
             if (shifted) {
-                msg(link->medium.context,
+                msg(link->context,
                     ll_error,
                     "An error has occurred while we were using packet "
                     "shifting; the link is now irrecoverable.");
@@ -1101,7 +1083,7 @@ cahute_seven_send_data(
 
         offset += 256;
 
-        msg(link->medium.context,
+        msg(link->context,
             ll_info,
             "Sending data packet %lu/%lu.",
             i,
@@ -1117,7 +1099,7 @@ cahute_seven_send_data(
         );
         if (err) {
             if (shifted) {
-                msg(link->medium.context,
+                msg(link->context,
                     ll_error,
                     "An error has occurred while we were using packet "
                     "shifting; the link is now irrecoverable.");
@@ -1150,7 +1132,7 @@ cahute_seven_send_data(
     if (err)
         return err;
 
-    msg(link->medium.context,
+    msg(link->context,
         ll_info,
         "Sending data packet %lu/%lu (last).",
         packet_count,
@@ -1168,9 +1150,7 @@ cahute_seven_send_data(
         return err;
 
     if (link->protocol_state.seven.last_packet_type != PACKET_TYPE_ACK) {
-        msg(link->medium.context,
-            ll_error,
-            "Calculator did not answer with an ACK.");
+        msg(link->context, ll_error, "Calculator did not answer with an ACK.");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -1182,7 +1162,7 @@ cahute_seven_send_data(
     case PACKET_SUBTYPE_ACK_TERM:
         /* The link is terminated at the end of the data exchange flow.
          * Apart from that, the packet flow went great! */
-        msg(link->medium.context,
+        msg(link->context,
             ll_info,
             "Calculator terminated the link following the data transfer.");
 
@@ -1190,7 +1170,7 @@ cahute_seven_send_data(
         break;
 
     default:
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Unhandled ACK subtype %02X at the end of data transfer.",
             link->protocol_state.seven.last_packet_subtype);
@@ -1208,7 +1188,7 @@ cahute_seven_send_data(
  *
  * Note that packet shifting is enabled only when not disabled explicitely
  * (e.g. for sensitive payloads, such as with command 0x56 "Upload and run"),
- * or when not on a reliable enough medium (i.e. not serial).
+ * or when not on a reliable enough transport (i.e. not serial).
  *
  * Also note that the command code to use as data packet subtypes has already
  * been set as `link->protocol_state.seven.last_command` by
@@ -1284,7 +1264,7 @@ cahute_seven_send_data_from_buf(
         memcpy(&buf[8], data, 256);
         data += 256;
 
-        msg(link->medium.context,
+        msg(link->context,
             ll_info,
             "Sending data packet %lu/%lu.",
             i,
@@ -1300,7 +1280,7 @@ cahute_seven_send_data_from_buf(
         );
         if (err) {
             if (shifted) {
-                msg(link->medium.context,
+                msg(link->context,
                     ll_error,
                     "An error has occurred while we were using packet "
                     "shifting; the link is now irrecoverable.");
@@ -1330,7 +1310,7 @@ cahute_seven_send_data_from_buf(
     cahute_set_ascii_hex(&buf[6], packet_count & 255);
     memcpy(&buf[8], data, last_packet_size);
 
-    msg(link->medium.context,
+    msg(link->context,
         ll_info,
         "Sending data packet %lu/%lu (last).",
         packet_count,
@@ -1348,9 +1328,7 @@ cahute_seven_send_data_from_buf(
         return err;
 
     if (link->protocol_state.seven.last_packet_type != PACKET_TYPE_ACK) {
-        msg(link->medium.context,
-            ll_error,
-            "Calculator did not answer with an ACK.");
+        msg(link->context, ll_error, "Calculator did not answer with an ACK.");
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -1362,7 +1340,7 @@ cahute_seven_send_data_from_buf(
     case PACKET_SUBTYPE_ACK_TERM:
         /* The link is terminated at the end of the data exchange flow.
          * Apart from that, the packet flow went great! */
-        msg(link->medium.context,
+        msg(link->context,
             ll_info,
             "Calculator terminated the link following the data transfer.");
 
@@ -1370,7 +1348,7 @@ cahute_seven_send_data_from_buf(
         break;
 
     default:
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Unhandled ACK subtype %02X at the end of data transfer.",
             link->protocol_state.seven.last_packet_subtype);
@@ -1425,10 +1403,9 @@ cahute_seven_receive_raw_data(
          * end has produced. In order to avoid logging "packet 1/0", we
          * emit a specific log for the first packet. */
         if (!packet_count)
-            msg(link->medium.context, ll_info, "Requesting first data packet."
-            );
+            msg(link->context, ll_info, "Requesting first data packet.");
         else
-            msg(link->medium.context,
+            msg(link->context,
                 ll_info,
                 "Requesting packet %u/%u.",
                 i,
@@ -1445,7 +1422,7 @@ cahute_seven_receive_raw_data(
 
         EXPECT_PACKET(PACKET_TYPE_DATA, command_code);
         if (link->protocol_state.seven.last_packet_data_size < 9) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Data packet doesn't contain metadata and at least one byte.");
             return CAHUTE_ERROR_UNKNOWN;
@@ -1455,9 +1432,7 @@ cahute_seven_receive_raw_data(
             || !cahute_is_ascii_hex(buf[2]) || !cahute_is_ascii_hex(buf[3])
             || !cahute_is_ascii_hex(buf[4]) || !cahute_is_ascii_hex(buf[5])
             || !cahute_is_ascii_hex(buf[6]) || !cahute_is_ascii_hex(buf[7])) {
-            msg(link->medium.context,
-                ll_error,
-                "Data packet has invalid format.");
+            msg(link->context, ll_error, "Data packet has invalid format.");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -1467,7 +1442,7 @@ cahute_seven_receive_raw_data(
              | (cahute_ascii_hex_to_nibble(buf[6]) << 4)
              | cahute_ascii_hex_to_nibble(buf[7]));
         if (read_packet_i != i) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Unexpected sequence number (expected %u, got %u)",
                 i,
@@ -1483,7 +1458,7 @@ cahute_seven_receive_raw_data(
         if (i == 1)
             packet_count = read_packet_count;
         else if (read_packet_count != packet_count) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Packet count was not consistent between packets "
                 "(initial: 1/%u, current: %u/%u)",
@@ -1497,7 +1472,7 @@ cahute_seven_receive_raw_data(
             link->protocol_state.seven.last_packet_data_size - 8;
         if (i < packet_count) {
             if (current_size >= size) {
-                msg(link->medium.context,
+                msg(link->context,
                     ll_error,
                     "Packet too much data for the expected total size of "
                     "the data flow (expected: %" CAHUTE_PRIuSIZE
@@ -1507,7 +1482,7 @@ cahute_seven_receive_raw_data(
                 return CAHUTE_ERROR_UNKNOWN;
             }
         } else if (current_size < size) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Last packet did not contain enough bytes to finish the "
                 "data flow (expected: %" CAHUTE_PRIuSIZE
@@ -1516,7 +1491,7 @@ cahute_seven_receive_raw_data(
                 current_size);
             return CAHUTE_ERROR_UNKNOWN;
         } else if (current_size > size) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Last packet contained too many bytes to finish the data "
                 "flow (expected: %" CAHUTE_PRIuSIZE ", got: %" CAHUTE_PRIuSIZE
@@ -1581,7 +1556,7 @@ cahute_seven_receive_raw_data_into_buf(
 
     /* Read the first data packet to determine the number of packets. */
     {
-        msg(link->medium.context, ll_info, "Requesting first packet.");
+        msg(link->context, ll_info, "Requesting first packet.");
         err = cahute_seven_send_basic(
             link,
             0,
@@ -1593,7 +1568,7 @@ cahute_seven_receive_raw_data_into_buf(
 
         EXPECT_PACKET(PACKET_TYPE_DATA, command_code);
         if (link->protocol_state.seven.last_packet_data_size < 9) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Data packet doesn't contain metadata and at least one byte.");
             return CAHUTE_ERROR_UNKNOWN;
@@ -1604,9 +1579,7 @@ cahute_seven_receive_raw_data_into_buf(
             || !cahute_is_ascii_hex(p_buf[4]) || !cahute_is_ascii_hex(p_buf[5])
             || !cahute_is_ascii_hex(p_buf[6])
             || !cahute_is_ascii_hex(p_buf[7])) {
-            msg(link->medium.context,
-                ll_error,
-                "Data packet has invalid format.");
+            msg(link->context, ll_error, "Data packet has invalid format.");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -1615,7 +1588,7 @@ cahute_seven_receive_raw_data_into_buf(
                         | (cahute_ascii_hex_to_nibble(p_buf[6]) << 4)
                         | cahute_ascii_hex_to_nibble(p_buf[7]);
         if (read_packet_i != 1) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Unexpected sequence number %u for first packet.",
                 read_packet_i);
@@ -1627,7 +1600,7 @@ cahute_seven_receive_raw_data_into_buf(
                             | (cahute_ascii_hex_to_nibble(p_buf[2]) << 4)
                             | cahute_ascii_hex_to_nibble(p_buf[3]);
         if (!read_packet_count) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_info,
                 "Unexpected packet count %u in first packet.",
                 read_packet_count);
@@ -1639,7 +1612,7 @@ cahute_seven_receive_raw_data_into_buf(
         current_size = link->protocol_state.seven.last_packet_data_size - 8;
         if (packet_count == 1) {
             if (current_size < size) {
-                msg(link->medium.context,
+                msg(link->context,
                     ll_error,
                     "Last packet did not contain enough bytes to finish the "
                     "data flow (expected: %" CAHUTE_PRIuSIZE
@@ -1649,7 +1622,7 @@ cahute_seven_receive_raw_data_into_buf(
                 return CAHUTE_ERROR_UNKNOWN;
             }
         } else if (current_size >= size) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Packet too much data for the expected total size of "
                 "the data flow (expected: %" CAHUTE_PRIuSIZE
@@ -1692,11 +1665,8 @@ cahute_seven_receive_raw_data_into_buf(
 
     /* Read all middle packets in the flow. */
     for (i = 2; size && i < read_packet_count - shifted; i++) {
-        msg(link->medium.context,
-            ll_info,
-            "Requesting packet %u/%u.",
-            i,
-            packet_count);
+        msg(link->context, ll_info, "Requesting packet %u/%u.", i, packet_count
+        );
 
         err = cahute_seven_send_basic(
             link,
@@ -1709,7 +1679,7 @@ cahute_seven_receive_raw_data_into_buf(
 
         EXPECT_PACKET(PACKET_TYPE_DATA, command_code);
         if (link->protocol_state.seven.last_packet_data_size < 9) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Data packet doesn't contain metadata and at least one byte.");
             return CAHUTE_ERROR_UNKNOWN;
@@ -1720,9 +1690,7 @@ cahute_seven_receive_raw_data_into_buf(
             || !cahute_is_ascii_hex(p_buf[4]) || !cahute_is_ascii_hex(p_buf[5])
             || !cahute_is_ascii_hex(p_buf[6])
             || !cahute_is_ascii_hex(p_buf[7])) {
-            msg(link->medium.context,
-                ll_error,
-                "Data packet has invalid format.");
+            msg(link->context, ll_error, "Data packet has invalid format.");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -1732,7 +1700,7 @@ cahute_seven_receive_raw_data_into_buf(
              | (cahute_ascii_hex_to_nibble(p_buf[6]) << 4)
              | cahute_ascii_hex_to_nibble(p_buf[7]));
         if (read_packet_i != i) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Unexpected sequence number (expected %u, got %u)",
                 i,
@@ -1746,7 +1714,7 @@ cahute_seven_receive_raw_data_into_buf(
              | (cahute_ascii_hex_to_nibble(p_buf[2]) << 4)
              | cahute_ascii_hex_to_nibble(p_buf[3]));
         if (read_packet_count != packet_count) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Packet count was not consistent between packets "
                 "(initial: 1/%u, current: %u/%u)",
@@ -1758,7 +1726,7 @@ cahute_seven_receive_raw_data_into_buf(
 
         current_size = link->protocol_state.seven.last_packet_data_size - 8;
         if (current_size >= size) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Packet too much data for the expected total size of "
                 "the data flow (expected: %" CAHUTE_PRIuSIZE
@@ -1780,7 +1748,7 @@ cahute_seven_receive_raw_data_into_buf(
     /* If we have been using packet shifting, we want to normalize the
      * exchange before the last packet. */
     if (shifted) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_info,
             "Requesting packet %u/%u.",
             packet_count - 1,
@@ -1791,7 +1759,7 @@ cahute_seven_receive_raw_data_into_buf(
 
         EXPECT_PACKET(PACKET_TYPE_DATA, command_code);
         if (link->protocol_state.seven.last_packet_data_size < 9) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Data packet doesn't contain metadata and at least one byte.");
             return CAHUTE_ERROR_UNKNOWN;
@@ -1802,9 +1770,7 @@ cahute_seven_receive_raw_data_into_buf(
             || !cahute_is_ascii_hex(p_buf[4]) || !cahute_is_ascii_hex(p_buf[5])
             || !cahute_is_ascii_hex(p_buf[6])
             || !cahute_is_ascii_hex(p_buf[7])) {
-            msg(link->medium.context,
-                ll_error,
-                "Data packet has invalid format.");
+            msg(link->context, ll_error, "Data packet has invalid format.");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -1814,7 +1780,7 @@ cahute_seven_receive_raw_data_into_buf(
              | (cahute_ascii_hex_to_nibble(p_buf[6]) << 4)
              | cahute_ascii_hex_to_nibble(p_buf[7]));
         if (read_packet_i != packet_count - 1) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Unexpected sequence number (expected %u, got %u)",
                 packet_count - 1,
@@ -1828,7 +1794,7 @@ cahute_seven_receive_raw_data_into_buf(
              | (cahute_ascii_hex_to_nibble(p_buf[2]) << 4)
              | cahute_ascii_hex_to_nibble(p_buf[3]));
         if (read_packet_count != packet_count) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Packet count was not consistent between packets "
                 "(initial: 1/%u, current: %u/%u)",
@@ -1840,7 +1806,7 @@ cahute_seven_receive_raw_data_into_buf(
 
         current_size = link->protocol_state.seven.last_packet_data_size - 8;
         if (current_size >= size) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Packet too much data for the expected total size of "
                 "the data flow (expected: %" CAHUTE_PRIuSIZE
@@ -1861,7 +1827,7 @@ cahute_seven_receive_raw_data_into_buf(
 
     /* Read the last data packet. */
     if (packet_count > 1) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_info,
             "Requesting packet %u/%u.",
             packet_count,
@@ -1878,7 +1844,7 @@ cahute_seven_receive_raw_data_into_buf(
 
         EXPECT_PACKET(PACKET_TYPE_DATA, command_code);
         if (link->protocol_state.seven.last_packet_data_size < 9) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Data packet doesn't contain metadata and at least one byte.");
             return CAHUTE_ERROR_UNKNOWN;
@@ -1889,9 +1855,7 @@ cahute_seven_receive_raw_data_into_buf(
             || !cahute_is_ascii_hex(p_buf[4]) || !cahute_is_ascii_hex(p_buf[5])
             || !cahute_is_ascii_hex(p_buf[6])
             || !cahute_is_ascii_hex(p_buf[7])) {
-            msg(link->medium.context,
-                ll_error,
-                "Data packet has invalid format.");
+            msg(link->context, ll_error, "Data packet has invalid format.");
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -1901,7 +1865,7 @@ cahute_seven_receive_raw_data_into_buf(
              | (cahute_ascii_hex_to_nibble(p_buf[6]) << 4)
              | cahute_ascii_hex_to_nibble(p_buf[7]));
         if (read_packet_i != packet_count) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Unexpected sequence number (expected %u, got %u)",
                 i,
@@ -1915,7 +1879,7 @@ cahute_seven_receive_raw_data_into_buf(
              | (cahute_ascii_hex_to_nibble(p_buf[2]) << 4)
              | cahute_ascii_hex_to_nibble(p_buf[3]));
         if (read_packet_count != packet_count) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Packet count was not consistent between packets "
                 "(initial: 1/%u, current: %u/%u)",
@@ -1927,7 +1891,7 @@ cahute_seven_receive_raw_data_into_buf(
 
         current_size = link->protocol_state.seven.last_packet_data_size - 8;
         if (current_size < size) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Last packet did not contain enough bytes to finish the "
                 "data flow (expected: %" CAHUTE_PRIuSIZE
@@ -1936,7 +1900,7 @@ cahute_seven_receive_raw_data_into_buf(
                 current_size);
             return CAHUTE_ERROR_UNKNOWN;
         } else if (current_size > size) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Last packet contained too many bytes to finish the data "
                 "flow (expected: %" CAHUTE_PRIuSIZE ", got: %" CAHUTE_PRIuSIZE
@@ -1991,7 +1955,7 @@ CAHUTE_EXTERN(int) cahute_seven_discover(cahute_link *link) {
 
     if (link->protocol_state.seven.last_packet_data_size
         > SEVEN_RAW_DEVICE_INFO_BUFFER_SIZE) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "Could not store obtained device information (got "
             "%" CAHUTE_PRIuSIZE "/%" CAHUTE_PRIuSIZE " bytes)",
@@ -2151,7 +2115,7 @@ cahute_seven_receive_data(
             else if (param1_size == 6 && !memcmp(param1, "115200", 6))
                 new_serial_speed = 115200;
             else {
-                msg(link->medium.context,
+                msg(link->context,
                     ll_warn,
                     "Unknown setting \"%.*s\" for speed.",
                     param1_size,
@@ -2166,7 +2130,7 @@ cahute_seven_receive_data(
             else if (param2_size == 4 && !memcmp(param2, "NONE", 4))
                 new_serial_flags |= CAHUTE_SERIAL_PARITY_OFF;
             else {
-                msg(link->medium.context,
+                msg(link->context,
                     ll_warn,
                     "Unknown setting \"%.*s\" for parity.",
                     param2_size,
@@ -2179,7 +2143,7 @@ cahute_seven_receive_data(
             else if (param3_size == 1 && param3[0] == '2')
                 new_serial_flags |= CAHUTE_SERIAL_STOP_TWO;
             else {
-                msg(link->medium.context,
+                msg(link->context,
                     ll_warn,
                     "Unknown setting \"%.*s\" for stop bits.",
                     param3_size,
@@ -2212,12 +2176,12 @@ cahute_seven_receive_data(
             /* We introduce an artificial sleep to make the device believe
              * that we may be slow. Otherwise, the transfer may crash right
              * after we have changed the properties of our link. */
-            err = cahute_sleep(link->medium.context, 50);
+            err = cahute_sleep(link->context, 50);
             if (err)
                 return err;
 
-            err = cahute_set_serial_params_to_link_medium(
-                &link->medium,
+            err = cahute_set_serial_params_on_link_transport(
+                link,
                 new_serial_flags,
                 new_serial_speed
             );
@@ -2227,7 +2191,7 @@ cahute_seven_receive_data(
                  * ourselves. We can no longer communicate with the device,
                  * hence can no longer negotiate the serial settings back.
                  * Therefore, we consider the link to be irrecoverable. */
-                msg(link->medium.context,
+                msg(link->context,
                     ll_error,
                     "Could not set the serial params; that makes our "
                     "connection irrecoverable!");
@@ -2235,9 +2199,7 @@ cahute_seven_receive_data(
                 return err;
             }
 
-            msg(link->medium.context,
-                ll_info,
-                "New serial settings have been set!");
+            msg(link->context, ll_info, "New serial settings have been set!");
             continue;
 
         case 0x09: /* Command 09 "OS Verification 3" */
@@ -2256,7 +2218,7 @@ cahute_seven_receive_data(
 
         case 0x25: /* Command 25 "Transfer file" (main memory) */
             if (data_size > link->data_buffer_capacity) {
-                msg(link->medium.context,
+                msg(link->context,
                     ll_error,
                     "File too big for our data buffer capacity "
                     "(%" CAHUTE_PRIuSIZE "o/%" CAHUTE_PRIuSIZE "o).",
@@ -2281,7 +2243,7 @@ cahute_seven_receive_data(
 
                 if (sizeof(parambuf)
                     < param1_size + param2_size + param3_size) {
-                    msg(link->medium.context,
+                    msg(link->context,
                         ll_error,
                         "Parameters are bigger than expected for file "
                         "transfer (%" CAHUTE_PRIuSIZE "o > %" CAHUTE_PRIuSIZE
@@ -2353,13 +2315,13 @@ cahute_seven_receive_data(
 
                 cahute_populate_file_from_memory(
                     &file,
-                    link->medium.context,
+                    link->context,
                     link->data_buffer,
                     link->data_buffer_size
                 );
 
                 err = cahute_mcs_decode_data(
-                    link->medium.context,
+                    link->context,
                     datap,
                     param1,
                     param1_size,
@@ -2419,7 +2381,7 @@ cahute_seven_make_device_info(cahute_link *link, cahute_device_info **infop) {
         /* We don't have a 'generic device information' if discovery has
          * been disabled. */
         CAHUTE_RETURN_IMPL(
-            link->medium.context,
+            link->context,
             "No generic device with Protocol 7.00."
         );
     }
@@ -2612,7 +2574,7 @@ cahute_seven_get_file_type(
         if (link->protocol_state.seven.last_packet_subtype != 0x4E) {
             /* The command is not "Transfer file information".
              * We just try to ACK and skip it here. */
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Unhandled command %02X for file listing.",
                 link->protocol_state.seven.last_packet_subtype);
@@ -2851,22 +2813,17 @@ cahute_seven_send_file_to_storage(
     if (flags & CAHUTE_SEND_FILE_FLAG_OPTIMIZE) {
         unsigned long capacity = 0;
 
-        msg(link->medium.context, ll_info, "Requesting storage capacity.");
+        msg(link->context, ll_info, "Requesting storage capacity.");
         err = cahute_seven_request_storage_capacity(link, storage, &capacity);
         if (err)
             return err;
 
-        msg(link->medium.context,
-            ll_info,
-            "Storage capacity is %lud.",
-            capacity);
+        msg(link->context, ll_info, "Storage capacity is %lud.", capacity);
         if ((size_t)capacity < file_size) {
-            msg(link->medium.context,
+            msg(link->context,
                 ll_info,
                 "Storage capacity is insufficient for file!.");
-            msg(link->medium.context,
-                ll_info,
-                "Requesting storage optimization.");
+            msg(link->context, ll_info, "Requesting storage optimization.");
             err = cahute_seven_optimize_storage(link, storage);
             if (err)
                 return err;
@@ -3020,14 +2977,14 @@ cahute_seven_request_file_from_storage(
 
     if (path)
         err = cahute_create_file(
-            link->medium.context,
+            link->context,
             &file,
             filesize,
             path,
             path_type
         );
     else
-        err = cahute_open_stdout(link->medium.context, &file);
+        err = cahute_open_stdout(link->context, &file);
 
     if (err)
         goto fail;
@@ -3161,7 +3118,7 @@ cahute_seven_list_storage_entries(
         if (link->protocol_state.seven.last_packet_subtype != 0x4E) {
             /* The command is not "Transfer file information".
              * We just try to ACK and skip it here. */
-            msg(link->medium.context,
+            msg(link->context,
                 ll_error,
                 "Unhandled command %02X for file listing.",
                 link->protocol_state.seven.last_packet_subtype);
@@ -3475,7 +3432,7 @@ cahute_seven_upload_and_run_program(
 
     if (program_size > 0xFFFFFFFF || load_address > 0xFFFFFFFF
         || start_address > 0xFFFFFFFF) {
-        msg(link->medium.context,
+        msg(link->context,
             ll_error,
             "One of the addresses or sizes does not fit in 32 bits.");
         return CAHUTE_ERROR_UNKNOWN;

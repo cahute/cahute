@@ -145,18 +145,23 @@ include(CPack)
 # much as possible to ensure that we stay compatible.
 set(CMAKE_C_STANDARD 90)
 
-# CMake defines "-O3" by default for the Release target.
-# This is very unsafe, so we force "-O2" instead.
-set(CMAKE_C_FLAGS_RELEASE -O2)
-
 # We want to add as much warnings as we can to all targets.
 if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(/W4)
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    # CMake defines "-O3" by default for the Release target for some platforms,
+    # including Windows. This is very unsafe, so we force "-O2" instead.
+    set(CMAKE_C_FLAGS_RELEASE -O2)
+
     add_compile_options(
         -Wall -Wextra -Wno-c99-extensions -Wc23-extensions
     )
 else()
+    # CMake defines "-O3" by default for the Release target for multiple
+    # compilers with the GNU command-line interface.
+    # This is very unsafe, so we force "-O2" instead.
+    set(CMAKE_C_FLAGS_RELEASE -O2)
+
     add_compile_options(
         -Wall -Wextra -Wno-unused-macros
         -Wshadow -Wwrite-strings -Wredundant-decls -Wformat -Wformat-nonliteral
@@ -332,14 +337,6 @@ if(CAHUTE_LIBUSB)
             "libusb-1.0"
         )
     endif()
-
-    list(APPEND LIB_COMPILE_DEFS
-        "-DLIBUSB_ENABLED=1"
-    )
-else()
-    list(APPEND LIB_COMPILE_DEFS
-        "-DLIBUSB_ENABLED=0"
-    )
 endif()
 
 check_type_size("ssize_t" "SIZEOF_SIZE_T")
@@ -353,6 +350,7 @@ check_include_file("linux/serial.h" "HAVE_LINUX_SERIAL_H")
 add_compile_definitions(
     SIZEOF_SIZE_T=${SIZEOF_SIZE_T}
     SIZEOF_UINTPTR_T=${SIZEOF_UINTPTR_T}
+    HAVE_LINUX_SERIAL_H=${HAVE_LINUX_SERIAL_H}
 )
 
 # ---
@@ -405,7 +403,47 @@ if(CAHUTE_FEATURE_LIB_STATIC)
         VERBATIM
     )
 
-    add_library(cahute STATIC
+    set(LIB_SOURCES
+        lib/file/checksum.c
+        lib/file/close.c
+        lib/file/create.c
+        lib/file/data.c
+        lib/file/examine.c
+        lib/file/open.c
+        lib/file/open_memory.c
+        lib/file/open_stdout.c
+        lib/file/read.c
+        lib/file/size.c
+        lib/file/write.c
+        lib/link/open/init.c
+        lib/link/open/serial.c
+        lib/link/open/simple_usb.c
+        lib/link/open/usb.c
+        lib/link/transport/receive.c
+        lib/link/transport/scsi_request_from.c
+        lib/link/transport/scsi_request_to.c
+        lib/link/transport/send.c
+        lib/link/transport/set_serial_params.c
+        lib/link/backup_rom.c
+        lib/link/check.c
+        lib/link/close.c
+        lib/link/copy_file_on_storage.c
+        lib/link/delete_file_from_storage.c
+        lib/link/flash_system_using_fxremote_method.c
+        lib/link/get_device_info.c
+        lib/link/list_storage_entries.c
+        lib/link/negotiate_serial_params.c
+        lib/link/optimize_storage.c
+        lib/link/receive.c
+        lib/link/receive_data.c
+        lib/link/receive_screen.c
+        lib/link/request_file_from_storage.c
+        lib/link/request_storage_capacity.c
+        lib/link/reset_storage.c
+        lib/link/send.c
+        lib/link/send_file_to_storage.c
+        lib/link/set_serial_params.c
+        lib/link/upload_and_run_program.c
         lib/cas40.c
         lib/cas50.c
         lib/cas100.c
@@ -415,13 +453,8 @@ if(CAHUTE_FEATURE_LIB_STATIC)
         "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
         lib/context.c
         lib/data.c
-        lib/detection.c
-        lib/file.c
-        lib/filemedium.c
-        lib/fileopen.c
-        lib/link.c
-        lib/linkmedium.c
-        lib/linkopen.c
+        lib/detect_serial.c
+        lib/detect_usb.c
         lib/logging.c
         lib/mcs.c
         lib/misc.c
@@ -431,6 +464,65 @@ if(CAHUTE_FEATURE_LIB_STATIC)
         lib/seven_ohp.c
         lib/text.c
     )
+
+    if(WIN32)
+        list(APPEND LIB_COMPILE_DEFS
+            CAHUTE_PLATFORM_WIN32=1)
+        list(APPEND LIB_SOURCES
+            lib/platform/win32/file.c
+            lib/platform/win32/file_create.c
+            lib/platform/win32/file_open.c
+            lib/platform/win32/misc.c
+            lib/platform/win32/serial.c
+            lib/platform/win32/serial_detection.c
+            lib/platform/win32/serial_generic.c
+            lib/platform/win32/stdout.c
+            lib/platform/win32/ums.c
+            lib/platform/win32/usb.c)
+    elseif(AMIGA)
+        list(APPEND LIB_COMPILE_DEFS
+            CAHUTE_PLATFORM_AMIGAOS=1)
+        list(APPEND LIB_SOURCES
+            lib/platform/amigaos/misc.c
+            lib/platform/amigaos/serial_detection.c
+            lib/platform/amigaos/serial.c
+            lib/platform/amigaos/serial_detection.c
+            lib/platform/amigaos/timer.c)
+    else()
+        if(LINUX)
+            list(APPEND LIB_COMPILE_DEFS
+                CAHUTE_PLATFORM_LINUX=1)
+            list(APPEND LIB_SOURCES
+                lib/platform/linux/serial_detection.c)
+        endif()
+
+        list(APPEND LIB_COMPILE_DEFS
+            CAHUTE_PLATFORM_POSIX=1)
+        list(APPEND LIB_SOURCES
+            lib/platform/posix/file.c
+            lib/platform/posix/file_create.c
+            lib/platform/posix/file_open.c
+            lib/platform/posix/misc.c
+            lib/platform/posix/path.c
+            lib/platform/posix/serial.c
+            lib/platform/posix/serial_detection.c
+            lib/platform/posix/stdout.c)
+    endif()
+
+    if(CAHUTE_LIBUSB)
+        list(APPEND LIB_COMPILE_DEFS
+            CAHUTE_PLATFORM_LIBUSB=1)
+        list(APPEND LIB_SOURCES
+            lib/platform/libusb/bulk.c
+            lib/platform/libusb/close.c
+            lib/platform/libusb/context.c
+            lib/platform/libusb/detection.c
+            lib/platform/libusb/open.c
+            lib/platform/libusb/ums.c)
+    endif()
+
+    add_library(cahute STATIC ${LIB_SOURCES})
+
     add_dependencies(cahute cahute-headers)
     target_include_directories(cahute PRIVATE
         ${LIB_INCLUDE_DIRS}

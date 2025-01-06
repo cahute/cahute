@@ -1,7 +1,7 @@
 .. _transport:
 
-Transport medium and protocols
-==============================
+Transports and protocols
+========================
 
 All communication protocols used by CASIO calculators are present over
 mediums and transport protocols, that presents a stream-like interface as

@@ -1,14 +1,13 @@
 .. _topic-links:
 
-Links and mediums
-=================
+Links
+=====
 
 All communication implementations are centered around resources called links.
 Internally, links are mostly constituted of:
 
-* A context; see :ref:`topic-contexts` for more information.
-* A medium, which is an interface with a set of resources to communicate with
-  the underlying medium opened with the system or hardware.
+* A context; see :ref:`topic-contexts` for more information;
+* A platform-specific transport implementation;
 * A protocol, which is a set of resources and functions that do not constitute
   an interface, since protocols may obey different logics.
 
@@ -29,11 +28,11 @@ Generic links
 -------------
 
 While Cahute aims at implementing official and widespread community protocols,
-the portability of its link mediums can be appealing to developers implementing
+the portability of its transports can be appealing to developers implementing
 a custom, possibly program-specific protocol between a host and a CASIO
 calculator, notably for the host part.
 
-Since Cahute does not expose link mediums publicly, it allows selecting a
+Since Cahute does not expose transports publicly, it allows selecting a
 special kind of links called "generic links", which allows the following
 functions to be used on such links:
 
@@ -45,7 +44,7 @@ The following methods can be used to open a generic link with Cahute:
 
 * Call :c:func:`cahute_open_serial_link` with the
   :c:macro:`CAHUTE_SERIAL_PROTOCOL_NONE` protocol, for opening a generic
-  link over a serial medium;
+  link over a serial transport;
 * Call :c:func:`cahute_open_simple_usb_link` or :c:func:`cahute_open_usb_link`
   with the :c:macro:`CAHUTE_USB_NOPROTO` flag, for opening a generic link
   to a USB device.

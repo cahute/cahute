@@ -83,7 +83,7 @@ display_progress(int *initp, unsigned long step, unsigned long total) {
  * Open a link depending on the parsed command-line.
  *
  * This function also takes care of changing the serial attributes, if the
- * opened link is on a serial medium.
+ * opened link is on a serial transport.
  *
  * @param context Context in which to open the link.
  * @param linkp Pointer to the link to initialize.
@@ -112,7 +112,7 @@ static int open_link(
  * Open a link for fxRemote depending on the parsed command-line.
  *
  * This function also takes care of changing the serial attributes, if the
- * opened link is on a serial medium.
+ * opened link is on a serial transport.
  *
  * @param context Context in which to open the link.
  * @param linkp Pointer to the link to initialize.

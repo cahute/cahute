@@ -28,52 +28,6 @@
 
 #ifndef INTERNALS_H
 #define INTERNALS_H 1
-
-/* For Microsoft Windows, we want to explicitely select the target system to
- * avoid breaking compatibility if possible.
- * See the following for more information:
- *
- * https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt */
-#define WINVER 0x0501 /* Windows XP */
-
-#if defined(_WIN32) || defined(_WIN64) || defined(__WINDOWS__)
-# define WIN32_ENABLED 1
-#else
-# define WIN32_ENABLED 0
-#endif
-
-#if defined(__DJGPP) || defined(__DJGPP__)
-# define DJGPP_ENABLED 1
-#else
-# define DJGPP_ENABLED 0
-#endif
-
-#if WIN32_ENABLED
-# define POSIX_ENABLED 0
-#elif defined(__unix__) && __unix__ \
-    || (defined(__APPLE__) || defined(__MACH__))
-# define POSIX_ENABLED 1
-#else
-# define POSIX_ENABLED 0
-#endif
-
-#if defined(AMIGA) || defined(__amigaos__)
-# define AMIGAOS_ENABLED 1
-#else
-# define AMIGAOS_ENABLED 0
-#endif
-
-#if AMIGAOS_ENABLED
-# include <exec/types.h>
-# include <exec/errors.h>
-# include <exec/io.h>
-# include <exec/ports.h>
-# include <dos/dos.h>
-# include <proto/exec.h>
-# include <devices/serial.h>
-# include <devices/timer.h>
-#endif
-
 #include <cahute.h>
 #include <ctype.h>
 #include <errno.h>
@@ -82,23 +36,27 @@
 #include <string.h>
 #include <time.h>
 
-#if POSIX_ENABLED
-# include <fcntl.h>
-# include <sys/ioctl.h>
-# include <sys/stat.h>
-# include <termios.h>
-# include <unistd.h>
-#endif
-
-#if LIBUSB_ENABLED
-# include <libusb.h>
-#endif
-
+/* Common to both command-line utilities and the library. */
 #include <compat.h>
 
-CAHUTE_DECLARE_TYPE(cahute_link_medium)
-CAHUTE_DECLARE_TYPE(cahute_file_medium)
+CAHUTE_DECLARE_TYPE(cahute_context_pointer)
 CAHUTE_DECLARE_TYPE(cahute_casiolink_data_description)
+
+CAHUTE_DECLARE_TYPE(cahute_serial_link_interface)
+CAHUTE_DECLARE_TYPE(cahute_serial_over_usb_bulk_link_interface)
+CAHUTE_DECLARE_TYPE(cahute_ums_link_interface)
+
+/* Defined in link/open/internals.h to ensure it stays opaque to
+ * platform-specific utilities. */
+CAHUTE_DECLARE_TYPE(cahute_serial_link_open_params)
+CAHUTE_DECLARE_TYPE(cahute_usb_link_open_params)
+
+CAHUTE_DECLARE_TYPE(cahute_file_open_params)
+CAHUTE_DECLARE_TYPE(cahute_file_open_interface)
+CAHUTE_DECLARE_TYPE(cahute_file_create_params)
+CAHUTE_DECLARE_TYPE(cahute_file_create_interface)
+CAHUTE_DECLARE_TYPE(cahute_stdout_open_params)
+CAHUTE_DECLARE_TYPE(cahute_stdout_open_interface)
 
 /* ---
  * Endianess management.
@@ -180,34 +138,28 @@ CAHUTE_EXTERN(cahute_u32) cahute_htole32(cahute_u32 cahute__x);
  * Context definition.
  * --- */
 
+#define CAHUTE_CONTEXT_POINTER_LIBUSB_CONTEXT 0
+#define CAHUTE_CONTEXT_POINTER_AMIGAOS_TIMER  1
+
+#define CAHUTE_CONTEXT_POINTER_COUNT 2 /* Update with the maximum value. */
+
+typedef void(cahute_context_destroy_func)(cahute_context *, void *);
+typedef int(cahute_context_init_func)(cahute_context *, void **, cahute_context_destroy_func **);
+
+#define CAHUTE_CONTEXT_POINTER_FLAG_INIT 0x00000001
+
+struct cahute_context_pointer {
+    void *value;
+    cahute_context_destroy_func *destroy_func;
+    unsigned long flags;
+};
+
 struct cahute_context {
     cahute_log_func *log_callback;
     void *log_callback_cookie;
     int log_level;
-
-#if LIBUSB_ENABLED
-    libusb_context *libusb_context;
-#endif
-
-#if AMIGAOS_ENABLED
-    struct MsgPort *amiga_timer_msg_port;
-    struct timerequest *amiga_timer_request;
-#endif
+    struct cahute_context_pointer pointers[CAHUTE_CONTEXT_POINTER_COUNT];
 };
-
-#if LIBUSB_ENABLED
-CAHUTE_EXTERN(int)
-cahute_get_libusb_context(cahute_context *context, libusb_context **contextp);
-#endif
-
-#if AMIGAOS_ENABLED
-CAHUTE_EXTERN(int)
-cahute_get_amiga_timer(
-    cahute_context *context,
-    struct MsgPort **msg_portp,
-    struct timerequest **timerp
-);
-#endif
 
 /* ---
  * Logging internals.
@@ -257,103 +209,27 @@ cahute_log_memory(
     } \
     (void)0 /* Force introducing a semicolon. */
 
-#if WIN32_ENABLED
-/**
- * Log a Windows API error.
- *
- * This is implemented as a separate function to the rest, because gathering
- * an error message for a given error code is quite lengthy.
- *
- * @param context Context to use for logging.
- * @param func_name Name of the function from which the log is emitted.
- * @param win_func Name of the Windows API function that returned the
- *        error.
- * @param code Windows API error code that was actually returned.
- */
-CAHUTE_INLINE(void)
-cahute__log_win_error(
-    cahute_context *context,
-    char const *func_name,
-    char const *win_func,
-    DWORD code
-) {
-    char buf[1024];
-    DWORD buf_size;
-
-    buf_size = FormatMessage(
-        FORMAT_MESSAGE_FROM_SYSTEM,
-        NULL,
-        code,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        buf,
-        1023,
-        NULL
-    );
-
-    if (!buf_size) {
-        cahute_log_message(
-            context,
-            30,
-            func_name,
-            "Error 0x%08lX occurred in %s.",
-            code,
-            win_func
-        );
-        return;
-    }
-
-    buf[buf_size] = '\0';
-    cahute_log_message(
-        context,
-        30,
-        func_name,
-        "Error 0x%08lX occurred in %s: %s",
-        code,
-        win_func,
-        buf
-    );
-}
-
-# define log_windows_error(CTX, FUNC, CODE) \
-     cahute__log_win_error(CTX, CAHUTE_LOGFUNC, FUNC, CODE)
-#endif
-
 /* ---
  * Link internals.
  * --- */
 
-#define CAHUTE_LINK_MEDIUM_READ_BUFFER_SIZE 32768U
-
-/* Flags that can be present on a medium at runtime. */
-#define CAHUTE_LINK_MEDIUM_FLAG_GONE 0x00000001UL /* No longer available. */
+#define CAHUTE_LINK_RECEIVE_BUFFER_SIZE 32768U
 
 /* Flags that can be present on a link at runtime. */
-#define CAHUTE_LINK_FLAG_CLOSE_MEDIUM 0x00000001UL
-#define CAHUTE_LINK_FLAG_TERMINATE    0x00000002UL /* Should terminate. */
-#define CAHUTE_LINK_FLAG_RECEIVER     0x00000004UL /* Act as a receiver. */
+#define CAHUTE_LINK_FLAG_TERMINATE 0x00000002UL /* Should terminate. */
+#define CAHUTE_LINK_FLAG_RECEIVER  0x00000004UL /* Act as a receiver. */
 
+#define CAHUTE_LINK_FLAG_GONE          0x00000100UL /* No longer available. */
 #define CAHUTE_LINK_FLAG_TERMINATED    0x00000200UL /* Was terminated! */
 #define CAHUTE_LINK_FLAG_IRRECOVERABLE 0x00000400UL /* Cannot recover. */
 #define CAHUTE_LINK_FLAG_ALMODE        0x00000800UL /* CAS40 AL received. */
 
-/* Medium types allowed. */
-#if POSIX_ENABLED
-# define CAHUTE_LINK_MEDIUM_POSIX_SERIAL 1
-#endif
-#if WIN32_ENABLED
-# define CAHUTE_LINK_MEDIUM_WIN32_SERIAL 2
-# define CAHUTE_LINK_MEDIUM_WIN32_CESG   3
-# define CAHUTE_LINK_MEDIUM_WIN32_UMS    4
-#endif
-#if LIBUSB_ENABLED
-# define CAHUTE_LINK_MEDIUM_LIBUSB     5
-# define CAHUTE_LINK_MEDIUM_LIBUSB_UMS 6
-#endif
-#if AMIGAOS_ENABLED
-# define CAHUTE_LINK_MEDIUM_AMIGAOS_SERIAL 7
-#endif
+/* Transport type stored in ``link->transport``. */
+#define CAHUTE_LINK_TRANSPORT_SERIAL               1
+#define CAHUTE_LINK_TRANSPORT_SERIAL_OVER_USB_BULK 2
+#define CAHUTE_LINK_TRANSPORT_UMS                  3
 
-/* Protocol selection for 'initialize_link_protocol()'. */
+/* Protocol stored in ``link->protocol``. */
 #define CAHUTE_LINK_PROTOCOL_SERIAL_NONE      1
 #define CAHUTE_LINK_PROTOCOL_SERIAL_CAS       2 /* Generic. */
 #define CAHUTE_LINK_PROTOCOL_SERIAL_CAS40     3
@@ -368,144 +244,6 @@ cahute__log_win_error(
 #define CAHUTE_LINK_PROTOCOL_USB_SEVEN        13
 #define CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP    14
 #define CAHUTE_LINK_PROTOCOL_USB_MASS_STORAGE 15
-
-#if defined(CAHUTE_LINK_MEDIUM_POSIX_SERIAL)
-
-/**
- * POSIX medium state.
- *
- * @property fd File descriptor on the opened medium.
- */
-struct cahute_link_posix_medium_state {
-    int fd;
-};
-#endif
-
-#if defined(CAHUTE_LINK_MEDIUM_WIN32_SERIAL) \
-    || defined(CAHUTE_LINK_MEDIUM_WIN32_CESG)
-/**
- * Windows API medium state.
- *
- * @property handle Device handle.
- * @property overlapped Overlapped I/O adapter.
- * @property read_in_progress Whether a read is currently in progress or not.
- */
-struct cahute_link_windows_medium_state {
-    HANDLE handle;
-    OVERLAPPED overlapped;
-    DWORD received;
-    int read_in_progress;
-};
-#endif
-
-#if defined(CAHUTE_LINK_MEDIUM_AMIGAOS_SERIAL)
-/**
- * AmigaOS serial device medium state.
- *
- * @property msg_port Message port with which the device was opened.
- * @property io IO structure of the device.
- */
-struct cahute_link_amigaos_serial_medium_state {
-    struct MsgPort *msg_port;
-    struct IOExtSer *io;
-};
-#endif
-
-#if defined(CAHUTE_LINK_MEDIUM_WIN32_UMS)
-/**
- * Windows API UMS (SCSI) medium state.
- *
- * @property handle Device handle.
- */
-struct cahute_link_windows_ums_medium_state {
-    HANDLE handle;
-};
-#endif
-
-#if defined(CAHUTE_LINK_MEDIUM_LIBUSB)
-/**
- * libusb device medium state.
- *
- * @property handle libusb device handle which to use to make USB requests.
- * @property bulk_in Bulk IN endpoint address to use for reading.
- * @property bulk_out Bulk OUT endpoint address to use for writing.
- */
-struct cahute_link_libusb_medium_state {
-    libusb_device_handle *handle;
-    int bulk_in;
-    int bulk_out;
-};
-#endif
-
-/**
- * Medium state, to be used depending on the link flags regarding the medium.
- *
- * @property posix Medium state if the selected medium type is POSIX_SERIAL.
- * @property windows Medium state if the selected medium type is WIN32_SERIAL
- *           or WIN32_CESG.
- * @property windows_ums Medium state if the selected medium type is
- *           WIN32_UMS (SCSI over a Windows HANDLE).
- * @property libusb Medium state if the selected medium type is LIBUSB.
- * @property amigaos_serial Medium state if the selected medium type is
- *           AMIGAOS_SERIAL.
- */
-union cahute_link_medium_state {
-#if defined(CAHUTE_LINK_MEDIUM_POSIX_SERIAL)
-    struct cahute_link_posix_medium_state posix;
-#endif
-#if defined(CAHUTE_LINK_MEDIUM_WIN32_SERIAL) \
-    || defined(CAHUTE_LINK_MEDIUM_WIN32_CESG)
-    struct cahute_link_windows_medium_state windows;
-#endif
-#if defined(CAHUTE_LINK_MEDIUM_WIN32_UMS)
-    struct cahute_link_windows_ums_medium_state windows_ums;
-#endif
-#if defined(CAHUTE_LINK_MEDIUM_LIBUSB)
-    struct cahute_link_libusb_medium_state libusb;
-#endif
-#if defined(CAHUTE_LINK_MEDIUM_AMIGAOS_SERIAL)
-    struct cahute_link_amigaos_serial_medium_state amigaos_serial;
-#endif
-};
-
-/**
- * Medium-related information.
- *
- * @property context Context in which the link/medium is defined.
- * @property type Medium type, as any ``CAHUTE_LINK_MEDIUM_*`` constant
- *           representing the medium state to use and how to use it.
- * @property flags Flags for the medium.
- * @property state State of the specific medium to use, e.g. opened
- *           handles and contexts to close at link closing.
- *           The read buffer is not included within this property.
- * @property serial_flags Current serial flags, as or'd
- *           ``CAHUTE_SERIAL_FLAG_*`` constants.
- * @property serial_speed Current serial speed.
- * @property read_buffer Buffer for reading from the medium in a
- *           stream-like interface. See ``cahute_receive_on_link_medium``
- *           definition for more information.
- *           Guaranteed to be aligned to a multiple of 32 bytes.
- * @property read_start Offset at which the unread data starts within
- *           the read buffer for the medium.
- * @property read_size Number of unread bytes in the read buffer for the
- *           medium, starting at the offset stored in ``read_start``.
- */
-struct cahute_link_medium {
-    cahute_context *context;
-
-    int type;
-    unsigned int flags;
-
-    unsigned long serial_flags;
-    unsigned long serial_speed;
-
-    union cahute_link_medium_state state;
-
-    /* Read buffer. See ``cahute_receive_on_link_medium`` definition for more
-     * information. */
-    size_t read_start, read_size;
-    cahute_u8 *read_buffer;
-};
 
 /* Absolute minimum buffer size for CASIOLINK. */
 #define CASIOLINK_MINIMUM_BUFFER_SIZE 50
@@ -671,13 +409,124 @@ union cahute_link_protocol_state {
     struct cahute_seven_ohp_state seven_ohp;
 };
 
+typedef void(cahute_link_close_func)(cahute_context *context, void *cookie);
+typedef int(cahute_link_receive_func)(
+    cahute_context *context,
+    void *cookie,
+    cahute_u8 *buf,
+    size_t capacity,
+    size_t *receivedp,
+    unsigned long timeout
+);
+typedef int(cahute_link_send_func)(
+    cahute_context *context,
+    void *cookie,
+    cahute_u8 const *buf,
+    size_t size,
+    size_t *sentp
+);
+typedef int(cahute_link_set_serial_params_func)(
+    cahute_context *context,
+    void *cookie,
+    unsigned long flags,
+    unsigned long speed
+);
+typedef int(cahute_link_scsi_request_to_func)(
+    cahute_context *context,
+    void *cookie,
+    cahute_u8 const *command,
+    size_t command_size,
+    cahute_u8 const *data,
+    size_t data_size,
+    int *statusp
+);
+typedef int(cahute_link_scsi_request_from_func)(
+    cahute_context *context,
+    void *cookie,
+    cahute_u8 const *command,
+    size_t command_size,
+    cahute_u8 *buf,
+    size_t buf_size,
+    int *statusp
+);
+
 /**
- * Internal link representation.
+ * Serial link interface.
  *
+ * @property name Name of the interface, for logging purposes.
+ * @property close_func Function used when closing the link, to process the
+ *           cookie. Can be set to NULL.
+ * @property receive_func Function used to receive bytes on the serial link.
+ * @property send_func Function used to send bytes on the serial link.
+ * @property set_serial_params_func Function used to set the serial parameters
+ *           on the serial link.
+ */
+struct cahute_serial_link_interface {
+    char const *name;
+    cahute_link_close_func *close_func;
+    cahute_link_receive_func *receive_func;
+    cahute_link_send_func *send_func;
+    cahute_link_set_serial_params_func *set_serial_params_func;
+};
+
+/**
+ * Serial over USB bulk link interface.
+ *
+ * @property name Name of the interface, for logging purposes.
+ * @property close_func Function used when closing the link, to process the
+ *           cookie. Can be set to NULL.
+ * @property receive_func Function used to receive bytes on the link.
+ * @property send_func Function used to send bytes on the link.
+ */
+struct cahute_serial_over_usb_bulk_link_interface {
+    char const *name;
+    cahute_link_close_func *close_func;
+    cahute_link_receive_func *receive_func;
+    cahute_link_send_func *send_func;
+};
+
+/**
+ * UMS (SCSI) link interface.
+ *
+ * @property name Name of the interface, for logging purposes.
+ * @property close_func Function used when closing the link, to process the
+ *           cookie. Can be set to NULL.
+ * @property request_to_func Function used to make an SCSI request with
+ *           optional outgoing data.
+ * @property request_from_func Function used to make an SCSI request with
+ *           incoming data.
+ */
+struct cahute_ums_link_interface {
+    char const *name;
+    cahute_link_close_func *close_func;
+    cahute_link_scsi_request_to_func *request_to_func;
+    cahute_link_scsi_request_from_func *request_from_func;
+};
+
+/**
+ * Internal base link representation.
+ *
+ * @property context Context in which the link is defined.
  * @property flags Link flags, as OR'd ``CAHUTE_LINK_FLAG_*`` constants.
+ * @property transport Transport type and protocol, as any
+ *           ``CAHUTE_LINK_TRANSPORT_*`` constant.
+ * @property transport_cookie Cookie used by the transport.
+ * @property transport_stream_cookie Cookie used by the send and receive functions
+ *           for the transport specifically, which may be different from the cookie
+ *           used by the rest of the functions.
+ * @property transport_serial_flags Current serial flags, as or'd
+ *           ``CAHUTE_SERIAL_FLAG_*`` constants.
+ * @property transport_serial_speed Current serial speed.
+ * @property transport_receive_buffer Buffer for receiving from the transport in
+ *           a stream-like interface. See ``cahute_receive_on_link_transport``
+ *           definition for more information. Guaranteed to be 32-byte aligned.
+ * @property transport_receive_start Offset at which the unread data starts
+ *           within the receive buffer for the transport.
+ * @property transport_receive_size Number of unread bytes in the receive buffer
+ *           for the transport, starting at the offset stored in
+ *           ``transport_receive_start``.
  * @property protocol Protocol type, as any ``CAHUTE_LINK_PROTOCOL_*`` constant
  *           representing the protocol state to use.
- * @property medium Medium-related information.
  * @property protocol_state State of the specific protocol to use, e.g.
  *           current role in the protocol and details regarding the last
  *           received packet.
@@ -693,10 +542,28 @@ union cahute_link_protocol_state {
  *           can contain, in bytes.
  */
 struct cahute_link {
+    cahute_context *context;
     unsigned long flags;
-    int protocol;
+    int protocol, transport;
 
-    cahute_link_medium medium;
+    void *transport_cookie;
+    void *transport_stream_cookie;
+    char const *transport_name; /* TODO: add description */
+    unsigned long transport_serial_flags;
+    unsigned long transport_serial_speed;
+
+    cahute_u8 *transport_receive_buffer;
+    size_t transport_receive_start;
+    size_t transport_receive_size;
+
+    /* TODO: Add description for these. */
+    cahute_link_close_func *transport_close_func;
+    cahute_link_receive_func *transport_receive_func;
+    cahute_link_send_func *transport_send_func;
+    cahute_link_set_serial_params_func *transport_set_serial_params_func;
+    cahute_link_scsi_request_to_func *transport_scsi_request_to_func;
+    cahute_link_scsi_request_from_func *transport_scsi_request_from_func;
+
     union cahute_link_protocol_state protocol_state;
 
     cahute_device_info *cached_device_info;
@@ -716,107 +583,42 @@ struct cahute_link {
  * File internals.
  * --- */
 
-#define CAHUTE_FILE_MEDIUM_READ_BUFFER_SIZE 4096U
+#define CAHUTE_FILE_READ_BUFFER_SIZE 4096U
 
 #define CAHUTE_MAX_FILE_OFFSET 2147483647
 
-#define CAHUTE_FILE_FLAG_CLOSE_MEDIUM 1 /* Whether to close the medium. */
-#define CAHUTE_FILE_FLAG_EXAMINED     2 /* Whether file type was examined. */
+#define CAHUTE_FILE_FLAG_WRITE    0x00000001 /* Can write to medium. */
+#define CAHUTE_FILE_FLAG_READ     0x00000002 /* Can read from medium. */
+#define CAHUTE_FILE_FLAG_SEEK     0x00000004 /* Can seek on medium. */
+#define CAHUTE_FILE_FLAG_SIZE     0x00000008 /* File size is avail. */
+#define CAHUTE_FILE_FLAG_EXAMINED 0x00000010 /* File type was examined. */
 
-#define CAHUTE_FILE_MEDIUM_FLAG_WRITE 0x00000001 /* Can write to medium. */
-#define CAHUTE_FILE_MEDIUM_FLAG_READ  0x00000002 /* Can read from medium. */
-#define CAHUTE_FILE_MEDIUM_FLAG_SEEK  0x00000004 /* Can seek on medium. */
-#define CAHUTE_FILE_MEDIUM_FLAG_SIZE  0x00000008 /* File size is avail. */
-
-/* Special medium which does not implement a read, write or seek method.
- * It actually directly uses the read buffer, and keeps everything in
- * memory using it. */
-#define CAHUTE_FILE_MEDIUM_NONE 0
-
-#if POSIX_ENABLED
-# define CAHUTE_FILE_MEDIUM_POSIX 1
-#endif
-
-#if WIN32_ENABLED
-# define CAHUTE_FILE_MEDIUM_WIN32 2
-#endif
-
-#if defined(CAHUTE_FILE_MEDIUM_POSIX)
-/**
- * POSIX file medium state.
- *
- * @property fd File descriptor on the opened file.
- */
-struct cahute_file_posix_medium_state {
-    int fd;
-};
-#endif
-
-#if defined(CAHUTE_FILE_MEDIUM_WIN32)
-/**
- * Windows API medium state.
- *
- * @property handle File handle.
- */
-struct cahute_file_windows_medium_state {
-    HANDLE handle;
-};
-#endif
-
-/**
- * File medium state, to be used depending on the file flags.
- *
- * @property posix Medium state if the selected medium type is POSIX.
- * @property windows Medium state if the selected medium type is WIN32.
- */
-union cahute_file_medium_state {
-#if defined(CAHUTE_FILE_MEDIUM_POSIX)
-    struct cahute_file_posix_medium_state posix;
-#endif
-#if defined(CAHUTE_FILE_MEDIUM_WIN32)
-    struct cahute_file_windows_medium_state windows;
-#endif
-};
-
-/**
- * File medium related information.
- *
- * @property context Context in which the file / medium is defined and used.
- * @property type Medium type, as any ``CAHUTE_FILE_MEDIUM_*`` constant.
- * @property write Whether the medium is writable or not.
- * @property flags Medium flags.
- * @property offset Current offset on the underlying medium.
- * @property state State of the specific medium to use, e.g. opened handles
- *           and contexts to close at file closing.
- * @property read_offset Current offset for the read buffer.
- * @property read_size Number of unread bytes in the read buffer for the
- *           medium, starting at the offset stored in ``read_start``.
- * @property read_buffer Buffer for reading from the medium in a stream-like
- *           interface. See ``cahute_read_from_file_medium`` definition
- *           for more information.
- *           Guaranteed to be aligned to a multiple of 32 bytes.
- * @property file_size File size computed when the file was opened.
- */
-struct cahute_file_medium {
-    cahute_context *context;
-
-    int type;
-
-    unsigned long flags;
-    unsigned long offset;
-    unsigned long file_size;
-    unsigned long read_offset;
-    size_t read_size;
-
-    cahute_u8 *read_buffer;
-    union cahute_file_medium_state state;
-};
+typedef void(cahute_file_close_func)(cahute_context *, void *);
+typedef int(cahute_file_read_func)(cahute_context *, void *, cahute_u8 *, size_t, size_t *);
+typedef int(cahute_file_write_func)(cahute_context *, void *, cahute_u8 const *, size_t, size_t *);
+typedef int(cahute_file_seek_func)(cahute_context *, void *, unsigned long, unsigned long *);
 
 /**
  * File related information.
  *
+ * @property context Context in which the file is defined and used.
  * @property flags Flags.
- * @property medium Medium.
+ * @property file_size File size computed when the file was opened.
+ * @property offset Current offset on the underlying medium.
+ * @property read_offset Current offset of the read buffer.
+ * @property read_size Number of bytes in the read buffer, starting at the
+ *           offset stored in ``read_offset``.
+ * @property read_buffer Buffer for reading from the medium in a stream-like
+ *           interface. See ``cahute_read_from_file`` definition for more
+ *           information. Guaranteed to be 32-byte aligned.
+ * @property cookie Cookie to pass to the underlying medium.
+ * @property close_func Function to call when closing the file.
+ * @property read_func Function to call when reading from the current offset
+ *           in the file.
+ * @property write_func Function to call when writing from the current offset
+ *           in the file.
+ * @property seek_func Function to call when changing the current offset in
+ *           the file.
  * @property type Found file type.
  *           If flag CAHUTE_FILE_FLAG_EXAMINED is present and this is
  *           set to 0, this means that the file has been examined but no
@@ -826,9 +628,56 @@ struct cahute_file_medium {
  */
 struct cahute_file {
     unsigned long flags;
-    cahute_file_medium medium;
+    unsigned long file_size;
+    unsigned long offset;
+    unsigned long read_offset;
+    size_t read_size;
+
+    cahute_context *context;
+    void *cookie;
+    cahute_u8 *read_buffer;
+    cahute_file_close_func *close_func;
+    cahute_file_read_func *read_func;
+    cahute_file_write_func *write_func;
+    cahute_file_seek_func *seek_func;
+
     int type;
     char extension[5];
+};
+
+struct cahute_file_open_params {
+    cahute_context *context;
+    cahute_file **filep;
+    void const *path;
+    int path_type;
+};
+
+struct cahute_file_open_interface {
+    cahute_file_close_func *close_func;
+    cahute_file_read_func *read_func;
+    cahute_file_seek_func *seek_func;
+};
+
+struct cahute_file_create_params {
+    cahute_context *context;
+    cahute_file **filep;
+    unsigned long file_size;
+};
+
+struct cahute_file_create_interface {
+    cahute_file_close_func *close_func;
+    cahute_file_write_func *write_func;
+    cahute_file_seek_func *seek_func;
+};
+
+struct cahute_stdout_open_params {
+    cahute_context *context;
+    cahute_file **filep;
+};
+
+struct cahute_stdout_open_interface {
+    cahute_file_close_func *close_func;
+    cahute_file_write_func *write_func;
 };
 
 /* Internal function to declare a file for a memory buffer, without having
@@ -841,11 +690,178 @@ cahute_populate_file_from_memory(
     size_t size
 );
 
+CAHUTE_EXTERN(int)
+cahute_create_file_from_interface(
+    cahute_file_create_params *create_params,
+    cahute_file_create_interface const *interface,
+    void *cookie,
+    size_t cookie_size
+);
+
+CAHUTE_EXTERN(int)
+cahute_open_file_from_interface(
+    cahute_file_open_params *open_params,
+    cahute_file_open_interface const *interface,
+    void *cookie,
+    size_t cookie_size,
+    unsigned long file_size
+);
+
+CAHUTE_EXTERN(int)
+cahute_open_stdout_from_interface(
+    cahute_stdout_open_params *open_params,
+    cahute_stdout_open_interface const *interface,
+    void *cookie,
+    size_t cookie_size
+);
+
+CAHUTE_EXTERN(int)
+cahute_checksum_from_file(
+    cahute_file *file,
+    unsigned long offset,
+    size_t size,
+    unsigned int *checksump
+);
+
+/* ---
+ * Platform-specific functions.
+ * --- */
+
+#if CAHUTE_PLATFORM_AMIGAOS
+CAHUTE_EXTERN(int)
+cahute_amigaos_detect_serial(
+    cahute_context *context,
+    cahute_detect_serial_entry_func *func,
+    void *cookie
+);
+
+CAHUTE_EXTERN(int)
+cahute_open_amigaos_serial_link(
+    cahute_context *context,
+    cahute_serial_link_open_params *open_params,
+    char const *name_or_path
+);
+#endif
+
+#if CAHUTE_PLATFORM_LINUX
+CAHUTE_EXTERN(int)
+cahute_linux_detect_serial(
+    cahute_context *context,
+    cahute_detect_serial_entry_func *func,
+    void *cookie
+);
+#endif
+
+#if CAHUTE_PLATFORM_POSIX
+CAHUTE_EXTERN(size_t) cahute_get_posix_path_max(cahute_context *context);
+
+CAHUTE_EXTERN(int)
+cahute_posix_detect_serial(
+    cahute_context *context,
+    cahute_detect_serial_entry_func *func,
+    void *cookie
+);
+
+CAHUTE_EXTERN(int)
+cahute_open_posix_serial_link(
+    cahute_context *context,
+    cahute_serial_link_open_params *open_params,
+    char const *name_or_path
+);
+
+CAHUTE_EXTERN(int)
+cahute_create_posix_file(
+    cahute_context *context,
+    cahute_file_create_params *create_params,
+    unsigned long file_size,
+    void const *path,
+    int path_type
+);
+
+CAHUTE_EXTERN(int)
+cahute_open_posix_file(
+    cahute_context *context,
+    cahute_file_open_params *open_params,
+    void const *path,
+    int path_type
+);
+
+CAHUTE_EXTERN(int)
+cahute_open_posix_stdout(
+    cahute_context *context,
+    cahute_stdout_open_params *open_params
+);
+#endif
+
+#if CAHUTE_PLATFORM_WIN32
+CAHUTE_EXTERN(int)
+cahute_win32_detect_serial(
+    cahute_context *context,
+    cahute_detect_serial_entry_func *func,
+    void *cookie
+);
+
+CAHUTE_EXTERN(int)
+cahute_open_win32_serial_link(
+    cahute_context *context,
+    cahute_serial_link_open_params *open_params,
+    char const *name_or_path
+);
+
+CAHUTE_EXTERN(int)
+cahute_open_win32_usb_device_from_address(
+    cahute_context *context,
+    cahute_usb_link_open_params *open_params,
+    int address
+);
+
+CAHUTE_EXTERN(int)
+cahute_create_win32_file(
+    cahute_context *context,
+    cahute_file_create_params *create_params,
+    unsigned long file_size,
+    void const *path,
+    int path_type
+);
+
+CAHUTE_EXTERN(int)
+cahute_open_win32_file(
+    cahute_context *context,
+    cahute_file_open_params *create_params,
+    void const *path,
+    int path_type
+);
+
+CAHUTE_EXTERN(int)
+cahute_open_win32_stdout(
+    cahute_context *context,
+    cahute_stdout_open_params *open_params
+);
+#endif
+
+#if CAHUTE_PLATFORM_LIBUSB
+CAHUTE_EXTERN(int)
+cahute_libusb_detect_usb(
+    cahute_context *context,
+    cahute_detect_usb_entry_func CAHUTE_NNPTR(func),
+    void *cookie
+);
+
+CAHUTE_EXTERN(int)
+cahute_open_libusb_link(
+    cahute_context *context,
+    cahute_usb_link_open_params *open_params,
+    int bus,
+    int address
+);
+#endif
+
 /* ---
  * Miscellaneous functions, defined in misc.c
  * --- */
 
 CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms);
+
 CAHUTE_EXTERN(int)
 cahute_monotonic(cahute_context *context, unsigned long *msp);
 
@@ -932,12 +948,60 @@ cahute_checksum(cahute_u8 const *data, size_t size) {
     ((~(CAHUTE__RESULT) + 1) & 255)
 
 /* ---
- * Link medium functions, defined in linkmedium.c
+ * Context management functions.
  * --- */
 
 CAHUTE_EXTERN(int)
-cahute_receive_on_link_medium(
-    cahute_link_medium *medium,
+cahute_get_context_pointer(
+    cahute_context *context,
+    void **valuep,
+    int key,
+    cahute_context_init_func *init_func
+);
+
+/* ---
+ * Link opening and management functions.
+ * --- */
+
+/* From link_open_serial.c */
+CAHUTE_EXTERN(int)
+cahute_open_serial_link_from_interface(
+    cahute_serial_link_open_params *open_params,
+    cahute_serial_link_interface const *interface,
+    void *cookie,
+    size_t cookie_size
+);
+
+/* From link_open_serial_over_usb_bulk.c */
+CAHUTE_EXTERN(int)
+cahute_open_serial_over_usb_bulk_link_from_interface(
+    cahute_usb_link_open_params *open_params,
+    cahute_serial_over_usb_bulk_link_interface const *interface,
+    void *cookie,
+    size_t cookie_size
+);
+
+/* From link_open_ums.c */
+CAHUTE_EXTERN(int)
+cahute_open_ums_link_from_interface(
+    cahute_usb_link_open_params *open_params,
+    cahute_ums_link_interface const *interface,
+    void *cookie,
+    size_t cookie_size
+);
+
+/* From link_init.c */
+CAHUTE_EXTERN(int) cahute_initialize_link(cahute_link *link);
+
+CAHUTE_EXTERN(char const *) cahute_get_protocol_name(int protocol);
+
+/* ---
+ * Link transport functions.
+ * --- */
+
+CAHUTE_EXTERN(int)
+cahute_receive_on_link_transport(
+    cahute_link *link,
     cahute_u8 *buf,
     size_t size,
     unsigned long first_timeout,
@@ -945,22 +1009,22 @@ cahute_receive_on_link_medium(
 );
 
 CAHUTE_EXTERN(int)
-cahute_send_on_link_medium(
-    cahute_link_medium *medium,
+cahute_send_on_link_transport(
+    cahute_link *link,
     cahute_u8 const *buf,
     size_t size
 );
 
 CAHUTE_EXTERN(int)
-cahute_set_serial_params_to_link_medium(
-    cahute_link_medium *medium,
+cahute_set_serial_params_on_link_transport(
+    cahute_link *link,
     unsigned long flags,
     unsigned long speed
 );
 
 CAHUTE_EXTERN(int)
-cahute_scsi_request_to_link_medium(
-    cahute_link_medium *medium,
+cahute_scsi_request_to_link_transport(
+    cahute_link *link,
     cahute_u8 const *command,
     size_t command_size,
     cahute_u8 const *data,
@@ -969,8 +1033,8 @@ cahute_scsi_request_to_link_medium(
 );
 
 CAHUTE_EXTERN(int)
-cahute_scsi_request_from_link_medium(
-    cahute_link_medium *medium,
+cahute_scsi_request_from_link_transport(
+    cahute_link *link,
     cahute_u8 const *command,
     size_t command_size,
     cahute_u8 *buf,
@@ -979,26 +1043,26 @@ cahute_scsi_request_from_link_medium(
 );
 
 /**
- * Receive a byte on a link medium.
+ * Receive a byte on a link's transport.
  *
  * NOTE: If an error occurs, *bytep is NOT set and keeps whatever value it
  * had before the function call.
  *
- * @param medium Link medium on which to receive the byte.
+ * @param link Link on the transport of which to receive the byte.
  * @param bytep Pointer to the byte to receive.
  * @param timeout Timeout to receive the byte.
  * @return Cahute error, or 0 if ok.
  */
 CAHUTE_INLINE(int)
-cahute_receive_byte_on_link_medium(
-    cahute_link_medium *medium,
+cahute_receive_byte_on_link_transport(
+    cahute_link *link,
     int *bytep,
     unsigned long timeout
 ) {
     cahute_u8 buf[8];
     int err;
 
-    err = cahute_receive_on_link_medium(medium, buf, 1, timeout, timeout);
+    err = cahute_receive_on_link_transport(link, buf, 1, timeout, timeout);
     if (!err && bytep)
         *bytep = buf[0];
 
@@ -1006,47 +1070,19 @@ cahute_receive_byte_on_link_medium(
 }
 
 /**
- * Send a byte on a link medium.
+ * Send a byte on a link's transport.
  *
- * @param medium Link medium on which to send the byte.
+ * @param link Link on the transport of which to send the byte.
  * @param byte Byte to send.
  * @return Cahute error, or 0 if ok.
  */
 CAHUTE_INLINE(int)
-cahute_send_byte_on_link_medium(cahute_link_medium *medium, int byte) {
+cahute_send_byte_on_link_transport(cahute_link *link, int byte) {
     cahute_u8 buf[8];
 
     buf[0] = byte;
-    return cahute_send_on_link_medium(medium, buf, 1);
+    return cahute_send_on_link_transport(link, buf, 1);
 }
-
-/* ---
- * File medium functions, defined in filemedium.c
- * --- */
-
-CAHUTE_EXTERN(int)
-cahute_read_from_file_medium(
-    cahute_file_medium *medium,
-    unsigned long off,
-    cahute_u8 *buf,
-    size_t size
-);
-
-CAHUTE_EXTERN(int)
-cahute_write_to_file_medium(
-    cahute_file_medium *medium,
-    unsigned long offset,
-    void const *data,
-    size_t size
-);
-
-CAHUTE_EXTERN(int)
-cahute_checksum_from_file_medium(
-    cahute_file_medium *medium,
-    unsigned long offset,
-    size_t size,
-    unsigned int *checksump
-);
 
 /* ---
  * Data management, defined in data.c

@@ -28,7 +28,7 @@ As a host device, we can receive such data by:
 
 In this rationale, the calculator initiates the connection, so the host
 actually does not need to know much about the protocol beforehand, only
-the medium and related parameters.
+the transport and related parameters.
 
 In order to open the link for such a rationale:
 
