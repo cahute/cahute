@@ -245,7 +245,7 @@ If everything goes well, your merge request should have been merged.
 Congratulations!
 
 .. _Repository: https://gitlab.com/cahuteproject/cahute
-.. _Github mirror: https://github.com/thomas-touhey/cahute
+.. _Github mirror: https://github.com/cahute/cahute
 
 .. _Git: https://git-scm.com/
 .. _Gitlab.com: https://about.gitlab.com/
