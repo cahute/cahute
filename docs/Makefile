@@ -4,9 +4,9 @@
 # You can set these variables from the command line, and also
 # from the environment for the first two.
 SPHINXOPTS ?=
-SPHINXBUILD ?= sphinx-build
+SPHINXBUILD ?= python -m sphinx
 SPHINXAUTOOPTS ?= --ignore "*.kate-swp" --ignore "**/openapi.json"
-SPHINXAUTOBUILD ?= sphinx-autobuild
+SPHINXAUTOBUILD ?= python -m sphinx_autobuild
 SOURCEDIR = .
 BUILDDIR = _build
 
@@ -15,7 +15,7 @@ help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 install:
-	pip install sphinx sphinxcontrib-mermaid furo
+	python -m pip install -r requirements.txt
 
 livehtml:
 	@$(SPHINXAUTOBUILD) "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXAUTOOPTS) $(O)
