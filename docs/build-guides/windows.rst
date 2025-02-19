@@ -109,6 +109,8 @@ on the top, and the architecture you're targetting. By leaving the default
 
     Visual Studio, after building and running p7.
 
+.. include:: _vs_build_error.rst
+
 Since Cahute defines mostly command-line utilities, it may be more interesting
 to have access to a command-line interface. In order to this, in the context
 menu, select "Tools", "Command line", then "Developer Powershell":
@@ -254,6 +256,8 @@ on the top, and the architecture you're targetting. By leaving the default
 
     Visual Studio, after building and running p7.
 
+.. include:: _vs_build_error.rst
+
 Since Cahute defines mostly command-line utilities, it may be more interesting
 to have access to a command-line interface. In order to this, in the context
 menu, select "Tools", "Command line", then "Developer Powershell":
@@ -377,6 +381,8 @@ we obtain the following:
 .. figure:: winvsmingw6.png
 
     Visual Studio, after building and running p7 using MinGW-w64.
+
+.. include:: _vs_build_error.rst
 
 Since Cahute defines mostly command-line utilities, it may be more interesting
 to have access to a command-line interface. In order to this, in the context
