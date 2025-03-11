@@ -24,6 +24,7 @@ The file formats described by topic are the following:
     file-formats/casrc
     file-formats/catalog
     file-formats/eact
+    file-formats/eact-maker
     file-formats/fkeys-cg
     file-formats/fkeys-fx
     file-formats/fx-program
@@ -55,6 +56,8 @@ The file formats described by extension are the following:
       - :ref:`file-format-cat`
     * - ``.CTF``
       - :ref:`file-format-ctf`
+    * - ``.EAM``
+      - :ref:`file-format-eam`
     * - ``.FXP``
       - :ref:`file-format-fxp`
     * - ``.G1A``
