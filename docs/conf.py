@@ -77,7 +77,10 @@ intersphinx_mapping = {}
 todo_include_todos = True
 
 mermaid_output_format = "raw"
+mermaid_use_local = "https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs"
 mermaid_init_js = """
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs";
+
 function isDarkMode() {
     const color = (
         getComputedStyle(document.body)
@@ -105,7 +108,7 @@ const observer = new MutationObserver(function(mutations) {
             mutation.type != "attributes"
             || mutation.attributeName != "data-theme"
         )
-            return
+            return;
 
         const nodes = document.querySelectorAll(".mermaid");
         nodes.forEach(node => {
