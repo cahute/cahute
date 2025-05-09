@@ -52,6 +52,26 @@ build (arm-pc-linux-gnueabihf):
             -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
         - cmake --build build-arm-pc-linux-gnueabihf
 
+build (arm-pc-linux-musleabihf):
+    stage: build
+    rules:
+        - if: $CI_COMMIT_BRANCH == "develop"
+        - if: $CI_COMMIT_TAG
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          changes:
+          - "chars/*"
+          - "cli/*"
+          - "common/*"
+          - "include/*"
+          - "lib/*"
+          - ".gitlab-ci.yml"
+    image: registry.gitlab.com/cahuteproject/docker-images/arm-pc-linux-musleabihf:latest
+    script:
+        - >
+            cmake -B build-arm-pc-linux-musleabihf -S .
+            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
+        - cmake --build build-arm-pc-linux-musleabihf
+
 build (i686-w64-mingw32-msvcrt):
     stage: build
     rules:
