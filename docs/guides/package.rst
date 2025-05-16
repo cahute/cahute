@@ -57,7 +57,7 @@ or the `Cahute formula for Homebrew`_.
 
       .. parsed-literal::
 
-          cmake -B build -S cahute-|version| ... -DENABLE_UDEV=OFF
+          cmake -B build -S cahute-|version| ... -DCAHUTE_UDEV=OFF
 
     * Take the appropriate measures to simplify user access to the devices.
 
