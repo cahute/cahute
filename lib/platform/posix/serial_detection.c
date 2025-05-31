@@ -61,7 +61,8 @@ cahute_posix_detect_serial(
      * directly:
      *
      * - On MacOS / OS X: "cu.*" (e.g. "cu.usbmodem621").
-     * - On FreeBSD: "cuadX" (e.g. "cuad0").
+     * - On FreeBSD: "cuadX" (e.g. "cuad0") or "cuanX" (e.g. "cuan0").
+     * - On NetBSD: "dtyX" (e.g. "dty01").
      * - On Linux: "ttyUSBX" (e.g. "ttyUSB1"). */
     dp = opendir("/dev/");
     if (dp) {
@@ -77,6 +78,10 @@ cahute_posix_detect_serial(
             if (strncmp(dr->d_name, "cu.", 3)
                 && (strncmp(dr->d_name, "cuad", 4)
                     || !all_numbers(&dr->d_name[4]))
+                && (strncmp(dr->d_name, "cuan", 4)
+                    || !all_numbers(&dr->d_name[4]))
+                && (strncmp(dr->d_name, "dty", 4)
+                    || !all_numbers(&dr->d_name[3]))
                 && (strncmp(dr->d_name, "ttyUSB", 6)
                     || !all_numbers(&dr->d_name[6])))
                 continue;
