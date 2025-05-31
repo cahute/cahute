@@ -26,7 +26,7 @@
  * knowledge of the CeCILL 2.1 license and that you accept its terms.
  * ************************************************************************* */
 
-#include "internals.h"
+#include "../internals.h"
 
 /**
  * Detect serial entries available to Cahute.

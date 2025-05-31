@@ -26,7 +26,7 @@
  * knowledge of the CeCILL 2.1 license and that you accept its terms.
  * ************************************************************************* */
 
-#include "internals.h"
+#include "../internals.h"
 
 CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms) {
     struct timerequest *timer;
@@ -41,21 +41,5 @@ CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms) {
     timer->tr_node.io_Command = TR_ADDREQUEST;
 
     DoIO((struct IORequest *)timer);
-    return CAHUTE_OK;
-}
-
-CAHUTE_EXTERN(int)
-cahute_monotonic(cahute_context *context, unsigned long *msp) {
-    struct timerequest *timer;
-    int err;
-
-    err = cahute_get_amiga_timer(context, NULL, &timer);
-    if (err)
-        return err;
-
-    timer->tr_node.io_Command = TR_GETSYSTIME;
-    DoIO((struct IORequest *)timer);
-
-    *msp = timer->tr_time.tv_secs * 1000 + timer->tr_time.tv_micro / 1000;
     return CAHUTE_OK;
 }

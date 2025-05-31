@@ -26,7 +26,7 @@
  * knowledge of the CeCILL 2.1 license and that you accept its terms.
  * ************************************************************************* */
 
-#include "internals.h"
+#include "../internals.h"
 
 struct timer_data {
     struct MsgPort *msg_port;
@@ -44,8 +44,6 @@ cahute_destroy_amigaos_timer(
     cahute_context *context,
     struct timer_data *data
 ) {
-    AbortIO((struct IORequest *)data->time_request);
-    WaitIO((struct IORequest *)data->time_request);
     CloseDevice((struct IORequest *)data->time_request);
     DeleteIORequest(data->time_request);
     DeleteMsgPort(data->msg_port);

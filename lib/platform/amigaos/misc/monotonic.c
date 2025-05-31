@@ -26,45 +26,20 @@
  * knowledge of the CeCILL 2.1 license and that you accept its terms.
  * ************************************************************************* */
 
-#ifndef PLATFORM_AMIGAOS_INTERNALS_H
-#define PLATFORM_AMIGAOS_INTERNALS_H 1
-#include "../../internals.h"
-#include <exec/types.h>
-#include <exec/errors.h>
-#include <exec/io.h>
-#include <exec/ports.h>
-#include <dos/dos.h>
-#include <proto/exec.h>
-#include <devices/serial.h>
-#include <devices/timer.h>
-
-CAHUTE_DECLARE_TYPE(cahute_amigaos_device)
-
-
-/**
- * AmigaOS device definition.
- *
- * @property name Device name.
- * @property unit Unit number.
- */
-struct cahute_amigaos_device {
-    char name[32];
-    unsigned long unit;
-};
+#include "../internals.h"
 
 CAHUTE_EXTERN(int)
-cahute_get_amiga_timer(
-    cahute_context *context,
-    struct MsgPort **msg_portp,
-    struct timerequest **timerp
-);
+cahute_monotonic(cahute_context *context, unsigned long *msp) {
+    struct timerequest *timer;
+    int err;
 
-CAHUTE_EXTERN(int)
-cahute_get_amigaos_device(
-    cahute_context *context,
-    cahute_amigaos_device *devp,
-    char const *raw,
-    char const *default_device
-);
+    err = cahute_get_amiga_timer(context, NULL, &timer);
+    if (err)
+        return err;
 
-#endif /* PLATFORM_AMIGAOS_INTERNALS_H */
+    timer->tr_node.io_Command = TR_GETSYSTIME;
+    DoIO((struct IORequest *)timer);
+
+    *msp = timer->tr_time.tv_secs * 1000 + timer->tr_time.tv_micro / 1000;
+    return CAHUTE_OK;
+}

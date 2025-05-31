@@ -401,11 +401,12 @@ if(CAHUTE_FEATURE_LIB_STATIC)
         list(APPEND LIB_COMPILE_DEFS
             CAHUTE_PLATFORM_AMIGAOS=1)
         list(APPEND LIB_SOURCES
-            lib/platform/amigaos/misc.c
-            lib/platform/amigaos/serial_detection.c
-            lib/platform/amigaos/serial.c
-            lib/platform/amigaos/serial_detection.c
-            lib/platform/amigaos/timer.c)
+            lib/platform/amigaos/misc/device_path.c
+            lib/platform/amigaos/misc/monotonic.c
+            lib/platform/amigaos/misc/sleep.c
+            lib/platform/amigaos/misc/timer.c
+            lib/platform/amigaos/serial/detection.c
+            lib/platform/amigaos/serial/link.c)
     else()
         if(LINUX)
             list(APPEND LIB_COMPILE_DEFS
