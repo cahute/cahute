@@ -3469,7 +3469,7 @@ cahute_seven_upload_and_run_program(
     link->protocol_state.seven.last_command = 0x56;
     return cahute_seven_send_data_from_buf(
         link,
-        0,
+        SEND_DATA_FLAG_DISABLE_SHIFTING,
         program,
         program_size,
         progress_func,
