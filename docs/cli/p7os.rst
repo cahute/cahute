@@ -43,6 +43,16 @@ Available options for all subcommands are the following:
     Flag to enable displaying of a loading bar to show transfer or
     procedure progress.
 
+``-L``, ``--load-address``
+    Load address for the Update.EXE (default: ``0x88024000``).
+
+    See :ref:`seven-upload-and-run` for more information.
+
+``-S``, ``--start-address``
+    Start address for the Update.EXE (default: ``0x88024000``).
+
+    See :ref:`seven-upload-and-run` for more information.
+
 ``--no-prepare``
     Do not upload the Update.EXE, suppose the correct one has already been
     uploaded and run by a previous command.

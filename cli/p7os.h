@@ -43,6 +43,8 @@
  * @property erase_flash Whether to erase flash before writing data.
  * @property display_progress Whether to display a progress bar or not.
  * @property loglevel Logging level to set.
+ * @property load_address Load address.
+ * @property start_address Start address.
  * @property uexe_data Update.EXE data.
  * @property uexe_allocated_data Allocated Update.EXE data.
  * @property uexe_size Update.EXE size.
@@ -56,6 +58,9 @@ struct args {
     int erase_flash;
     int display_progress;
     char const *loglevel;
+
+    unsigned long load_address;
+    unsigned long start_address;
 
     cahute_u8 const *uexe_data;
     cahute_u8 *uexe_allocated_data;

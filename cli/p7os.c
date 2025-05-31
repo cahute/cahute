@@ -156,6 +156,10 @@ int main(int ac, char **av) {
     if (!parse_args(ac, av, &args))
         return 0;
 
+    fprintf(stderr, "Start address: 0x%08lX\n", args.start_address);
+    fprintf(stderr, "Load address: 0x%08lX\n", args.load_address);
+    return 0;
+
     err = cahute_create_context(&context);
     if (err)
         goto end;
@@ -191,8 +195,8 @@ int main(int ac, char **av) {
             link,
             args.uexe_data,
             args.uexe_size,
-            0x88024000,
-            0x88024000,
+            args.load_address,
+            args.start_address,
             NULL,
             NULL
         );

@@ -67,6 +67,12 @@ static char const help_main[] =
     "                    Logging level to use, instead of the default one.\n"
     "                    One of: info, warning, error, fatal, none.\n"
     "  -#                Display a nice progress bar.\n"
+    "  -S, --start-address <addr>\n"
+    "                    Start address for the update program\n"
+    "                    (default: 0x880240000).\n"
+    "  -L, --load-address <addr>\n"
+    "                    Load address for the update program\n"
+    "                    (default: 0x880240000).\n"
     "  --no-prepare      Use the current environment, instead of uploading "
     "one.\n"
     "  -u, --uexe <path> Use a custom update program.\n"
@@ -116,6 +122,8 @@ static struct short_option const short_options[] = {
     {'u', OPTION_FLAG_PARAMETER_REQUIRED},
     {'o', OPTION_FLAG_PARAMETER_REQUIRED},
     {'#', 0},
+    {'S', OPTION_FLAG_PARAMETER_REQUIRED},
+    {'L', OPTION_FLAG_PARAMETER_REQUIRED},
 
     SHORT_OPTION_SENTINEL
 };
@@ -131,9 +139,47 @@ static struct long_option const long_options[] = {
     {"erase-flash", 0, 'e'},
     {"uexe", OPTION_FLAG_PARAMETER_REQUIRED, 'u'},
     {"output", OPTION_FLAG_PARAMETER_REQUIRED, 'o'},
+    {"load-address", OPTION_FLAG_PARAMETER_REQUIRED, 'L'},
+    {"start-address", OPTION_FLAG_PARAMETER_REQUIRED, 'S'},
 
     LONG_OPTION_SENTINEL
 };
+
+/**
+ * Decode a hexadecimal u32.
+ *
+ * @param raw Raw hexadecimal u32.
+ * @param resultp Pointer to the result to set.
+ * @return Whether it has succeeded (1), or not (0).
+ */
+static int decode_u32_hex(char const *raw, unsigned long *resultp) {
+    int i;
+    unsigned long result;
+
+    if (raw[0] == '0' && (raw[1] == 'x' || raw[1] == 'X'))
+        raw += 2;
+
+    result = 0;
+    for (i = 0; i < 8 && *raw; i++, raw++) {
+        int c = *raw;
+
+        result <<= 4;
+        if (c >= '0' && c <= '9')
+            result |= c - '0';
+        else if (c >= 'a' && c <= 'f')
+            result |= c - 'a' + 10;
+        else if (c >= 'A' && c <= 'F')
+            result |= c - 'A' + 10;
+        else
+            return 0;
+    }
+
+    if (i > 7 && *raw)
+        return 0;
+
+    *resultp = result;
+    return 1;
+}
 
 /**
  * Parse the command-line arguments.
@@ -149,6 +195,7 @@ int parse_args(int argc, char **argv, struct args *args) {
     char const *uexe_path = NULL, *output_path = "os.bin";
     char *optarg;
     int option, optopt, help = 0, version = 0;
+    unsigned long addr;
 
     /* Default parsed arguments. */
     args->command = COMMAND_NONE;
@@ -156,6 +203,8 @@ int parse_args(int argc, char **argv, struct args *args) {
     args->erase_flash = 0;
     args->display_progress = 0;
     args->loglevel = NULL;
+    args->load_address = 0x88024000;
+    args->start_address = 0x88024000;
     args->uexe_data = cahute_fxremote_update_exe;
     args->uexe_allocated_data = NULL;
     args->uexe_size = cahute_fxremote_update_exe_size;
@@ -215,6 +264,26 @@ int parse_args(int argc, char **argv, struct args *args) {
             args->display_progress = 1;
             break;
 
+        case 'L':
+        case 'S':
+            /* --load-address, --start-address: update.exe addresses. */
+            if (!decode_u32_hex(optarg, &addr)) {
+                fprintf(
+                    stderr,
+                    "-%c, --%s-address: invalid hex address: '%s'\n",
+                    option,
+                    option == 'L' ? "load" : "start",
+                    optarg
+                );
+                return 0;
+            }
+
+            if (option == 'L')
+                args->load_address = addr;
+            else
+                args->start_address = addr;
+            break;
+
         case GETOPT_FAIL:
             /* Erroneous option usage. */
             if (optopt == 'l')
@@ -223,6 +292,10 @@ int parse_args(int argc, char **argv, struct args *args) {
                 fprintf(stderr, "-u, --uexe: expected an argument\n");
             else if (optopt == 'o')
                 fprintf(stderr, "-o, --output: expected an argument\n");
+            else if (optopt == 'L')
+                fprintf(stderr, "-L, --load-address: expected an argument\n");
+            else if (optopt == 'S')
+                fprintf(stderr, "-S, --start-address: expected an argument\n");
             else
                 /* We ignore unknown options. */
                 break;
