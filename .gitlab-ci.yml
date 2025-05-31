@@ -19,11 +19,11 @@ build (x86_64-pc-linux-gnu):
         - if: $CI_COMMIT_TAG
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
           changes:
-          - "chars/*"
-          - "cli/*"
-          - "common/*"
-          - "include/*"
-          - "lib/*"
+          - "chars/**/*"
+          - "cli/**/*"
+          - "common/**/*"
+          - "include/**/*"
+          - "lib/**/*"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahuteproject/docker-images/x86_64-pc-linux-gnu:latest
     script:
@@ -39,11 +39,11 @@ build (arm-pc-linux-gnueabihf):
         - if: $CI_COMMIT_TAG
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
           changes:
-          - "chars/*"
-          - "cli/*"
-          - "common/*"
-          - "include/*"
-          - "lib/*"
+          - "chars/**/*"
+          - "cli/**/*"
+          - "common/**/*"
+          - "include/**/*"
+          - "lib/**/*"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahuteproject/docker-images/arm-pc-linux-gnueabihf:latest
     script:
@@ -59,11 +59,11 @@ build (arm-pc-linux-musleabihf):
         - if: $CI_COMMIT_TAG
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
           changes:
-          - "chars/*"
-          - "cli/*"
-          - "common/*"
-          - "include/*"
-          - "lib/*"
+          - "chars/**/*"
+          - "cli/**/*"
+          - "common/**/*"
+          - "include/**/*"
+          - "lib/**/*"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahuteproject/docker-images/arm-pc-linux-musleabihf:latest
     script:
@@ -79,11 +79,11 @@ build (i686-w64-mingw32-msvcrt):
         - if: $CI_COMMIT_TAG
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
           changes:
-          - "chars/*"
-          - "cli/*"
-          - "common/*"
-          - "include/*"
-          - "lib/*"
+          - "chars/**/*"
+          - "cli/**/*"
+          - "common/**/*"
+          - "include/**/*"
+          - "lib/**/*"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahuteproject/docker-images/i686-w64-mingw32-msvcrt:latest
     script:
@@ -99,11 +99,11 @@ build (i686-w64-mingw32-ucrt):
         - if: $CI_COMMIT_TAG
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
           changes:
-          - "chars/*"
-          - "cli/*"
-          - "common/*"
-          - "include/*"
-          - "lib/*"
+          - "chars/**/*"
+          - "cli/**/*"
+          - "common/**/*"
+          - "include/**/*"
+          - "lib/**/*"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahuteproject/docker-images/i686-w64-mingw32-ucrt:latest
     script:
@@ -119,11 +119,11 @@ build (x86_64-w64-mingw32-msvcrt):
         - if: $CI_COMMIT_TAG
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
           changes:
-          - "chars/*"
-          - "cli/*"
-          - "common/*"
-          - "include/*"
-          - "lib/*"
+          - "chars/**/*"
+          - "cli/**/*"
+          - "common/**/*"
+          - "include/**/*"
+          - "lib/**/*"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahuteproject/docker-images/x86_64-w64-mingw32-msvcrt:latest
     script:
@@ -139,11 +139,11 @@ build (x86_64-w64-mingw32-ucrt):
         - if: $CI_COMMIT_TAG
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
           changes:
-          - "chars/*"
-          - "cli/*"
-          - "common/*"
-          - "include/*"
-          - "lib/*"
+          - "chars/**/*"
+          - "cli/**/*"
+          - "common/**/*"
+          - "include/**/*"
+          - "lib/**/*"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahuteproject/docker-images/x86_64-w64-mingw32-ucrt:latest
     script:
@@ -159,11 +159,11 @@ build (m68k-amigaos):
         - if: $CI_COMMIT_TAG
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
           changes:
-          - "chars/*"
-          - "cli/*"
-          - "common/*"
-          - "include/*"
-          - "lib/*"
+          - "chars/**/*"
+          - "cli/**/*"
+          - "common/**/*"
+          - "include/**/*"
+          - "lib/**/*"
           - ".gitlab-ci.yml"
     image: amigadev/crosstools:m68k-amigaos
     before_script:
