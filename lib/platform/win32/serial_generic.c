@@ -44,7 +44,8 @@ cahute_close_win32_serial_link(
         log_windows_error(context, "CancelIo", werr);
     }
 
-    CloseHandle(cookie->overlapped.hEvent);
+    CloseHandle(cookie->read_overlapped.hEvent);
+    CloseHandle(cookie->write_overlapped.hEvent);
     CloseHandle(cookie->handle);
 }
 
@@ -79,7 +80,7 @@ cahute_receive_on_win32_serial_link(
             buf,
             capacity,
             &cookie->received,
-            &cookie->overlapped
+            &cookie->read_overlapped
         );
 
         if (!ret) {
@@ -99,7 +100,7 @@ cahute_receive_on_win32_serial_link(
      * and has not returned immediately, we want to check on it. */
     if (cookie->read_in_progress) {
         ret = WaitForSingleObject(
-            cookie->overlapped.hEvent,
+            cookie->read_overlapped.hEvent,
             timeout ? timeout : INFINITE
         );
         switch (ret) {
@@ -107,7 +108,7 @@ cahute_receive_on_win32_serial_link(
             cookie->read_in_progress = 0;
             ret = GetOverlappedResult(
                 cookie->handle,
-                &cookie->overlapped,
+                &cookie->read_overlapped,
                 &cookie->received,
                 FALSE
             );
@@ -159,17 +160,19 @@ cahute_send_on_win32_serial_link(
     DWORD sent;
     BOOL ret;
 
-    ret = WriteFile(cookie->handle, buf, size, &sent, &cookie->overlapped);
+    ret =
+        WriteFile(cookie->handle, buf, size, &sent, &cookie->write_overlapped);
     if (!ret) {
         DWORD werr = GetLastError();
 
         if (werr == ERROR_IO_PENDING) {
-            ret = WaitForSingleObject(cookie->overlapped.hEvent, INFINITE);
+            ret =
+                WaitForSingleObject(cookie->write_overlapped.hEvent, INFINITE);
             switch (ret) {
             case WAIT_OBJECT_0:
                 ret = GetOverlappedResult(
                     cookie->handle,
-                    &cookie->overlapped,
+                    &cookie->write_overlapped,
                     &sent,
                     FALSE
                 );

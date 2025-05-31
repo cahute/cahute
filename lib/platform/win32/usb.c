@@ -666,7 +666,8 @@ cahute_open_win32_usb_device_from_address(
     int address
 ) {
     HANDLE win_handle = INVALID_HANDLE_VALUE;
-    HANDLE overlapped_event_handle = INVALID_HANDLE_VALUE;
+    HANDLE read_overlapped_event_handle = INVALID_HANDLE_VALUE;
+    HANDLE write_overlapped_event_handle = INVALID_HANDLE_VALUE;
     char device_interface[300];
     int type, err;
 
@@ -739,9 +740,15 @@ cahute_open_win32_usb_device_from_address(
             goto fail;
         }
 
-        /* Create the overlapped event. */
-        overlapped_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL);
-        if (overlapped_event_handle == INVALID_HANDLE_VALUE) {
+        /* Create the overlapped events. */
+        read_overlapped_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL);
+        if (read_overlapped_event_handle == INVALID_HANDLE_VALUE) {
+            log_windows_error(context, "CreateEvent", GetLastError());
+            goto fail;
+        }
+
+        write_overlapped_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL);
+        if (write_overlapped_event_handle == INVALID_HANDLE_VALUE) {
             log_windows_error(context, "CreateEvent", GetLastError());
             goto fail;
         }
@@ -752,8 +759,10 @@ cahute_open_win32_usb_device_from_address(
             cookie.handle = win_handle;
             cookie.read_in_progress = 0;
             cookie.received = 0;
-            SecureZeroMemory(&cookie.overlapped, sizeof(OVERLAPPED));
-            cookie.overlapped.hEvent = overlapped_event_handle;
+            SecureZeroMemory(&cookie.read_overlapped, sizeof(OVERLAPPED));
+            SecureZeroMemory(&cookie.write_overlapped, sizeof(OVERLAPPED));
+            cookie.read_overlapped.hEvent = read_overlapped_event_handle;
+            cookie.write_overlapped.hEvent = write_overlapped_event_handle;
 
             return cahute_open_serial_over_usb_bulk_link_from_interface(
                 open_params,
@@ -766,8 +775,8 @@ cahute_open_win32_usb_device_from_address(
 
     err = CAHUTE_ERROR_IMPL;
 fail:
-    if (overlapped_event_handle != INVALID_HANDLE_VALUE)
-        CloseHandle(overlapped_event_handle);
+    if (read_overlapped_event_handle != INVALID_HANDLE_VALUE)
+        CloseHandle(read_overlapped_event_handle);
     if (win_handle != INVALID_HANDLE_VALUE)
         CloseHandle(win_handle);
 

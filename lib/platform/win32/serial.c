@@ -196,9 +196,11 @@ cahute_open_win32_serial_link(
 ) {
     cahute_win32_serial_link_cookie cookie;
     HANDLE handle = INVALID_HANDLE_VALUE;
-    HANDLE overlapped_event_handle = INVALID_HANDLE_VALUE;
+    HANDLE read_overlapped_event_handle = INVALID_HANDLE_VALUE;
+    HANDLE write_overlapped_event_handle = INVALID_HANDLE_VALUE;
     COMMTIMEOUTS timeouts;
     DWORD werr;
+    int err = CAHUTE_ERROR_UNKNOWN;
 
     handle = CreateFile(
         name_or_path,
@@ -234,34 +236,38 @@ cahute_open_win32_serial_link(
 
     if (!SetCommTimeouts(handle, &timeouts)) {
         log_windows_error(context, "SetCommTimeouts", GetLastError());
-        CloseHandle(handle);
-        return CAHUTE_ERROR_UNKNOWN;
+        goto fail;
     }
 
     /* We only want events to be set if we are receiving a byte. */
     if (!SetCommMask(handle, EV_RXCHAR)) {
         log_windows_error(context, "SetCommMask", GetLastError());
-        CloseHandle(handle);
-        return CAHUTE_ERROR_UNKNOWN;
+        goto fail;
     }
 
     if (!PurgeComm(handle, PURGE_RXCLEAR | PURGE_TXCLEAR)) {
         log_windows_error(context, "PurgeComm", GetLastError());
-        CloseHandle(handle);
-        return CAHUTE_ERROR_UNKNOWN;
+        goto fail;
     }
 
-    /* Create the overlapped event. */
-    overlapped_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL);
-    if (overlapped_event_handle == INVALID_HANDLE_VALUE) {
+    /* Create the overlapped events. */
+    read_overlapped_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (read_overlapped_event_handle == INVALID_HANDLE_VALUE) {
         log_windows_error(context, "CreateEvent", GetLastError());
-        CloseHandle(handle);
-        return CAHUTE_ERROR_UNKNOWN;
+        goto fail;
     }
 
-    SecureZeroMemory(&cookie.overlapped, sizeof(OVERLAPPED));
+    write_overlapped_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (write_overlapped_event_handle == INVALID_HANDLE_VALUE) {
+        log_windows_error(context, "CreateEvent", GetLastError());
+        goto fail;
+    }
+
+    SecureZeroMemory(&cookie.read_overlapped, sizeof(OVERLAPPED));
+    SecureZeroMemory(&cookie.write_overlapped, sizeof(OVERLAPPED));
     cookie.handle = handle;
-    cookie.overlapped.hEvent = overlapped_event_handle;
+    cookie.read_overlapped.hEvent = read_overlapped_event_handle;
+    cookie.write_overlapped.hEvent = write_overlapped_event_handle;
     cookie.read_in_progress = 0;
     cookie.received = 0;
     return cahute_open_serial_link_from_interface(
@@ -270,4 +276,12 @@ cahute_open_win32_serial_link(
         &cookie,
         sizeof(cookie)
     );
+
+fail:
+    if (read_overlapped_event_handle != INVALID_HANDLE_VALUE)
+        CloseHandle(handle);
+    if (handle != INVALID_HANDLE_VALUE)
+        CloseHandle(handle);
+
+    return err;
 }

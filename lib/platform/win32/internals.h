@@ -61,14 +61,18 @@ cahute_win32_log_error(
 /**
  * Win32 serial / CESG link cookie.
  *
- * @property handle
- * @property overlapped
- * @property received
- * @property read_in_progress
+ * @property handle Handle to use for receiving and sending.
+ * @property read_overlapped Overlapped object for receiving.
+ * @property write_overlapped Overlapped object for sending.
+ * @property received Number of received bytes in an asynchronous read
+ *           or write.
+ * @property read_in_progress Whether a read operation is currently in
+ *           progress.
  */
 struct cahute_win32_serial_link_cookie {
     HANDLE handle;
-    OVERLAPPED overlapped;
+    OVERLAPPED read_overlapped;
+    OVERLAPPED write_overlapped;
     DWORD received;
     DWORD read_in_progress;
 };
