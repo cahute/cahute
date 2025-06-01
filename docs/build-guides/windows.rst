@@ -140,15 +140,6 @@ Building Cahute for Windows XP, using Visual Studio
 
     See :ref:`system-windows` for more information.
 
-.. warning::
-
-    This build method is not functional yet due to a bug with Visual Studio
-    and the Windows SDK; see `#68
-    <https://gitlab.com/cahuteproject/cahute/-/issues/68>`_ for more details.
-
-    For now, you can build for Windows XP using the
-    :ref:`build-windows-vs-mingw` guide.
-
 It is possible to build Cahute for Windows XP, using Microsoft's
 `Visual Studio`_.
 
@@ -167,19 +158,6 @@ Visual Studio Installer, modify your existing installation, go to
 
 You can then select "Modify" at the bottom right of the window in order to
 download and configure MSVC v141.
-
-Installing the Windows 8.1 SDK
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-By default, Visual Studio with the MSVC v141_xp toolset does not select the
-correct SDK version, so Cahute makes an effort to find a compatible SDK it
-can use for some features. For XP compatibility, you need to download
-and install the Windows 8.1 SDK in `Windows SDK and emulator archive`_:
-
-.. figure:: winvsxp1_1.png
-
-    Section in which to find the Windows 8.1 SDK on the
-    `Windows SDK and emulator archive`_.
 
 Setting up the project and configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -274,6 +252,15 @@ run the command-line utilities from here with the options you want to test.
 
     A PowerShell developer console opened in Visual Studio, running p7 from
     the build directory directly.
+
+.. note::
+
+    If you are running the executables on another machine, you will need to
+    install the Visual C++ Redistribuable Packages on said machine.
+
+    If you've selected ``Visual Studio 17 2022``, you can download and install
+    `Visual C++ Redistribuable for Visual Studio 2015`_ on the target machine
+    before running the executable.
 
 .. _build-windows-vs-mingw:
 
@@ -496,9 +483,9 @@ one of the following command depending on the architecture you're targetting::
     archlinux.Dockerfile?ref_type=heads
 
 .. _Visual Studio: https://visualstudio.microsoft.com/fr/
+.. _Visual C++ Redistribuable for Visual Studio 2015:
+    https://www.microsoft.com/en-us/download/details.aspx?id=48145
 .. _Installing and using packages (vcpkg):
     https://github.com/microsoft/vcpkg-docs/blob/main/vcpkg/examples/
     installing-and-using-packages.md#-step-2-use
-.. _Windows SDK and emulator archive:
-    https://developer.microsoft.com/en-us/windows/downloads/sdk-archive/
 .. _MinGW-w64 Downloads: https://www.mingw-w64.org/downloads/
