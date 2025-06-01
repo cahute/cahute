@@ -27,7 +27,6 @@
  * ************************************************************************* */
 
 #include "internals.h"
-#include <cfgmgr32.h>
 #include <initguid.h>
 #if defined(__MINGW32__) || defined(__MINGW64__)
 # include <ddk/wdmguid.h>
@@ -117,15 +116,21 @@ find_win32_interface(
     LPGUID guid
 ) {
     DWORD property_size = 0;
-    CONFIGRET cret;
+    DWORD cret;
+    int err = 0;
+    cahute_win32_cfgmgr32 *cfgmgr32;
 
-    cret = CM_Get_Device_Interface_List_SizeA(
+    err = cahute_get_win32_cfgmgr32(context, &cfgmgr32);
+    if (err)
+        return err;
+
+    cret = (*cfgmgr32->get_device_interface_list_size)(
         &property_size,
         guid,
         device_id,
-        CM_GET_DEVICE_INTERFACE_LIST_PRESENT
+        0
     );
-    if (cret != CR_SUCCESS) {
+    if (cret) {
         msg(context,
             ll_error,
             "CM_Get_Device_Interface_List_SizeA returned error "
@@ -141,14 +146,14 @@ find_win32_interface(
         return CAHUTE_ERROR_SIZE;
     }
 
-    cret = CM_Get_Device_Interface_ListA(
+    cret = (*cfgmgr32->get_device_interface_list)(
         guid,
         device_id,
         path,
         property_size,
-        CM_GET_DEVICE_INTERFACE_LIST_PRESENT
+        0
     );
-    if (cret != CR_SUCCESS) {
+    if (cret) {
         msg(context,
             ll_error,
             "CM_Get_Device_Interface_ListA returned error "
@@ -217,16 +222,21 @@ find_win32_usb_device(
     int *typep,
     DWORD addr
 ) {
-    DEVINST device_instance;
+    DWORD device_instance;
     char *usb_device_id_list = NULL, *usb_device_id;
     BYTE property[64];
     char disk_drive_id_buf[300], *disk_drive_id;
     char volume_id_buf[300], *volume_id;
     ULONG property_type = 0;
     ULONG property_size = 0;
-    CONFIGRET cret;
+    DWORD cret;
     GUID guid;
     int err = CAHUTE_ERROR_UNKNOWN;
+    cahute_win32_cfgmgr32 *cfgmgr32;
+
+    err = cahute_get_win32_cfgmgr32(context, &cfgmgr32);
+    if (err)
+        return err;
 
     /* ---
      * Step 1. Find the USB device corresponding to the calculator.
@@ -237,12 +247,8 @@ find_win32_usb_device(
      * Since the device was found using libusb, not finding it here results
      * rightfully in a CAHUTE_ERROR_UNKNOWN. */
 
-    cret = CM_Get_Device_ID_List_SizeA(
-        &property_size,
-        NULL,
-        CM_GETIDLIST_FILTER_NONE
-    );
-    if (cret != CR_SUCCESS) {
+    cret = (*cfgmgr32->get_device_id_list_size)(&property_size, NULL, 0);
+    if (cret) {
         msg(context,
             ll_error,
             "CM_Get_Device_ID_List_SizeA returned error 0x%08lX.",
@@ -258,13 +264,13 @@ find_win32_usb_device(
         goto fail;
     }
 
-    cret = CM_Get_Device_ID_ListA(
+    cret = (*cfgmgr32->get_device_id_list)(
         NULL,
         usb_device_id_list,
         property_size,
-        CM_GETIDLIST_FILTER_NONE
+        0
     );
-    if (cret != CR_SUCCESS) {
+    if (cret) {
         msg(context,
             ll_error,
             "CM_Get_Device_ID_ListA returned error 0x%08lX.",
@@ -275,15 +281,11 @@ find_win32_usb_device(
     for (usb_device_id = usb_device_id_list; *usb_device_id;
          usb_device_id += strlen(usb_device_id) + 1) {
         /* Get the device behind the interface. */
-        cret = CM_Locate_DevNodeA(
-            &device_instance,
-            usb_device_id,
-            CM_LOCATE_DEVNODE_NORMAL
-        );
-        if (cret == CR_NO_SUCH_DEVINST)
+        cret = (*cfgmgr32->locate_devnode)(&device_instance, usb_device_id, 0);
+        if (cret == 0x0D /* CR_NO_SUCH_DEVINST */)
             continue;
 
-        if (cret != CR_SUCCESS) {
+        if (cret) {
             msg(context,
                 ll_error,
                 "CM_Locate_DevNodeA returned error 0x%08lX.",
@@ -294,18 +296,18 @@ find_win32_usb_device(
         /* We want to check that the device or any of its parents is actually
          * the USB device we're looking for. */
         property_size = sizeof(property);
-        cret = CM_Get_DevNode_Registry_PropertyA(
+        cret = (*cfgmgr32->get_devnode_registry_property)(
             device_instance,
-            CM_DRP_BUSTYPEGUID,
+            0x14 /* CM_DRP_BUSTYPEGUID */,
             &property_type,
             (PBYTE)property,
             &property_size,
             0
         );
-        if (cret == CR_NO_SUCH_VALUE)
+        if (cret == 0x25 /* CR_NO_SUCH_VALUE */)
             continue; /* Virtual device, we need to check the parent. */
 
-        if (cret != CR_SUCCESS) {
+        if (cret) {
             msg(context,
                 ll_error,
                 "CM_Get_DevNode_Registry_PropertyA with property "
@@ -333,15 +335,15 @@ find_win32_usb_device(
         /* Get the device address, to check if it corresponds to the
          * address we have previously found. */
         property_size = sizeof(property);
-        cret = CM_Get_DevNode_Registry_PropertyA(
+        cret = (*cfgmgr32->get_devnode_registry_property)(
             device_instance,
-            CM_DRP_ADDRESS,
+            0x1D /* CM_DRP_ADDRESS */,
             &property_type,
             (PBYTE)property,
             &property_size,
             0
         );
-        if (cret != CR_SUCCESS) {
+        if (cret) {
             msg(context,
                 ll_error,
                 "CM_Get_DevNode_Registry_PropertyA with property "
@@ -370,18 +372,18 @@ find_win32_usb_device(
          * independent hardware vendors (IHVs). */
 
         property_size = sizeof(property);
-        cret = CM_Get_DevNode_Registry_PropertyA(
+        cret = (*cfgmgr32->get_devnode_registry_property)(
             device_instance,
-            CM_DRP_SERVICE,
+            0x05 /* CM_DRP_SERVICE */,
             &property_type,
             (PBYTE)property,
             &property_size,
             0
         );
-        if (cret == CR_NO_SUCH_VALUE)
+        if (cret == 0x25 /* CR_NO_SUCH_VALUE */)
             continue; /* No driver installed. */
 
-        if (cret != CR_SUCCESS) {
+        if (cret) {
             msg(context,
                 ll_error,
                 "CM_Get_DevNode_Registry_PropertyA returned error "
@@ -413,13 +415,13 @@ find_win32_usb_device(
          *         through Bus Relations.
          * --- */
 
-        cret = CM_Get_Device_ID_ListA(
+        cret = (*cfgmgr32->get_device_id_list)(
             usb_device_id,
             disk_drive_id_buf,
             sizeof(disk_drive_id_buf),
-            CM_GETIDLIST_FILTER_BUSRELATIONS
+            0x20 /* CM_GETIDLIST_FILTER_BUSRELATIONS */
         );
-        if (cret == CR_BUFFER_SMALL) {
+        if (cret == 0x1A /* CR_BUFFER_SMALL */) {
             msg(context,
                 ll_error,
                 "Sub device id buffer size was not big enough for USB "
@@ -428,7 +430,7 @@ find_win32_usb_device(
             goto fail;
         }
 
-        if (cret != CR_SUCCESS) {
+        if (cret) {
             msg(context,
                 ll_error,
                 "CM_Get_Device_ID_ListA (disk drive) returned error "
@@ -439,18 +441,18 @@ find_win32_usb_device(
 
         for (disk_drive_id = disk_drive_id_buf; *disk_drive_id;
              disk_drive_id += strlen(disk_drive_id) + 1) {
-            DEVINST disk_drive_device_instance;
+            DWORD disk_drive_device_instance;
 
             /* Get the device behind the interface. */
-            cret = CM_Locate_DevNodeA(
+            cret = (*cfgmgr32->locate_devnode)(
                 &disk_drive_device_instance,
                 disk_drive_id,
-                CM_LOCATE_DEVNODE_NORMAL
+                0
             );
-            if (cret == CR_NO_SUCH_DEVINST)
+            if (cret == 0x0D /* CR_NO_SUCH_DEVINST */)
                 continue;
 
-            if (cret != CR_SUCCESS) {
+            if (cret) {
                 msg(context,
                     ll_error,
                     "CM_Locate_DevNodeA (disk drive) returned error 0x%08lX.",
@@ -460,18 +462,18 @@ find_win32_usb_device(
 
             /* Check that the class of the device is a disk drive. */
             property_size = sizeof(property);
-            cret = CM_Get_DevNode_Registry_PropertyA(
+            cret = (*cfgmgr32->get_devnode_registry_property)(
                 disk_drive_device_instance,
-                CM_DRP_CLASSGUID,
+                0x09 /* CM_DRP_CLASSGUID */,
                 &property_type,
                 (PBYTE)property,
                 &property_size,
                 0
             );
-            if (cret == CR_NO_SUCH_VALUE)
+            if (cret == 0x25 /* CR_NO_SUCH_VALUE */)
                 continue;
 
-            if (cret != CR_SUCCESS) {
+            if (cret) {
                 msg(context,
                     ll_error,
                     "CM_Get_DevNode_Registry_PropertyA (disk drive) with "
@@ -509,14 +511,14 @@ find_win32_usb_device(
              *         device through Bus Relations.
              * --- */
 
-            cret = CM_Get_Device_ID_ListA(
+            cret = (*cfgmgr32->get_device_id_list)(
                 disk_drive_id,
                 volume_id_buf,
                 sizeof(volume_id_buf),
-                CM_GETIDLIST_FILTER_REMOVALRELATIONS
+                0x08 /* CM_GETIDLIST_FILTER_REMOVALRELATIONS */
             );
 
-            if (cret == CR_BUFFER_SMALL) {
+            if (cret == 0x1A /* CR_BUFFER_SMALL */) {
                 msg(context,
                     ll_error,
                     "Sub device id buffer size was not big enough for disk "
@@ -525,7 +527,7 @@ find_win32_usb_device(
                 goto fail;
             }
 
-            if (cret != CR_SUCCESS) {
+            if (cret) {
                 msg(context,
                     ll_error,
                     "CM_Get_Device_ID_ListA (volume) returned error 0x%08lX.",
@@ -535,18 +537,18 @@ find_win32_usb_device(
 
             for (volume_id = volume_id_buf; *volume_id;
                  volume_id += strlen(volume_id) + 1) {
-                DEVINST volume_device_instance;
+                DWORD volume_device_instance;
 
                 /* Get the device behind the interface. */
-                cret = CM_Locate_DevNodeA(
+                cret = (*cfgmgr32->locate_devnode)(
                     &volume_device_instance,
                     volume_id,
-                    CM_LOCATE_DEVNODE_NORMAL
+                    0
                 );
-                if (cret == CR_NO_SUCH_DEVINST)
+                if (cret == 0x0D /* CR_NO_SUCH_DEVINST */)
                     continue;
 
-                if (cret != CR_SUCCESS) {
+                if (cret) {
                     msg(context,
                         ll_error,
                         "CM_Locate_DevNodeA (volume) returned error 0x%08lX.",
@@ -556,18 +558,18 @@ find_win32_usb_device(
 
                 /* Check that the class of the device is a volume. */
                 property_size = sizeof(property);
-                cret = CM_Get_DevNode_Registry_PropertyA(
+                cret = (*cfgmgr32->get_devnode_registry_property)(
                     volume_device_instance,
-                    CM_DRP_CLASSGUID,
+                    0x09 /* CM_DRP_CLASSGUID */,
                     &property_type,
                     (PBYTE)property,
                     &property_size,
                     0
                 );
-                if (cret == CR_NO_SUCH_VALUE)
+                if (cret == 0x25 /* CR_NO_SUCH_VALUE */)
                     continue;
 
-                if (cret != CR_SUCCESS) {
+                if (cret) {
                     msg(context,
                         ll_error,
                         "CM_Get_DevNode_Registry_PropertyA (volume) with "
@@ -648,7 +650,7 @@ cahute_open_win32_usb_device_from_address(
     int address
 ) {
     char device_interface[300];
-    int type, err;
+    int type = 0, err;
 
     err = find_win32_usb_device(
         context,

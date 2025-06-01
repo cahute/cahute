@@ -222,8 +222,8 @@ if(WIN32 OR MINGW)
         AND "${CMAKE_GENERATOR_TOOLSET}" MATCHES ".*_xp"
     )
         # In case of VS toolset v141_xp for Visual Studio, an incorrect
-        # Windows SDK is loaded that may not include <wdmguid.h> or
-        # cfgmgr32.lib, so we add them manually.
+        # Windows SDK is loaded that may not include <wdmguid.h>,
+        # so we add them manually.
         string(REGEX REPLACE "-.*" "" WIN_SDK_ARCH "${VCPKG_TARGET_TRIPLET}")
 
         # Start by trying to match the Windows 8.1 SDK.
@@ -236,8 +236,6 @@ if(WIN32 OR MINGW)
 
         if(NOT WIN_SDK_PATH STREQUAL "" AND EXISTS "${WIN_SDK_PATH}/Include/shared/wdmguid.h")
             set(WIN_SDK_INCLUDE_DIR "${WIN_SDK_PATH}/Include/shared")
-            set(WIN_SDK_LIBRARY_DIR "${WIN_SDK_PATH}/Lib/winv6.3/um/${WIN_SDK_ARCH}")
-            set(WIN_SDK_CFGMGR32_LIB "cfgmgr32")
         endif()
 
         # Otherwise, try to match the Windows 7 SDK.
@@ -252,12 +250,6 @@ if(WIN32 OR MINGW)
 
                 if(NOT WIN_SDK_PATH STREQUAL "" AND EXISTS "${WIN_SDK_PATH}/Include/wdmguid.h")
                     set(WIN_SDK_INCLUDE_DIR "${WIN_SDK_PATH}/Include")
-                    if("${WIN_SDK_ARCH}" EQUALS "x64")
-                        set(WIN_SDK_LIBRARY_DIR "${WIN_SDK_PATH}/Lib/x64")
-                    else()
-                        set(WIN_SDK_LIBRARY_DIR "${WIN_SDK_PATH}/Lib")
-                    endif()
-                    set(WIN_SDK_CFGMGR32_LIB "setupapi")
                 endif()
             endforeach()
         endif()
@@ -277,31 +269,22 @@ if(WIN32 OR MINGW)
             foreach(WIN_SDK_VERSION IN LISTS WIN_SDK_VERSIONS)
                 if(
                     EXISTS "${WIN_SDK_PATH}/Include/${WIN_SDK_VERSION}/shared/wdmguid.h"
-                    AND EXISTS "${WIN_SDK_PATH}/Lib/${WIN_SDK_VERSION}/um/${WIN_SDK_ARCH}/cfgmgr32.lib"
                 )
                     set(WIN_SDK_INCLUDE_DIR "${WIN_SDK_PATH}/Include/${WIN_SDK_VERSION}/shared")
-                    set(WIN_SDK_LIBRARY_DIR "${WIN_SDK_PATH}/Lib/${WIN_SDK_VERSION}/um/${WIN_SDK_ARCH}")
                     break()
                 endif()
             endforeach()
-
-            set(WIN_SDK_CFGMGR32_LIB "cfgmgr32")
         endif()
 
         if(NOT DEFINED WIN_SDK_INCLUDE_DIR)
             message(FATAL_ERROR "Windows SDK could not be found.")
         endif()
 
-        set(WIN_SDK_CFGMGR32_LIB "${WIN_SDK_LIBRARY_DIR}/${WIN_SDK_CFGMGR32_LIB}.lib")
 
         message("Using the following overrides for Windows SDK:")
-        message("* cfgmgr32 library: ${WIN_SDK_CFGMGR32_LIB}")
         message("* include directory: ${WIN_SDK_INCLUDE_DIR}")
 
-        list(APPEND CLI_LIBRARIES "${WIN_SDK_CFGMGR32_LIB}")
         list(APPEND LIB_INCLUDE_DIRS "${WIN_SDK_INCLUDE_DIR}")
-    else()
-        list(APPEND CLI_LIBRARIES cfgmgr32)
     endif()
 
     list(APPEND CLI_LIBRARIES uuid)
@@ -476,6 +459,8 @@ if(CAHUTE_FEATURE_LIB_STATIC)
             lib/platform/win32/file/read.c
             lib/platform/win32/file/stdout.c
             lib/platform/win32/file/write.c
+            lib/platform/win32/misc/cfgmgr32.c
+            lib/platform/win32/misc/dll.c
             lib/platform/win32/misc/logging.c
             lib/platform/win32/misc/monotonic.c
             lib/platform/win32/misc/sleep.c

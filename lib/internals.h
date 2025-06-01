@@ -140,8 +140,9 @@ CAHUTE_EXTERN(cahute_u32) cahute_htole32(cahute_u32 cahute__x);
 
 #define CAHUTE_CONTEXT_POINTER_LIBUSB_CONTEXT 0
 #define CAHUTE_CONTEXT_POINTER_AMIGAOS_TIMER  1
+#define CAHUTE_CONTEXT_POINTER_WIN32_CFGMGR32 2
 
-#define CAHUTE_CONTEXT_POINTER_COUNT 2 /* Update with the maximum value. */
+#define CAHUTE_CONTEXT_POINTER_COUNT 3 /* Update with the maximum value. */
 
 typedef void(cahute_context_destroy_func)(cahute_context *, void *);
 typedef int(cahute_context_init_func)(cahute_context *, void **, cahute_context_destroy_func **);

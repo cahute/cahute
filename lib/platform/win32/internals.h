@@ -39,6 +39,8 @@
 #include "../../internals.h"
 #include <windows.h>
 
+CAHUTE_DECLARE_TYPE(cahute_win32_cfgmgr32)
+
 CAHUTE_EXTERN(void)
 cahute_win32_log_error(
     cahute_context *context,
@@ -49,5 +51,83 @@ cahute_win32_log_error(
 
 #define log_windows_error(CTX, FUNC, CODE) \
     cahute_win32_log_error(CTX, CAHUTE_LOGFUNC, FUNC, CODE)
+
+CAHUTE_EXTERN(int)
+cahute_load_win32_system_library(
+    cahute_context *context,
+    HMODULE *dllp,
+    char const *name
+);
+CAHUTE_EXTERN(int)
+cahute_get_win32_library_function(
+    cahute_context *context,
+    FARPROC *funcp,
+    HMODULE dll,
+    char const *name
+);
+
+/* ---
+ * Cfgmgr32 management.
+ * --- */
+
+/* CM_Get_Device_Interface_List_SizeA() function type. */
+typedef DWORD(WINAPI cahute_cfgmgr32_get_device_interface_list_size_func)(
+    PULONG,
+    LPGUID,
+    CHAR *,
+    ULONG
+);
+/* CM_Get_Device_Interface_ListA() function type. */
+typedef DWORD(WINAPI cahute_cfgmgr32_get_device_interface_list_func)(
+    LPGUID,
+    CHAR *,
+    PCHAR,
+    ULONG,
+    ULONG
+);
+/* CM_Get_Device_ID_List_SizeA() function type. */
+typedef DWORD(WINAPI cahute_cfgmgr32_get_device_id_list_size_func)(
+    PULONG,
+    PCSTR,
+    ULONG
+);
+/* CM_Get_Device_ID_ListA() function type. */
+typedef DWORD(WINAPI cahute_cfgmgr32_get_device_id_list_func)(
+    PCSTR,
+    PCHAR,
+    ULONG,
+    ULONG
+);
+/* CM_Locate_DevNodeA() function type. */
+typedef DWORD(WINAPI
+                  cahute_cfgmgr32_locate_devnode_func)(DWORD *, CHAR *, ULONG);
+/* CM_Get_DevNode_Registry_PropertyA() function type. */
+typedef DWORD(WINAPI cahute_cfgmgr32_get_devnode_registry_property_func)(
+    DWORD,
+    ULONG,
+    PULONG,
+    PVOID,
+    PULONG,
+    ULONG
+);
+
+struct cahute_win32_cfgmgr32 {
+    HMODULE dll;
+
+    cahute_cfgmgr32_get_device_interface_list_size_func
+        *get_device_interface_list_size;
+    cahute_cfgmgr32_get_device_interface_list_func *get_device_interface_list;
+    cahute_cfgmgr32_get_device_id_list_size_func *get_device_id_list_size;
+    cahute_cfgmgr32_get_device_id_list_func *get_device_id_list;
+    cahute_cfgmgr32_locate_devnode_func *locate_devnode;
+    cahute_cfgmgr32_get_devnode_registry_property_func
+        *get_devnode_registry_property;
+};
+
+CAHUTE_EXTERN(int)
+cahute_get_win32_cfgmgr32(
+    cahute_context *context,
+    cahute_win32_cfgmgr32 **libp
+);
 
 #endif /* PLATFORM_WIN32_INTERNALS_H */
