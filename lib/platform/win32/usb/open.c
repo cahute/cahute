@@ -28,18 +28,51 @@
 
 #include "internals.h"
 #include <initguid.h>
-#if defined(__MINGW32__) || defined(__MINGW64__)
-# include <ddk/wdmguid.h>
-#else
-# include <wdmguid.h>
-#endif
-#include <usbiodef.h>
 #include <devguid.h>
 #define HEXDIGIT(C) \
     ((C) >= 'a' ? (C) - 'a' + 10 : (C) >= 'A' ? (C) - 'A' + 10 : (C) - '0')
 
 #define TYPE_CESG 1
 #define TYPE_UMS  2
+
+/* Normally defined in <wdmguid.h>, but sometimes not present in the SDK,
+ * so it's easier to define it ourselves.
+ *
+ * This defines the GUID "9d7debbc-c85d-11d1-9eb4-006008c3a19a". */
+DEFINE_GUID(
+    GUID_BUS_TYPE_USB,
+    0x9d7debbc,
+    0xc85d,
+    0x11d1,
+    0x9e,
+    0xb4,
+    0x00,
+    0x60,
+    0x08,
+    0xc3,
+    0xa1,
+    0x9a
+);
+
+/* Normally defined in <usbiodef.h>, but sometimes not present in the SDK,
+ * so it's easier to define it ourselves.
+ *
+ * This defines the GUID "a5dcbf10-6530-11d2-901f-00c04fb951ed". */
+DEFINE_GUID(
+    GUID_DEVINTERFACE_USB_DEVICE,
+    0xa5dcbf10,
+    0x6530,
+    0x11d2,
+    0x90,
+    0x1f,
+    0x00,
+    0xc0,
+    0x4f,
+    0xb9,
+    0x51,
+    0xed
+);
+
 
 /**
  * Decode a GUID from a string.
