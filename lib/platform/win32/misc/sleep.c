@@ -26,28 +26,9 @@
  * knowledge of the CeCILL 2.1 license and that you accept its terms.
  * ************************************************************************* */
 
-#ifndef PLATFORM_WIN32_INTERNALS_H
-#define PLATFORM_WIN32_INTERNALS_H 1
+#include "../internals.h"
 
-/* For Microsoft Windows, we want to explicitely select the target system to
- * avoid breaking compatibility if possible.
- * See the following for more information:
- *
- * https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt */
-#define WINVER 0x0501 /* Windows XP */
-
-#include "../../internals.h"
-#include <windows.h>
-
-CAHUTE_EXTERN(void)
-cahute_win32_log_error(
-    cahute_context *context,
-    char const *func_name,
-    char const *win_func,
-    DWORD code
-);
-
-#define log_windows_error(CTX, FUNC, CODE) \
-    cahute_win32_log_error(CTX, CAHUTE_LOGFUNC, FUNC, CODE)
-
-#endif /* PLATFORM_WIN32_INTERNALS_H */
+CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms) {
+    Sleep(ms);
+    return CAHUTE_OK;
+}

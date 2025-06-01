@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -28,53 +28,52 @@
 
 #include "internals.h"
 
-CAHUTE_LOCAL_DATA(cahute_file_create_interface)
-win32_create_file_interface = {
+CAHUTE_LOCAL_DATA(cahute_file_open_interface)
+win32_open_file_interface = {
     (cahute_file_close_func *)&cahute_close_win32_file,
-    (cahute_file_write_func *)&cahute_write_to_win32_file,
+    (cahute_file_read_func *)&cahute_read_from_win32_file,
     (cahute_file_seek_func *)&cahute_move_in_win32_file
 };
 
 /**
- * Create a file.
+ * Open a file.
  *
- * @param context Context in which to create the file.
- * @param create_params File creation parameters.
- * @param file_size
+ * @param context
+ * @param open_params
  * @param path
  * @param path_type
  * @return
  */
 CAHUTE_EXTERN(int)
-cahute_create_win32_file(
+cahute_open_win32_file(
     cahute_context *context,
-    cahute_file_create_params *create_params,
-    unsigned long file_size,
+    cahute_file_open_params *open_params,
     void const *path,
     int path_type
 ) {
     cahute_win32_file_cookie cookie;
     HANDLE handle = INVALID_HANDLE_VALUE;
+    unsigned long file_size;
     DWORD dwoff, werr;
 
     if (path_type == CAHUTE_PATH_TYPE_DOS
         || path_type == CAHUTE_PATH_TYPE_WIN32_ANSI)
         handle = CreateFileA(
             path,
-            GENERIC_READ | GENERIC_WRITE,
+            GENERIC_READ,
             0,
             NULL,
-            OPEN_ALWAYS,
+            OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL,
             NULL
         );
     else if (path_type == CAHUTE_PATH_TYPE_WIN32_UNICODE)
         handle = CreateFileW(
             path,
-            GENERIC_READ | GENERIC_WRITE,
+            GENERIC_READ,
             0,
             NULL,
-            OPEN_ALWAYS,
+            OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL,
             NULL
         );
@@ -84,7 +83,7 @@ cahute_create_win32_file(
             "Path type must be Win32 or DOS compatible."
         );
 
-    if (handle == INVALID_HANDLE_VALUE)
+    if (handle == INVALID_HANDLE_VALUE) {
         switch (werr = GetLastError()) {
         case ERROR_FILE_NOT_FOUND:
             return CAHUTE_ERROR_NOT_FOUND;
@@ -96,19 +95,26 @@ cahute_create_win32_file(
             log_windows_error(context, "CreateFile", werr);
             return CAHUTE_ERROR_UNKNOWN;
         }
+    }
 
-    dwoff = SetFilePointer(handle, file_size, NULL, FILE_BEGIN);
+    dwoff = SetFilePointer(handle, 0, NULL, FILE_END);
     if (dwoff == INVALID_SET_FILE_POINTER) {
         log_windows_error(context, "SetFilePointer", GetLastError());
         CloseHandle(handle);
         return CAHUTE_ERROR_UNKNOWN;
     }
 
-    if (!SetEndOfFile(handle)) {
-        log_windows_error(context, "SetEndOfFile", GetLastError());
+    if (dwoff > CAHUTE_MAX_FILE_OFFSET) {
+        msg(context,
+            ll_warn,
+            "File size %lu is longer than maximum offset %lu",
+            (unsigned long)dwoff,
+            CAHUTE_MAX_FILE_OFFSET);
         CloseHandle(handle);
-        return CAHUTE_ERROR_UNKNOWN;
+        return CAHUTE_ERROR_SIZE;
     }
+
+    file_size = (unsigned long)dwoff;
 
     dwoff = SetFilePointer(handle, 0, NULL, FILE_BEGIN);
     if (dwoff == INVALID_SET_FILE_POINTER) {
@@ -120,10 +126,11 @@ cahute_create_win32_file(
     cookie.handle = handle;
     cookie.close = 1;
 
-    return cahute_create_file_from_interface(
-        create_params,
-        &win32_create_file_interface,
+    return cahute_open_file_from_interface(
+        open_params,
+        &win32_open_file_interface,
         &cookie,
-        sizeof(cookie)
+        sizeof(cookie),
+        file_size
     );
 }

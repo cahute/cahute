@@ -26,28 +26,31 @@
  * knowledge of the CeCILL 2.1 license and that you accept its terms.
  * ************************************************************************* */
 
-#ifndef PLATFORM_WIN32_INTERNALS_H
-#define PLATFORM_WIN32_INTERNALS_H 1
+#include "internals.h"
 
-/* For Microsoft Windows, we want to explicitely select the target system to
- * avoid breaking compatibility if possible.
- * See the following for more information:
+/**
+ * Move to the provided offset on a Win32 file.
  *
- * https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt */
-#define WINVER 0x0501 /* Windows XP */
-
-#include "../../internals.h"
-#include <windows.h>
-
-CAHUTE_EXTERN(void)
-cahute_win32_log_error(
+ * @param context
+ * @param cookie
+ * @param offset
+ * @return
+ */
+CAHUTE_EXTERN(int)
+cahute_move_in_win32_file(
     cahute_context *context,
-    char const *func_name,
-    char const *win_func,
-    DWORD code
-);
+    cahute_win32_file_cookie *cookie,
+    unsigned long offset,
+    unsigned long *offsetp
+) {
+    DWORD dwoff;
 
-#define log_windows_error(CTX, FUNC, CODE) \
-    cahute_win32_log_error(CTX, CAHUTE_LOGFUNC, FUNC, CODE)
+    dwoff = SetFilePointer(cookie->handle, (DWORD)offset, NULL, FILE_BEGIN);
+    if (dwoff == INVALID_SET_FILE_POINTER) {
+        log_windows_error(context, "SetFilePointer", GetLastError());
+        return CAHUTE_ERROR_UNKNOWN;
+    } else
+        *offsetp = (unsigned long)dwoff;
 
-#endif /* PLATFORM_WIN32_INTERNALS_H */
+    return CAHUTE_OK;
+}

@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -41,24 +41,6 @@
 
 #define TYPE_CESG 1
 #define TYPE_UMS  2
-
-/* Win32 CESG link callbacks. */
-CAHUTE_LOCAL_DATA(cahute_serial_over_usb_bulk_link_interface)
-cahute_cesg_link_interface = {
-    "Serial over USB bulk (Win32 CESG)",
-    (cahute_link_close_func *)cahute_close_win32_serial_link,
-    (cahute_link_receive_func *)cahute_receive_on_win32_serial_link,
-    (cahute_link_send_func *)cahute_send_on_win32_serial_link
-};
-
-CAHUTE_LOCAL_DATA(cahute_ums_link_interface)
-cahute_win32_ums_link_interface = {
-    "UMS (Win32)",
-    (cahute_link_close_func *)&cahute_close_win32_ums_link,
-    (cahute_link_scsi_request_to_func *)&cahute_scsi_request_to_win32_device,
-    (cahute_link_scsi_request_from_func
-         *)&cahute_scsi_request_from_win32_device
-};
 
 /**
  * Decode a GUID from a string.
@@ -665,9 +647,6 @@ cahute_open_win32_usb_device_from_address(
     cahute_usb_link_open_params *open_params,
     int address
 ) {
-    HANDLE win_handle = INVALID_HANDLE_VALUE;
-    HANDLE read_overlapped_event_handle = INVALID_HANDLE_VALUE;
-    HANDLE write_overlapped_event_handle = INVALID_HANDLE_VALUE;
     char device_interface[300];
     int type, err;
 
@@ -683,102 +662,19 @@ cahute_open_win32_usb_device_from_address(
 
     switch (type) {
     case TYPE_UMS:
-        /* The device is a volume on which we should make synchronous
-         * SCSI requests using DeviceIoControl(). */
-        win_handle = CreateFileA(
-            device_interface,
-            GENERIC_READ | GENERIC_WRITE,
-            FILE_SHARE_READ | FILE_SHARE_WRITE,
-            NULL,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL,
-            NULL
+        return cahute_open_win32_ums_link(
+            context,
+            open_params,
+            device_interface
         );
-
-        if (win_handle == INVALID_HANDLE_VALUE) {
-            DWORD werr = GetLastError();
-
-            if (werr == ERROR_ACCESS_DENIED)
-                err = CAHUTE_ERROR_PRIV;
-            else
-                log_windows_error(context, "CreateFileA", werr);
-
-            goto fail;
-        }
-
-        {
-            struct cahute_win32_ums_link_cookie cookie;
-
-            cookie.handle = win_handle;
-            return cahute_open_ums_link_from_interface(
-                open_params,
-                &cahute_win32_ums_link_interface,
-                &cookie,
-                sizeof(cookie)
-            );
-        }
 
     case TYPE_CESG:
-        /* The device is a USB device opened using CESG502. */
-        win_handle = CreateFileA(
-            device_interface,
-            GENERIC_READ | GENERIC_WRITE,
-            0,
-            NULL,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-            NULL
+        return cahute_open_win32_cesg_link(
+            context,
+            open_params,
+            device_interface
         );
-        if (win_handle == INVALID_HANDLE_VALUE) {
-            DWORD werr = GetLastError();
-
-            if (werr == ERROR_ACCESS_DENIED)
-                err = CAHUTE_ERROR_PRIV;
-            else
-                log_windows_error(context, "CreateFileA", werr);
-
-            goto fail;
-        }
-
-        /* Create the overlapped events. */
-        read_overlapped_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL);
-        if (read_overlapped_event_handle == INVALID_HANDLE_VALUE) {
-            log_windows_error(context, "CreateEvent", GetLastError());
-            goto fail;
-        }
-
-        write_overlapped_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL);
-        if (write_overlapped_event_handle == INVALID_HANDLE_VALUE) {
-            log_windows_error(context, "CreateEvent", GetLastError());
-            goto fail;
-        }
-
-        {
-            struct cahute_win32_serial_link_cookie cookie;
-
-            cookie.handle = win_handle;
-            cookie.read_in_progress = 0;
-            cookie.received = 0;
-            SecureZeroMemory(&cookie.read_overlapped, sizeof(OVERLAPPED));
-            SecureZeroMemory(&cookie.write_overlapped, sizeof(OVERLAPPED));
-            cookie.read_overlapped.hEvent = read_overlapped_event_handle;
-            cookie.write_overlapped.hEvent = write_overlapped_event_handle;
-
-            return cahute_open_serial_over_usb_bulk_link_from_interface(
-                open_params,
-                &cahute_cesg_link_interface,
-                &cookie,
-                sizeof(cookie)
-            );
-        }
     }
 
-    err = CAHUTE_ERROR_IMPL;
-fail:
-    if (read_overlapped_event_handle != INVALID_HANDLE_VALUE)
-        CloseHandle(read_overlapped_event_handle);
-    if (win_handle != INVALID_HANDLE_VALUE)
-        CloseHandle(win_handle);
-
-    return err;
+    CAHUTE_RETURN_IMPL(context, "Unsupported USB device type.");
 }

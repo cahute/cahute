@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -28,69 +28,38 @@
 
 #include "internals.h"
 
-CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms) {
-    Sleep(ms);
-    return CAHUTE_OK;
-}
-
-CAHUTE_EXTERN(int)
-cahute_monotonic(cahute_context *context, unsigned long *msp) {
-    *msp = GetTickCount();
-    return CAHUTE_OK;
-}
+CAHUTE_LOCAL_DATA(cahute_stdout_open_interface)
+win32_stdout_interface = {
+    (cahute_file_close_func *)&cahute_close_win32_file,
+    (cahute_file_write_func *)&cahute_write_to_win32_file
+};
 
 /**
- * Log a Windows API error.
+ * Open standard output.
  *
- * This is implemented as a separate function to the rest, because gathering
- * an error message for a given error code is quite lengthy.
- *
- * @param context Context to use for logging.
- * @param func_name Name of the function from which the log is emitted.
- * @param win_func Name of the Windows API function that returned the
- *        error.
- * @param code Windows API error code that was actually returned.
+ * @param context
+ * @param open_params
+ * @return
  */
-CAHUTE_EXTERN(void)
-cahute_win32_log_error(
+CAHUTE_EXTERN(int)
+cahute_open_win32_stdout(
     cahute_context *context,
-    char const *func_name,
-    char const *win_func,
-    DWORD code
+    cahute_stdout_open_params *open_params
 ) {
-    char buf[1024];
-    DWORD buf_size;
+    cahute_win32_file_cookie cookie;
+    HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    buf_size = FormatMessage(
-        FORMAT_MESSAGE_FROM_SYSTEM,
-        NULL,
-        code,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        buf,
-        1023,
-        NULL
-    );
-
-    if (!buf_size) {
-        cahute_log_message(
-            context,
-            30,
-            func_name,
-            "Error 0x%08lX occurred in %s.",
-            code,
-            win_func
-        );
-        return;
+    if (handle == INVALID_HANDLE_VALUE) {
+        log_windows_error(context, "GetStdHandle", GetLastError());
+        return CAHUTE_ERROR_UNKNOWN;
     }
 
-    buf[buf_size] = '\0';
-    cahute_log_message(
-        context,
-        30,
-        func_name,
-        "Error 0x%08lX occurred in %s: %s",
-        code,
-        win_func,
-        buf
+    cookie.handle = handle;
+    cookie.close = 0;
+    return cahute_open_stdout_from_interface(
+        open_params,
+        &win32_stdout_interface,
+        &cookie,
+        sizeof(cookie)
     );
 }

@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -28,17 +28,35 @@
 
 #include "internals.h"
 
+CAHUTE_DECLARE_TYPE(cahute_win32_cesg_link_cookie)
+
 /**
- * Close a Win32 serial or CESG link.
+ * Win32 CESG link cookie.
+ *
+ * @property handle Handle to use for receiving and sending.
+ * @property read_overlapped Overlapped object for receiving.
+ * @property write_overlapped Overlapped object for sending.
+ * @property received Number of received bytes in an asynchronous read
+ *           or write.
+ * @property read_in_progress Whether a read operation is currently in
+ *           progress.
+ */
+struct cahute_win32_cesg_link_cookie {
+    HANDLE handle;
+    OVERLAPPED read_overlapped;
+    OVERLAPPED write_overlapped;
+    DWORD received;
+    DWORD read_in_progress;
+};
+
+/**
+ * Close a Win32 CESG link.
  *
  * @param context
  * @param cookie
  */
-CAHUTE_EXTERN(void)
-cahute_close_win32_serial_link(
-    cahute_context *context,
-    cahute_win32_serial_link_cookie *cookie
-) {
+CAHUTE_LOCAL(void)
+close_link(cahute_context *context, cahute_win32_cesg_link_cookie *cookie) {
     if (!CancelIo(cookie->handle)) {
         DWORD werr = GetLastError();
         log_windows_error(context, "CancelIo", werr);
@@ -50,7 +68,7 @@ cahute_close_win32_serial_link(
 }
 
 /**
- * Receive from a Win32 serial link.
+ * Receive from a Win32 CESG link.
  *
  * @param context
  * @param cookie
@@ -60,10 +78,10 @@ cahute_close_win32_serial_link(
  * @param timeout Timeout; 0 for infinite.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
-cahute_receive_on_win32_serial_link(
+CAHUTE_LOCAL(int)
+receive_on_link(
     cahute_context *context,
-    cahute_win32_serial_link_cookie *cookie,
+    cahute_win32_cesg_link_cookie *cookie,
     cahute_u8 *buf,
     size_t capacity,
     size_t *receivedp,
@@ -140,7 +158,7 @@ cahute_receive_on_win32_serial_link(
 }
 
 /**
- * Send on a Win32 serial link.
+ * Send on a Win32 CESG link.
  *
  * @param context
  * @param cookie
@@ -149,10 +167,10 @@ cahute_receive_on_win32_serial_link(
  * @param sentp Pointer to the written bytes count to set.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
-cahute_send_on_win32_serial_link(
+CAHUTE_LOCAL(int)
+send_on_link(
     cahute_context *context,
-    cahute_win32_serial_link_cookie *cookie,
+    cahute_win32_cesg_link_cookie *cookie,
     cahute_u8 const *buf,
     size_t size,
     size_t *sentp
@@ -202,4 +220,91 @@ cahute_send_on_win32_serial_link(
 
     *sentp = (size_t)sent;
     return CAHUTE_OK;
+}
+
+CAHUTE_LOCAL_DATA(cahute_serial_over_usb_bulk_link_interface)
+cesg_link_interface = {
+    "Serial over USB bulk (Win32 CESG)",
+    (cahute_link_close_func *)close_link,
+    (cahute_link_receive_func *)receive_on_link,
+    (cahute_link_send_func *)send_on_link
+};
+
+
+/**
+ * Open a Win32 CESG link.
+ *
+ * @param context
+ * @param open_params
+ * @param path Path to the device interface.
+ * @return Error, or 0 if successful.
+ */
+CAHUTE_EXTERN(int)
+cahute_open_win32_cesg_link(
+    cahute_context *context,
+    cahute_usb_link_open_params *open_params,
+    char const *path
+) {
+    HANDLE handle = INVALID_HANDLE_VALUE;
+    HANDLE read_overlapped_event_handle = INVALID_HANDLE_VALUE;
+    HANDLE write_overlapped_event_handle = INVALID_HANDLE_VALUE;
+    cahute_win32_cesg_link_cookie cookie;
+    int err = CAHUTE_ERROR_UNKNOWN;
+
+    /* The device is a USB device opened using CESG502. */
+    handle = CreateFileA(
+        path,
+        GENERIC_READ | GENERIC_WRITE,
+        0,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+        NULL
+    );
+    if (handle == INVALID_HANDLE_VALUE) {
+        DWORD werr = GetLastError();
+
+        if (werr == ERROR_ACCESS_DENIED)
+            err = CAHUTE_ERROR_PRIV;
+        else
+            log_windows_error(context, "CreateFileA", werr);
+
+        goto fail;
+    }
+
+    /* Create the overlapped events. */
+    read_overlapped_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (read_overlapped_event_handle == INVALID_HANDLE_VALUE) {
+        log_windows_error(context, "CreateEvent", GetLastError());
+        goto fail;
+    }
+
+    write_overlapped_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (write_overlapped_event_handle == INVALID_HANDLE_VALUE) {
+        log_windows_error(context, "CreateEvent", GetLastError());
+        goto fail;
+    }
+
+    cookie.handle = handle;
+    cookie.read_in_progress = 0;
+    cookie.received = 0;
+    SecureZeroMemory(&cookie.read_overlapped, sizeof(OVERLAPPED));
+    SecureZeroMemory(&cookie.write_overlapped, sizeof(OVERLAPPED));
+    cookie.read_overlapped.hEvent = read_overlapped_event_handle;
+    cookie.write_overlapped.hEvent = write_overlapped_event_handle;
+
+    return cahute_open_serial_over_usb_bulk_link_from_interface(
+        open_params,
+        &cesg_link_interface,
+        &cookie,
+        sizeof(cookie)
+    );
+
+fail:
+    if (read_overlapped_event_handle != INVALID_HANDLE_VALUE)
+        CloseHandle(read_overlapped_event_handle);
+    if (handle != INVALID_HANDLE_VALUE)
+        CloseHandle(handle);
+
+    return err;
 }

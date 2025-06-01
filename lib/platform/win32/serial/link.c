@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -26,7 +26,201 @@
  * knowledge of the CeCILL 2.1 license and that you accept its terms.
  * ************************************************************************* */
 
-#include "internals.h"
+#include "../internals.h"
+
+CAHUTE_DECLARE_TYPE(cahute_win32_serial_link_cookie)
+
+/**
+ * Win32 serial cookie.
+ *
+ * @property handle Handle to use for receiving and sending.
+ * @property read_overlapped Overlapped object for receiving.
+ * @property write_overlapped Overlapped object for sending.
+ * @property received Number of received bytes in an asynchronous read
+ *           or write.
+ * @property read_in_progress Whether a read operation is currently in
+ *           progress.
+ */
+struct cahute_win32_serial_link_cookie {
+    HANDLE handle;
+    OVERLAPPED read_overlapped;
+    OVERLAPPED write_overlapped;
+    DWORD received;
+    DWORD read_in_progress;
+};
+
+/**
+ * Close a Win32 serial or CESG link.
+ *
+ * @param context
+ * @param cookie
+ */
+CAHUTE_LOCAL(void)
+close_link(cahute_context *context, cahute_win32_serial_link_cookie *cookie) {
+    if (!CancelIo(cookie->handle)) {
+        DWORD werr = GetLastError();
+        log_windows_error(context, "CancelIo", werr);
+    }
+
+    CloseHandle(cookie->read_overlapped.hEvent);
+    CloseHandle(cookie->write_overlapped.hEvent);
+    CloseHandle(cookie->handle);
+}
+
+/**
+ * Receive from a Win32 serial link.
+ *
+ * @param context
+ * @param cookie
+ * @param buf Buffer in which to receive.
+ * @param capacity Capacity of the buffer.
+ * @param receivedp Pointer to the received bytes count to set.
+ * @param timeout Timeout; 0 for infinite.
+ * @return Cahute error, or 0 if successful.
+ */
+CAHUTE_LOCAL(int)
+receive_on_link(
+    cahute_context *context,
+    cahute_win32_serial_link_cookie *cookie,
+    cahute_u8 *buf,
+    size_t capacity,
+    size_t *receivedp,
+    unsigned long timeout
+) {
+    BOOL ret;
+
+    /* If a read operation is not already in progress, we want to
+     * initiate it now. */
+    if (!cookie->read_in_progress) {
+        cookie->received = 0;
+        ret = ReadFile(
+            cookie->handle,
+            buf,
+            capacity,
+            &cookie->received,
+            &cookie->read_overlapped
+        );
+
+        if (!ret) {
+            DWORD werr = GetLastError();
+
+            if (werr == ERROR_IO_PENDING)
+                cookie->read_in_progress = 1;
+            else {
+                log_windows_error(context, "ReadFile", werr);
+                return CAHUTE_ERROR_UNKNOWN;
+            }
+        }
+    }
+
+    /* If a read operation is in progress, i.e. either if it has been
+     * initiated in a previous read or if it has been initiated before
+     * and has not returned immediately, we want to check on it. */
+    if (cookie->read_in_progress) {
+        ret = WaitForSingleObject(
+            cookie->read_overlapped.hEvent,
+            timeout ? timeout : INFINITE
+        );
+        switch (ret) {
+        case WAIT_OBJECT_0:
+            cookie->read_in_progress = 0;
+            ret = GetOverlappedResult(
+                cookie->handle,
+                &cookie->read_overlapped,
+                &cookie->received,
+                FALSE
+            );
+
+            if (!ret) {
+                DWORD werr = GetLastError();
+                if (werr == ERROR_GEN_FAILURE)
+                    return CAHUTE_ERROR_GONE;
+
+                log_windows_error(context, "GetOverlappedResult", werr);
+                return CAHUTE_ERROR_UNKNOWN;
+            }
+            break;
+
+        case WAIT_TIMEOUT:
+            /* Read will still be in progress for next time we come
+             * back to this function. */
+            return CAHUTE_ERROR_TIMEOUT;
+
+        default:
+            log_windows_error(context, "WaitForSingleObject", GetLastError());
+
+            return CAHUTE_ERROR_UNKNOWN;
+        }
+    }
+
+    *receivedp = (size_t)cookie->received;
+    return CAHUTE_OK;
+}
+
+/**
+ * Send on a Win32 serial link.
+ *
+ * @param context
+ * @param cookie
+ * @param buf Buffer to send.
+ * @param size Size of the buffer to send.
+ * @param sentp Pointer to the written bytes count to set.
+ * @return Cahute error, or 0 if successful.
+ */
+CAHUTE_LOCAL(int)
+send_on_link(
+    cahute_context *context,
+    cahute_win32_serial_link_cookie *cookie,
+    cahute_u8 const *buf,
+    size_t size,
+    size_t *sentp
+) {
+    DWORD sent;
+    BOOL ret;
+
+    ret =
+        WriteFile(cookie->handle, buf, size, &sent, &cookie->write_overlapped);
+    if (!ret) {
+        DWORD werr = GetLastError();
+
+        if (werr == ERROR_IO_PENDING) {
+            ret =
+                WaitForSingleObject(cookie->write_overlapped.hEvent, INFINITE);
+            switch (ret) {
+            case WAIT_OBJECT_0:
+                ret = GetOverlappedResult(
+                    cookie->handle,
+                    &cookie->write_overlapped,
+                    &sent,
+                    FALSE
+                );
+                if (!ret) {
+                    werr = GetLastError();
+                    if (werr == ERROR_GEN_FAILURE)
+                        return CAHUTE_ERROR_GONE;
+
+                    log_windows_error(context, "GetOverlappedResult", werr);
+                    return CAHUTE_ERROR_UNKNOWN;
+                }
+                break;
+
+            default:
+                log_windows_error(
+                    context,
+                    "WaitForSingleObject",
+                    GetLastError()
+                );
+                return CAHUTE_ERROR_UNKNOWN;
+            }
+        } else {
+            log_windows_error(context, "WriteFile", werr);
+            return CAHUTE_ERROR_UNKNOWN;
+        }
+    }
+
+    *sentp = (size_t)sent;
+    return CAHUTE_OK;
+}
 
 /**
  * Set serial params on a Win32 serial link.
@@ -36,8 +230,8 @@
  * @param flags Flags on which to set
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
-cahute_set_win32_serial_link_params(
+CAHUTE_LOCAL(int)
+set_serial_params_on_link(
     cahute_context *context,
     cahute_win32_serial_link_cookie *cookie,
     unsigned long flags,
@@ -174,10 +368,10 @@ cahute_set_win32_serial_link_params(
 CAHUTE_LOCAL_DATA(cahute_serial_link_interface)
 win32_serial_link_interface = {
     "Serial (Win32)",
-    (cahute_link_close_func *)&cahute_close_win32_serial_link,
-    (cahute_link_receive_func *)&cahute_receive_on_win32_serial_link,
-    (cahute_link_send_func *)&cahute_send_on_win32_serial_link,
-    (cahute_link_set_serial_params_func *)&cahute_set_win32_serial_link_params
+    (cahute_link_close_func *)&close_link,
+    (cahute_link_receive_func *)&receive_on_link,
+    (cahute_link_send_func *)&send_on_link,
+    (cahute_link_set_serial_params_func *)&set_serial_params_on_link
 };
 
 /**

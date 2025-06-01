@@ -469,16 +469,21 @@ if(CAHUTE_FEATURE_LIB_STATIC)
         list(APPEND LIB_COMPILE_DEFS
             CAHUTE_PLATFORM_WIN32=1)
         list(APPEND LIB_SOURCES
-            lib/platform/win32/file.c
-            lib/platform/win32/file_create.c
-            lib/platform/win32/file_open.c
-            lib/platform/win32/misc.c
-            lib/platform/win32/serial.c
-            lib/platform/win32/serial_detection.c
-            lib/platform/win32/serial_generic.c
-            lib/platform/win32/stdout.c
-            lib/platform/win32/ums.c
-            lib/platform/win32/usb.c)
+            lib/platform/win32/file/close.c
+            lib/platform/win32/file/create.c
+            lib/platform/win32/file/move.c
+            lib/platform/win32/file/open.c
+            lib/platform/win32/file/read.c
+            lib/platform/win32/file/stdout.c
+            lib/platform/win32/file/write.c
+            lib/platform/win32/misc/logging.c
+            lib/platform/win32/misc/monotonic.c
+            lib/platform/win32/misc/sleep.c
+            lib/platform/win32/serial/detection.c
+            lib/platform/win32/serial/link.c
+            lib/platform/win32/usb/cesg.c
+            lib/platform/win32/usb/open.c
+            lib/platform/win32/usb/ums.c)
     elseif(AMIGA)
         list(APPEND LIB_COMPILE_DEFS
             CAHUTE_PLATFORM_AMIGAOS=1)

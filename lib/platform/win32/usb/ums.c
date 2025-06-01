@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -29,17 +29,25 @@
 #include "internals.h"
 #include <ntddscsi.h>
 
+CAHUTE_DECLARE_TYPE(cahute_win32_ums_link_cookie)
+
+/**
+ * Win32 UMS link cookie.
+ *
+ * @property handle
+ */
+struct cahute_win32_ums_link_cookie {
+    HANDLE handle;
+};
+
 /**
  * Close a Win32 UMS link.
  *
  * @param context
  * @param cookie
  */
-CAHUTE_EXTERN(void)
-cahute_close_win32_ums_link(
-    cahute_context *context,
-    cahute_win32_ums_link_cookie *cookie
-) {
+CAHUTE_LOCAL(void)
+close_link(cahute_context *context, cahute_win32_ums_link_cookie *cookie) {
     CloseHandle(cookie->handle);
 }
 
@@ -57,7 +65,7 @@ cahute_close_win32_ums_link(
  * @return Cahute error, or 0 if successful.
  */
 CAHUTE_LOCAL(int)
-win32_scsi_request(
+scsi_request(
     cahute_context *context,
     cahute_win32_ums_link_cookie *cookie,
     cahute_u8 const *command,
@@ -127,8 +135,8 @@ win32_scsi_request(
  * @param statusp Pointer to the SCSI status to set to the received one.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
-cahute_scsi_request_to_win32_device(
+CAHUTE_LOCAL(int)
+scsi_request_to(
     cahute_context *context,
     cahute_win32_ums_link_cookie *cookie,
     cahute_u8 const *command,
@@ -137,7 +145,7 @@ cahute_scsi_request_to_win32_device(
     size_t data_size,
     int *statusp
 ) {
-    return win32_scsi_request(
+    return scsi_request(
         context,
         cookie,
         command,
@@ -161,8 +169,8 @@ cahute_scsi_request_to_win32_device(
  * @param statusp
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
-cahute_scsi_request_from_win32_device(
+CAHUTE_LOCAL(int)
+scsi_request_from(
     cahute_context *context,
     cahute_win32_ums_link_cookie *cookie,
     cahute_u8 const *command,
@@ -171,7 +179,7 @@ cahute_scsi_request_from_win32_device(
     size_t buf_size,
     int *statusp
 ) {
-    return win32_scsi_request(
+    return scsi_request(
         context,
         cookie,
         command,
@@ -180,5 +188,65 @@ cahute_scsi_request_from_win32_device(
         buf_size,
         0,
         statusp
+    );
+}
+
+/* Win32 UMS link interface. */
+CAHUTE_LOCAL_DATA(cahute_ums_link_interface)
+ums_link_interface = {
+    "UMS (Win32)",
+    (cahute_link_close_func *)&close_link,
+    (cahute_link_scsi_request_to_func *)&scsi_request_to,
+    (cahute_link_scsi_request_from_func *)&scsi_request_from
+};
+
+
+/**
+ * Open a Win32 UMS link.
+ *
+ * @param context
+ * @param open_params
+ * @param path Path to the device interface.
+ * @return Error, or 0 if successful.
+ */
+CAHUTE_EXTERN(int)
+cahute_open_win32_ums_link(
+    cahute_context *context,
+    cahute_usb_link_open_params *open_params,
+    char const *path
+) {
+    HANDLE handle = INVALID_HANDLE_VALUE;
+    struct cahute_win32_ums_link_cookie cookie;
+    int err = CAHUTE_ERROR_UNKNOWN;
+
+    /* The device is a volume on which we should make synchronous
+     * SCSI requests using DeviceIoControl(). */
+    handle = CreateFileA(
+        path,
+        GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL
+    );
+
+    if (handle == INVALID_HANDLE_VALUE) {
+        DWORD werr = GetLastError();
+
+        if (werr == ERROR_ACCESS_DENIED)
+            err = CAHUTE_ERROR_PRIV;
+        else
+            log_windows_error(context, "CreateFileA", werr);
+
+        return err;
+    }
+
+    cookie.handle = handle;
+    return cahute_open_ums_link_from_interface(
+        open_params,
+        &ums_link_interface,
+        &cookie,
+        sizeof(cookie)
     );
 }

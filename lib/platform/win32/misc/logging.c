@@ -26,28 +26,60 @@
  * knowledge of the CeCILL 2.1 license and that you accept its terms.
  * ************************************************************************* */
 
-#ifndef PLATFORM_WIN32_INTERNALS_H
-#define PLATFORM_WIN32_INTERNALS_H 1
+#include "../internals.h"
 
-/* For Microsoft Windows, we want to explicitely select the target system to
- * avoid breaking compatibility if possible.
- * See the following for more information:
+/**
+ * Log a Windows API error.
  *
- * https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt */
-#define WINVER 0x0501 /* Windows XP */
-
-#include "../../internals.h"
-#include <windows.h>
-
+ * This is implemented as a separate function to the rest, because gathering
+ * an error message for a given error code is quite lengthy.
+ *
+ * @param context Context to use for logging.
+ * @param func_name Name of the function from which the log is emitted.
+ * @param win_func Name of the Windows API function that returned the
+ *        error.
+ * @param code Windows API error code that was actually returned.
+ */
 CAHUTE_EXTERN(void)
 cahute_win32_log_error(
     cahute_context *context,
     char const *func_name,
     char const *win_func,
     DWORD code
-);
+) {
+    char buf[1024];
+    DWORD buf_size;
 
-#define log_windows_error(CTX, FUNC, CODE) \
-    cahute_win32_log_error(CTX, CAHUTE_LOGFUNC, FUNC, CODE)
+    buf_size = FormatMessage(
+        FORMAT_MESSAGE_FROM_SYSTEM,
+        NULL,
+        code,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        buf,
+        1023,
+        NULL
+    );
 
-#endif /* PLATFORM_WIN32_INTERNALS_H */
+    if (!buf_size) {
+        cahute_log_message(
+            context,
+            30,
+            func_name,
+            "Error 0x%08lX occurred in %s.",
+            code,
+            win_func
+        );
+        return;
+    }
+
+    buf[buf_size] = '\0';
+    cahute_log_message(
+        context,
+        30,
+        func_name,
+        "Error 0x%08lX occurred in %s: %s",
+        code,
+        win_func,
+        buf
+    );
+}

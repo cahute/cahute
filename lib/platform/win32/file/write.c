@@ -26,28 +26,35 @@
  * knowledge of the CeCILL 2.1 license and that you accept its terms.
  * ************************************************************************* */
 
-#ifndef PLATFORM_WIN32_INTERNALS_H
-#define PLATFORM_WIN32_INTERNALS_H 1
+#include "internals.h"
 
-/* For Microsoft Windows, we want to explicitely select the target system to
- * avoid breaking compatibility if possible.
- * See the following for more information:
+/**
+ * Write to the current offset using a Win32 file.
  *
- * https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt */
-#define WINVER 0x0501 /* Windows XP */
-
-#include "../../internals.h"
-#include <windows.h>
-
-CAHUTE_EXTERN(void)
-cahute_win32_log_error(
+ * @param context
+ * @param cookie
+ * @param buf
+ * @param size
+ * @param writtenp
+ * @return
+ */
+CAHUTE_EXTERN(int)
+cahute_write_to_win32_file(
     cahute_context *context,
-    char const *func_name,
-    char const *win_func,
-    DWORD code
-);
+    cahute_win32_file_cookie *cookie,
+    cahute_u8 const *buf,
+    size_t size,
+    size_t *writtenp
+) {
+    BOOL ret;
+    DWORD written;
 
-#define log_windows_error(CTX, FUNC, CODE) \
-    cahute_win32_log_error(CTX, CAHUTE_LOGFUNC, FUNC, CODE)
+    ret = WriteFile(cookie->handle, buf, size, &written, NULL);
+    if (!ret) {
+        log_windows_error(context, "WriteFile", GetLastError());
+        return CAHUTE_ERROR_UNKNOWN;
+    }
 
-#endif /* PLATFORM_WIN32_INTERNALS_H */
+    *writtenp = (size_t)written;
+    return CAHUTE_OK;
+}
