@@ -1,12 +1,12 @@
-.. _file-format-eam:
+.. _file-format-topic-eam:
 
 eAct Maker file
 ===============
 
 `eAct Maker`_, a community-made tool for storing a document, is a tool that
 allows converting simple text into other document formats readable by
-calculators, including :ref:`G1E and G2E <file-format-g1e>`, FLS, XCP and
-:ref:`CAT <file-format-cat>`.
+calculators, including :ref:`G1E and G2E <file-format-topic-g1e>`, FLS, XCP
+and :ref:`CAT <file-format-topic-cat>`.
 
 It also allows saving the editor's content before exporting for later loading
 and modification, since the editor does not allow importing any of the export

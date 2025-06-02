@@ -1,4 +1,4 @@
-.. _file-format-cat:
+.. _file-format-topic-cat:
 
 Catalog files (CAT)
 ===================

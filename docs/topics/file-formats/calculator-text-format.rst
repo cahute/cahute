@@ -1,4 +1,4 @@
-.. _file-format-ctf:
+.. _file-format-topic-ctf:
 
 Calculator Text Format (CTF)
 ============================

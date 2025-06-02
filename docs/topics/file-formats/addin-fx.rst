@@ -1,4 +1,4 @@
-.. _file-format-g1a:
+.. _file-format-topic-g1a:
 
 fx-9860G add-ins
 ================
@@ -6,7 +6,7 @@ fx-9860G add-ins
 An fx-9860G add-in is a native application that can run on fx-9860G and
 derivatives. It can be identified using the ``G1A`` extension, and uses
 the CASIO container with subtype ``USBPower\xF3\0\x10\0\x10\0``; see
-:ref:`file-format-standardheader` for more information.
+:ref:`file-format-topic-container` for more information.
 
 Past the CASIO container header, such files start with a 480-bytes long header
 formatted the following way:
@@ -49,7 +49,7 @@ formatted the following way:
       - 68 B
       - Menu Icon
       - Icon to be displayed in the main menu.
-      - Monochrome picture encoded using :ref:`picture-format-1bit`.
+      - Monochrome picture encoded using :ref:`format-topic-picture-1bit`.
     * - 112 (0x70)
       - 324 B
       - Reserved

@@ -1,4 +1,4 @@
-.. _file-format-graphcard:
+.. _file-format-topic-graphcard:
 
 GraphCard file format
 =====================
@@ -21,7 +21,8 @@ contents. Every memory file in the archive is composed of the following:
 * A big endian, 16-bit unsigned integer representing the size of the next
   entry.
 * A main memory file of the data for which the length is the one above,
-  of CASIOLINK format; see :ref:`file-format-casiolink` for more information.
+  of CASIOLINK format; see :ref:`file-format-topic-container` for more
+  information.
 
 .. _GraphCard:
     https://web.archive.org/web/20230125095116/

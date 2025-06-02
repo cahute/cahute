@@ -1,5 +1,5 @@
 # *****************************************************************************
-# Copyright (C) 2024 Thomas Touhey <thomas@touhey.fr>
+# Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
 #
 # This software is governed by the CeCILL 2.1 license under French law and
 # abiding by the rules of distribution of free software. You can use, modify
@@ -30,6 +30,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import docutils.nodes as nodes
@@ -520,6 +521,30 @@ class SystemListDirective(TwoLevelListDirective):
         return container
 
 
+def add_redirects(app: Sphinx, exc: Exception | None) -> None:
+    """Get iterables of pages to write, which we do not have."""
+    if exc is not None or not app.builder.name.endswith("html"):
+        return
+
+    redirects: list[tuple[str, str]] = [
+        (
+            "/" + key.removeprefix("/"),
+            value.removesuffix("/") + "/"[:key.endswith("/")],
+        )
+        for key, value in app.config.redirects.items()
+    ]
+    redirects.sort(key=lambda x: (len(x[0]), x[0]))
+
+    with (Path(app.outdir) / "_redirects.nginx").open("w+") as fp:
+        for orig, dest in redirects:
+            if orig.endswith("/"):
+                inst = f"rewrite ^{re.escape(orig)}(.*)$ {dest}$1 permanent;\n"
+            else:
+                inst = f"rewrite ^{re.escape(orig)}$ {dest} permanent;\n"
+
+            fp.write(inst)
+
+
 def setup(app: Sphinx, /) -> None:
     """Set up the extension.
 
@@ -529,3 +554,6 @@ def setup(app: Sphinx, /) -> None:
     app.add_directive("seven-command", SevenCommandDirective)
     app.add_directive("feature-list", FeatureListDirective)
     app.add_directive("system-list", SystemListDirective)
+    app.connect("build-finished", add_redirects)
+    app.add_config_value("redirects", {}, "env")
+    return {"parallel_read_safe": True}

@@ -1,4 +1,4 @@
-.. _guide-install:
+.. _install-guide:
 
 Installation guides
 ===================
@@ -9,7 +9,7 @@ different means.
 .. toctree::
     :maxdepth: 2
 
-    ../install-guides/linux
-    ../install-guides/macos
-    ../install-guides/windows
-    ../install-guides/amigaos
+    install/linux
+    install/macos
+    install/windows
+    install/amigaos

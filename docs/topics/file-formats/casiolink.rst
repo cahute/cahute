@@ -1,4 +1,4 @@
-.. _file-format-casiolink:
+.. _file-format-topic-casiolink:
 
 CASIOLINK archives
 ==================
@@ -32,7 +32,7 @@ by these calculators. Such calculators include:
 * CASIO fx-9700GH (1995-1997);
 * CASIO CFX-9800G (1995-1996).
 
-See :ref:`cas40-data-types` for more information.
+See :ref:`protocol-topic-cas40-data-types` for more information.
 
 CAS50 main memory file format
 -----------------------------
@@ -45,4 +45,4 @@ Such calculators include:
 * CASIO CFX-9950G (1996-1998);
 * CASIO fx-9750G (1997-1999).
 
-See :ref:`cas50-data-types` for more information.
+See :ref:`protocol-topic-cas50-data-types` for more information.

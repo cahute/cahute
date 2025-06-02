@@ -752,6 +752,7 @@ FodyWeavers.xsd
 
 !/lib
 !/lib/platform/win32
+!/docs/guides/build
 
 # Additional user configuration.
 /.envrc

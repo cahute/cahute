@@ -1,4 +1,4 @@
-.. _guide-build:
+.. _build-guide:
 
 Build from source guides
 ========================
@@ -9,7 +9,7 @@ different means.
 .. toctree::
     :maxdepth: 2
 
-    ../build-guides/linux
-    ../build-guides/macos
-    ../build-guides/windows
-    ../build-guides/amigaos
+    build/linux
+    build/macos
+    build/windows
+    build/amigaos

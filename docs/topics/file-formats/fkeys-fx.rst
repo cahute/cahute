@@ -1,4 +1,4 @@
-.. _file-format-g1n:
+.. _file-format-topic-g1n:
 
 fx-9860G f-key files
 ====================
@@ -7,7 +7,7 @@ An fx-9860G f-key file is a data file containing images for function keys
 (abbreviated f-keys) for internationalization, for fx-9860G and derivatives.
 It can be identified using the ``G1N`` extension, and uses the
 CASIO container with a subtype to be determined;
-see :ref:`file-format-standardheader` for more information.
+see :ref:`file-format-topic-container` for more information.
 
 .. note::
 

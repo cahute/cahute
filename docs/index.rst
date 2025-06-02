@@ -33,14 +33,14 @@ Officially supported systems are the following:
 .. system-list::
 
     * - |system-arch|
-      - :ref:`system-arch`
-      - :ref:`Install from the AUR <install-linux-aur>`
-      - :ref:`Install using GiteaPC <install-linux-giteapc>`
-      - :ref:`Build natively <build-linux-sh>`
+      - :ref:`feature-topic-system-arch`
+      - :ref:`Install from the AUR <install-guide-linux-aur>`
+      - :ref:`Install using GiteaPC <install-guide-linux-giteapc>`
+      - :ref:`Build natively <build-guide-linux-sh>`
     * - |system-apple|
-      - :ref:`system-macos`
-      - :ref:`Install using Homebrew <install-macos-homebrew>`
-      - :ref:`Build natively <build-macos-sh>`
+      - :ref:`feature-topic-system-macos`
+      - :ref:`Install using Homebrew <install-guide-macos-homebrew>`
+      - :ref:`Build natively <build-guide-macos-sh>`
 
 .. note::
 
@@ -50,25 +50,28 @@ Officially supported systems are the following:
     .. system-list::
 
         * - |system-debian|
-          - :ref:`system-debian`
-          - :ref:`Install using GiteaPC <install-linux-giteapc>`
-          - :ref:`Build natively <build-linux-sh>`
+          - :ref:`feature-topic-system-debian`
+          - :ref:`Install using GiteaPC <install-guide-linux-giteapc>`
+          - :ref:`Build natively <build-guide-linux-sh>`
         * - |system-voidlinux|
-          - :ref:`system-void`
-          - :ref:`Install using GiteaPC <install-linux-giteapc>`
-          - :ref:`Build natively <build-linux-sh>`
+          - :ref:`feature-topic-system-void`
+          - :ref:`Install using GiteaPC <install-guide-linux-giteapc>`
+          - :ref:`Build natively <build-guide-linux-sh>`
         * - |system-win|
-          - :ref:`system-windows`
-          - :ref:`Build for Vista+ using Visual Studio <build-windows-vs>`
-          - :ref:`Build for XP using Visual Studio <build-windows-vs-xp>`
-          - :ref:`Build for XP+ using Visual Studio and MinGW-w64 <build-windows-vs-mingw>`
-          - :ref:`Build using MinGW-w64 from Archlinux <build-windows-mingw>`
+          - :ref:`feature-topic-system-windows`
+          - :ref:`Build for Vista+ using Visual Studio
+            <build-guide-windows-vs>`
+          - :ref:`Build for XP using Visual Studio <build-guide-windows-vs-xp>`
+          - :ref:`Build for XP+ using Visual Studio and MinGW-w64
+            <build-guide-windows-vs-mingw>`
+          - :ref:`Build using MinGW-w64 from Archlinux
+            <build-guide-windows-mingw>`
         * - |system-amigaos|
-          - :ref:`system-amigaos`
-          - :ref:`Build from Linux <build-amigaos-linux>`
+          - :ref:`feature-topic-system-amigaos`
+          - :ref:`Build from Linux <build-guide-amigaos-linux>`
 
 The project is being worked on `on Gitlab <Cahute on Gitlab_>`_.
-It is maintained by `Thomas Touhey`_. See :ref:`project-forums` for the
+It is maintained by `Thomas Touhey`_. See :ref:`project-topic-forums` for the
 topics describing the projects in other communities.
 
 The project's code and documentation contents are licensed under CeCILL_
@@ -119,10 +122,10 @@ and use-cases.
 
     guides/install
     guides/build
-    contribution-guides
-    cli-guides
-    developer-guides
-    misc-guides
+    guides/contribution
+    guides/cli
+    guides/developer
+    guides/misc
 
 Discussion topics
 -----------------
@@ -133,10 +136,12 @@ and provide useful background information and explanation.
 .. toctree::
     :maxdepth: 3
 
-    data-formats
-    communication-protocols
-    features
-    internals
+    topics/communication-protocols
+    topics/file-formats
+    topics/data-formats
+    topics/features
+    topics/internals
+    topics/project
 
 References
 ----------
@@ -148,20 +153,9 @@ basic understanding of key concepts.
 .. toctree::
     :maxdepth: 3
 
-    cli
-    headers
-    cmake
-
-Project management
-------------------
-
-These sections describe how the project is managed, and what works it
-is based on.
-
-.. toctree::
-    :maxdepth: 3
-
-    project
+    references/cli
+    references/headers
+    references/cmake
 
 .. [#mutant] Icons used here are from the `Mutant Standard`_,
   licensed under `CC BY-NC-SA 4.0 International`_.
@@ -172,12 +166,12 @@ is based on.
 .. |feat-text| image:: feat-text.svg
 .. |feat-ohp| image:: feat-ohp.svg
 .. |feat-flash| image:: feat-flash.svg
-.. |system-arch| image:: install-guides/arch.svg
-.. |system-apple| image:: install-guides/apple.svg
-.. |system-win| image:: install-guides/win.png
-.. |system-debian| image:: install-guides/debian.svg
-.. |system-voidlinux| image:: install-guides/voidlinux.svg
-.. |system-amigaos| image:: install-guides/amigaos.png
+.. |system-arch| image:: guides/install/arch.svg
+.. |system-apple| image:: guides/install/apple.svg
+.. |system-win| image:: guides/install/win.png
+.. |system-debian| image:: guides/install/debian.svg
+.. |system-voidlinux| image:: guides/install/voidlinux.svg
+.. |system-amigaos| image:: guides/install/amigaos.png
 
 .. _Cahute on Gitlab: https://gitlab.com/cahuteproject/cahute
 .. _Thomas Touhey: https://thomas.touhey.fr/

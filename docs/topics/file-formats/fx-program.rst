@@ -1,4 +1,4 @@
-.. _file-format-fxp:
+.. _file-format-topic-fxp:
 
 FX Program (FXP)
 ================

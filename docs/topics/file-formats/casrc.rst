@@ -1,10 +1,10 @@
-.. _file-format-casrc:
+.. _file-format-topic-casrc:
 
 casrc configuration file
 ========================
 
-The ``casrc`` file is the "run commands" file for ``CaS`` (see :ref:`cas`).
-It defines two elements:
+The ``casrc`` file is the "run commands" file for ``CaS`` (see
+:ref:`cli-ref-cas`). It defines two elements:
 
 * Settings, as sets of key/value pairs named "properties".
 * Macros, as sequences of "property diffs" composed of the following:
@@ -78,7 +78,7 @@ The format of a line is the following:
 Macro and setting names are **case insensitive**, and components
 reference previously set macros.
 
-.. _file-format-casrc-component-format:
+.. _file-format-topic-casrc-component-format:
 
 Component format
 ~~~~~~~~~~~~~~~~
@@ -145,14 +145,14 @@ The casrc file above defines the following settings:
 * ``my-third.key``: ``oh-yeah=``, ``msg=hello world``, ``wow=``
   (since ``some=things`` is cancelled out by ``no-some`` at the end).
 
-.. _file-format-casrc-available-settings:
+.. _file-format-topic-casrc-available-settings:
 
 Available settings and properties
 ---------------------------------
 
 This section inventories known keys.
 
-.. _file-format-casrc-model-setting:
+.. _file-format-topic-casrc-model-setting:
 
 ``model`` -- Calculator model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

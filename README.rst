@@ -51,17 +51,20 @@ Happy Cahuting!
 .. _Building Cahute from source:
     https://next.cahuteproject.org/guides/build.html
 .. _Contributing to Cahute:
-    https://next.cahuteproject.org/guides/contribute.html
+    https://next.cahuteproject.org/guides/contribution/contribute.html
 .. _Reporting a bug or vulnerability:
-    https://next.cahuteproject.org/guides/report.html
+    https://next.cahuteproject.org/guides/contribution/report.html
 .. _Requesting a feature:
-    https://next.cahuteproject.org/guides/request-feature.html
-.. _Packaging Cahute: https://next.cahuteproject.org/guides/package.html
+    https://next.cahuteproject.org/guides/contribution/request-feature.html
+.. _Packaging Cahute:
+    https://next.cahuteproject.org/guides/contribution/package.html
 .. _Creating a merge request:
-    https://next.cahuteproject.org/guides/create-merge-request.html
+    https://next.cahuteproject.org/guides/contribution/
+    create-merge-request.html
 
 .. _CeCILL: http://www.cecill.info/licences.en.html
 .. _cecill.info: http://www.cecill.info/licences.en.html
 
 .. _Releases: https://gitlab.com/cahuteproject/cahute/-/releases
-.. _Community feedback: https://next.cahuteproject.org/project/community.html
+.. _Community feedback:
+    https://next.cahuteproject.org/topics/project/community.html

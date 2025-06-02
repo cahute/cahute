@@ -1,4 +1,4 @@
-.. _file-format-mainmem:
+.. _file-format-topic-mainmem:
 
 Main memory archives
 ====================
@@ -13,7 +13,7 @@ fx-CP and/or fx-CG. It can be identified using:
   - ``G2R`` (fx-CP with settings);
   - ``G3M`` (fx-CG without settings);
   - ``G3R`` (fx-CG with settings).
-* The CASIO container subtype (see :ref:`file-format-standardheader`), among:
+* The CASIO container subtype (see :ref:`file-format-topic-container`), among:
 
   - ``USBPower\x62\0\x10\0\x10\0`` (fx-9860G with or without settings);
   - ``USBPower\x31\0\x10\0\x10\0`` (fx-CP with or without settings);
