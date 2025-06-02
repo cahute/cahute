@@ -103,6 +103,8 @@ documentation. This page is a little tribute to these works.
   gbl08ma, BrandonWilson and amazonka.
 * Thanks to Nessotrin_ for their work on UsbConnector_, which prompted me
   to work on a better version in the first place.
+* Thanks to Massena_ for their work on the Cahute cover image, on the top of
+  every page.
 
 There are obviously plenty more people working on other connected aspects
 (hardware, low-level system stuff), administering or moderating forums and
@@ -196,6 +198,7 @@ basic understanding of key concepts.
 .. _UsbConnector:
     https://www.planet-casio.com/Fr/forums/topic13656-1-usbconnector
     -remplacement-de-fa124-multi-os.html
+.. _Massena: https://pannocatto.itch.io/
 
 .. _Casetta: https://casetta.tuxfamily.org/
 .. _Caspro:

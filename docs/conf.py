@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent / "_ext"))
 
 project = "Cahute"
 version = "0.6"
-copyright = "2024, Thomas Touhey"
+copyright = "2024-2025, Thomas Touhey"
 author = "Thomas Touhey"
 
 extensions = [
@@ -24,7 +24,7 @@ extensions = [
     "cahute_extensions",
 ]
 
-templates_path: list[str] = []
+templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 primary_domain = "c"
 
