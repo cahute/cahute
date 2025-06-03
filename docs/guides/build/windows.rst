@@ -264,8 +264,8 @@ run the command-line utilities from here with the options you want to test.
 
 .. _build-guide-windows-vs-mingw:
 
-Building Cahute for Windows XP and above, using Visual Studio and MinGW-w64
----------------------------------------------------------------------------
+Building Cahute for Windows 2000 and above, using Visual Studio and MinGW-w64
+-----------------------------------------------------------------------------
 
 .. warning::
 
@@ -390,8 +390,8 @@ run the command-line utilities from here with the options you want to test.
 
 .. _build-guide-windows-mingw:
 
-Building Cahute for Windows XP and above, using |mingw-w64| MinGW-w64 on Archlinux
-----------------------------------------------------------------------------------
+Building Cahute for Windows 2000 and above, using |mingw-w64| MinGW-w64 on Archlinux
+------------------------------------------------------------------------------------
 
 .. warning::
 
@@ -415,7 +415,7 @@ You need to first install the required dependencies from the AUR, by using
 your favourite AUR helper, e.g. with paru_::
 
     paru -S cmake python python-toml mingw-w64 \
-        mingw-w64-cmake mingw-w64-libusb mingw-w64-sdl2
+        mingw-w64-cmake mingw-w64-sdl2
 
 Building the project
 ~~~~~~~~~~~~~~~~~~~~
@@ -437,17 +437,8 @@ Before testing with either Wine or a Windows host, it is recommended to
 copy the required shared libraries to the build directory, by running either
 one of the following command depending on the architecture you're targetting::
 
-    cp /usr/i686-w64-mingw32/bin/{libssp-0,SDL2,libusb-1.0}.dll .
-    cp /usr/x86_64-w64-mingw32/bin/{libssp-0,SDL2,libusb-1.0}.dll .
-
-.. warning::
-
-    In order for Cahute to be usable on Windows XP, you need to use a previous
-    release of libusb as system requirements have been upgraded.
-
-    `libusb 1.0.23`_ has been proven to work in such cases. The DLLs can be
-    found in the ``libusb-1.0.23.7z`` archive, more specifically in the
-    ``MinGW32/dll`` and ``MinGW64/dll`` directories.
+    cp /usr/i686-w64-mingw32/bin/{libssp-0,SDL2}.dll .
+    cp /usr/x86_64-w64-mingw32/bin/{libssp-0,SDL2}.dll .
 
 .. note::
 
@@ -469,12 +460,10 @@ one of the following command depending on the architecture you're targetting::
 .. _GNU Make: https://www.gnu.org/software/make/
 .. _pkg-config: https://git.sr.ht/~kaniini/pkgconf
 .. _SDL: https://www.libsdl.org/
-.. _libusb: https://libusb.info/
 
 .. _MinGW-w64: https://www.mingw-w64.org/
 .. _Archlinux: https://archlinux.org/
 .. _paru: https://github.com/Morganamilo/paru
-.. _libusb 1.0.23: https://github.com/libusb/libusb/releases/tag/v1.0.23
 .. _Cross Compiling With CMake:
     https://cmake.org/cmake/help/book/mastering-cmake/chapter/
     Cross%20Compiling%20With%20CMake.html?highlight=mingw

@@ -28,6 +28,14 @@
 
 #include "internals.h"
 #include <stdarg.h>
+#if CAHUTE_PLATFORM_WIN32
+/* We want to avoid '\r' as a prefix on such platforms, since they are
+ * considered newlines. */
+# define LOG_PREFIX ""
+#else
+/* On other platforms, they may remove garbage at the beginning of the line. */
+# define LOG_PREFIX "\r"
+#endif
 
 CAHUTE_LOCAL_DATA(char const *)
 hexadecimal_alphabet = "0123456789ABCDEF";
@@ -96,12 +104,12 @@ cahute_log_to_file(
     sprintf(levelbuf, "%s %s", source, level_name);
 
     if (!func)
-        fprintf(stderr, "\r[%s %14s] ", timebuf, levelbuf);
+        fprintf(stderr, LOG_PREFIX "[%s %14s] ", timebuf, levelbuf);
     else {
         if (!strncmp(func, "cahute_", 7))
             func = &func[7];
 
-        fprintf(stderr, "\r[%s %14s] %s: ", timebuf, levelbuf, func);
+        fprintf(stderr, LOG_PREFIX "[%s %14s] %s: ", timebuf, levelbuf, func);
     }
 
     fprintf(stderr, "%s\n", message);

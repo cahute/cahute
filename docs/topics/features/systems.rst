@@ -36,7 +36,7 @@ The following sections represents these.
 Linux_ is only a kernel, which has spawned multiple distributions around it
 considered systems on which Cahute can run. Their support is one of the main
 reasons why alternative tooling to CASIO's own exist in the first place, which
-is only Windows-compatible.
+is only distributed on Microsoft Windows.
 
 Officially supported targets for Linux are the following:
 
@@ -174,27 +174,57 @@ NetBSD_ is a BSD-derived system.
 
 .. warning::
 
-    Windows is not yet supported as an official target by Cahute.
-    See `#10 <https://gitlab.com/cahute/cahute/-/issues/10>`_
+    Microsoft Windows in general is not yet supported as an official target
+    by Cahute. See `#10 <https://gitlab.com/cahute/cahute/-/issues/10>`_
     for more information.
 
-    NT 5.0 (Windows 2000) compatibility is also being discussed in
-    `#73 <https://gitlab.com/cahute/cahute/-/issues/73>`_.
+`Microsoft Windows`_ is a family of operating systems made by Microsoft_
+since the 1980s, bearing multiple programmation interfaces, described in the
+following subsections.
+
+.. _feature-topic-system-win16:
+
+|win31| Win16
+~~~~~~~~~~~~~
 
 .. warning::
 
-    `Microsoft Windows`_ in this context refers to `Windows NT`_ based
-    systems by Microsoft_. For other systems by Microsoft_ bearing the name
-    "Windows", see :ref:`feature-topic-system-msdos` and
-    :ref:`feature-topic-system-win9x`.
+    This platform is currently unsupported by Cahute.
 
-`Windows NT`_ is a family of systems made by Microsoft_.
-In this context, we only consider systems including the Win32 subsystem, which
-was introduced in NT 3.1. Currently, only NT 5.1 (Windows XP) and above
-are supported by Cahute.
+Win16 is the 16-bit Windows API, only present on the x86_ architecture,
+first introduced with `Windows 1.0`_ in 1985.
+It is supported by the following systems:
 
-Cahute only supports x86_ (i686+) and x64_ for Windows.
-It aims at supporting both available runtimes for Windows:
+* :ref:`MS-DOS <feature-topic-system-msdos>` based Windows systems, up to
+  `Windows 3.x`_;
+* Windows systems from the `Windows 9x`_ series, using :ref:`MS-DOS
+  <feature-topic-system-msdos>` as a bootloader (see
+  `What was the role of MS-DOS in Windows 95?`_ for more information),
+  including `Windows 95`_, `Windows 98`_ and `Windows Me`_ (*Millenium
+  Edition*);
+* `Windows NT`_ based Windows systems up to and including `Windows 2000`_
+  (NT 5.0).
+
+.. _feature-topic-system-win32:
+
+|win| Win32
+~~~~~~~~~~~
+
+Win32 is the 32-bit Windows API, present on the x86_ (i686+) and x64_
+architectures, first introduced with `Windows NT 3.1`_ in 1993.
+It is supported by the following systems:
+
+* `Windows NT`_ based Windows systems starting from `Windows NT 3.1`_
+  up until now;
+* Windows systems from the `Windows 9x`_ series, including `Windows 95`_,
+  `Windows 98`_ and `Windows Me`_.
+
+.. note::
+
+    The `Windows 9x`_ series only support a subset of Win32, also known
+    as "Win32s".
+
+C/C++ programs using this interface can have one of two existing runtimes:
 
 * Microsoft Visual C++ Runtime (MSVCRT), available by default on NT 3.1+;
 * Universal C Runtime (UCRT), only available by default on NT 10.0
@@ -208,32 +238,59 @@ Microsoft's C libraries exclusively distributed with `Visual Studio`_, or
 from other platforms such as Linux. See :ref:`build-guide-windows` for more
 details.
 
-Microsoft Windows drivers for CASIO calculators over USB
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Cahute currently supports Win32 starting from `Windows 2000`_ (NT 5.0), for
+both the UCRT and MSVCRT runtimes.
 
-As opposed to other platforms, Cahute cannot access USB devices on calculators,
-but must make use of a driver specifically installed for the calculator.
-Possible drivers are the following:
+.. _feature-topic-system-win32-drivers:
 
-* CASIO's ``CESG502`` driver, which matches devices using the ``07cf:6101``
-  VID/PID pair for devices implementing
-  :ref:`protocol-topic-transport-serial-over-usb-bulk` in order to provide a
-  stream-like interface.
+Win32 drivers for CASIO calculators over USB
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  It is compatible with NT 5.0 (Windows 2000) onwards.
-  32-bit (x86_) drivers can be found `here <32-bit CESG502 driver_>`_, and
-  64-bit (x64_) drivers are installed with `FA-124`_;
-* WinUSB_, a generic USB driver made by Microsoft and compatible
-  with NT 6.0 (Windows Vista) onwards. Cahute uses this through libusb_;
-* `libusbK.sys`_, a generic USB driver provided by libusbK_, compatible
-  with NT 5.1 (Windows XP) onwards. Cahute uses this through libusb_;
-* `libusb0.sys`_, a generic USB driver provided by `libusb-win32`_, compatible
-  with NT 5.0 (Windows 2000) onwards. Cahute uses this through libusb_.
+As opposed to other platforms and interfaces, Cahute cannot access USB devices
+on calculators, but must make use of a driver specifically installed for the
+calculator.
 
-This compatibility is limited by the fact that Cahute uses libusb_, which,
-while originally compatible NT 5.1 (Windows XP) onwards, has dropped
-compatibility with Windows XP in version 1.0.24; see `libusb supported
-environments`_ for more information.
+Possible drivers include the following:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Name
+      - Description
+      - Compatibility
+    * - Generic volume driver
+      - Driver by Microsoft_, automatically used when a device presents
+        a **USB Mass Storage** interface descriptor.
+      - Windows 2000 (NT 5.0)+
+    * - CESG502_
+      - CASIO's official driver for :ref:`serial over USB bulk devices
+        <protocol-topic-transport-serial-over-usb-bulk>`, matching USB
+        devices presenting the ``07cf:6101`` VID/PID pair.
+
+        32-bit (x86_) drivers can be found `here <32-bit CESG502 driver_>`_,
+        and 64-bit (x64_) drivers are installed with `FA-124`_;
+      - Windows 2000 (NT 5.0)+
+    * - WinUSB_
+      - Generic USB device driver by Microsoft.
+
+        Can be selected automatically if the calculator presents WCID_
+        attributes.
+      - Windows Vista (NT 6.0)+
+    * - `libusbK.sys`_
+      - Generic KMF-based USB device driver provided by libusbK_, a third-party
+        library.
+      - Windows XP (NT 5.1)+
+    * - `libusb0.sys`_
+      - Generic USB device driver provided by `libusb-win32`_, a third-party
+        library implementing the libusb_ 0.1 API.
+      - Windows 2000 (NT 5.0)+
+    * - UsbDk_
+      - Generic USB device driver provided by the eponym, third-party
+        component.
+      - Windows XP (NT 5.1)+
+
+See `libusb-compatible kernel drivers`_ for more information on generic
+USB device drivers for Win32.
 
 .. _feature-topic-system-msdos:
 
@@ -244,22 +301,7 @@ environments`_ for more information.
 
     MS-DOS is not yet supported as an official target by Cahute.
 
-`MS-DOS`_ is a system made by Microsoft_ in 1981, on which `Windows 3.1`_ runs.
-
-.. _feature-topic-system-win9x:
-
-|win95| Windows 9x
-------------------
-
-.. warning::
-
-    Windows 9x is not yet supported as an official target by Cahute.
-
-`Windows 9x`_ is a series of systems made by Microsoft_ in the 1990s, including
-`Windows 95`_, `Windows 98`_ and `Windows Me`_ (*Millennium Edition*).
-It is distinct from :ref:`feature-topic-system-msdos` as it uses a different
-kernel that takes advance of 32-bit *protected* mode on x86_; see
-`What was the role of MS-DOS in Windows 95?`_ for more information.
+`MS-DOS`_ is a system made by Microsoft_ in 1981.
 
 .. _feature-topic-system-amigaos:
 
@@ -289,6 +331,7 @@ which can be found in the `Hyperion Entertainment Downloads`_. See
 .. |debian| image:: ../../guides/install/debian.svg
 .. |void| image:: ../../guides/install/voidlinux.svg
 .. |win| image:: ../../guides/install/win.png
+.. |win31| image:: ../../guides/install/win31.svg
 .. |win95| image:: ../../guides/install/win95.svg
 .. |freebsd| image:: ../../guides/install/freebsd.png
 .. |netbsd| image:: ../../guides/install/netbsd.png
@@ -320,36 +363,6 @@ which can be found in the `Hyperion Entertainment Downloads`_. See
 .. _Void Linux: https://voidlinux.org/
 .. _XBPS: https://docs.voidlinux.org/xbps/index.html
 
-.. _Microsoft Windows: http://windows.microsoft.com/
-.. _Microsoft: https://www.microsoft.com/
-.. _Visual Studio: https://visualstudio.microsoft.com/fr/
-.. _Windows NT: https://en.wikipedia.org/wiki/Windows_NT
-.. _Universal CRT deployment:
-    https://learn.microsoft.com/en-us/cpp/windows/universal-crt-deployment
-.. _UCRT vs. MSVCRT:
-    https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/mingw-w64-doc/
-    howto-build/ucrt-vs-msvcrt.txt
-.. _MinGW-w64: https://www.mingw-w64.org/
-
-.. _32-bit CESG502 driver:
-    https://www.planet-casio.com/Fr/logiciels/voir_un_logiciel_casio.php
-    ?showid=75
-.. _FA-124:
-    https://www.planet-casio.com/Fr/logiciels/voir_un_logiciel_casio.php
-    ?showid=16
-.. _WinUSB:
-    https://learn.microsoft.com/fr-fr/windows-hardware/drivers/usbcon/
-    using-winusb-api-to-communicate-with-a-usb-device
-.. _libusbK: https://libusbk.sourceforge.net/UsbK3/index.html
-.. _`libusbK.sys`:
-    https://libusbk.sourceforge.net/UsbK3/usbk_about.html#usbk_about_sys
-.. _libusb-win32: https://github.com/mcuee/libusb-win32
-.. _`libusb0.sys`:
-    https://github.com/mcuee/libusb-win32/wiki#development
-.. _libusb supported environments:
-    https://github.com/libusb/libusb/wiki/Windows/
-    0a6dc490c1766b8fc5a2d14e90efa8957663f0f0#supported-environments
-
 .. _FreeBSD: https://www.freebsd.org/
 .. _NetBSD: https://www.netbsd.org/
 
@@ -367,14 +380,51 @@ which can be found in the `Hyperion Entertainment Downloads`_. See
     https://docs.brew.sh/Installation#macos-requirements
 
 .. _MS-DOS: https://en.wikipedia.org/wiki/MS-DOS
-.. _Windows 3.1: https://en.wikipedia.org/wiki/Windows_3.1
 
+.. _Microsoft Windows: http://windows.microsoft.com/
+.. _Microsoft: https://www.microsoft.com/
+.. _Windows 1.0: https://fr.wikipedia.org/wiki/Windows_1.0
+.. _Windows 3.x: https://fr.wikipedia.org/wiki/Windows_3.x
 .. _Windows 9x: https://en.wikipedia.org/wiki/Windows_9x
 .. _Windows 95: https://en.wikipedia.org/wiki/Windows_95
 .. _Windows 98: https://en.wikipedia.org/wiki/Windows_98
 .. _Windows Me: https://en.wikipedia.org/wiki/Windows_Me
+.. _Windows NT: https://en.wikipedia.org/wiki/Windows_NT
+.. _Windows NT 3.1: https://en.wikipedia.org/wiki/Windows_NT_3.1
+.. _Windows 2000: https://en.wikipedia.org/wiki/Windows_2000
 .. _`What was the role of MS-DOS in Windows 95?`:
     https://devblogs.microsoft.com/oldnewthing/20071224-00/?p=24063
+.. _Visual Studio: https://visualstudio.microsoft.com/fr/
+.. _Universal CRT deployment:
+    https://learn.microsoft.com/en-us/cpp/windows/universal-crt-deployment
+.. _UCRT vs. MSVCRT:
+    https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/mingw-w64-doc/
+    howto-build/ucrt-vs-msvcrt.txt
+.. _MinGW-w64: https://www.mingw-w64.org/
+
+.. _CESG502:
+    https://www.planet-casio.com/Fr/logiciels/voir_un_logiciel_casio.php
+    ?showid=75&page=10
+.. _32-bit CESG502 driver:
+    https://www.planet-casio.com/Fr/logiciels/voir_un_logiciel_casio.php
+    ?showid=75
+.. _FA-124:
+    https://www.planet-casio.com/Fr/logiciels/voir_un_logiciel_casio.php
+    ?showid=16
+.. _WinUSB:
+    https://learn.microsoft.com/fr-fr/windows-hardware/drivers/usbcon/
+    using-winusb-api-to-communicate-with-a-usb-device
+.. _libusbK: https://libusbk.sourceforge.net/UsbK3/index.html
+.. _`libusbK.sys`:
+    https://libusbk.sourceforge.net/UsbK3/usbk_about.html#usbk_about_sys
+.. _libusb-win32: https://github.com/mcuee/libusb-win32
+.. _`libusb0.sys`:
+    https://github.com/mcuee/libusb-win32/wiki#development
+.. _UsbDk: https://github.com/daynix/UsbDk
+.. _libusb-compatible kernel drivers:
+    https://github.com/libusb/libusb/wiki/
+    Windows#user-content-Driver_Installation
+.. _WCID: https://github.com/pbatard/libwdi/wiki/WCID-Devices
 
 .. _AmigaOS: https://www.amigaos.net/
 .. _Amiga: https://en.wikipedia.org/wiki/Amiga

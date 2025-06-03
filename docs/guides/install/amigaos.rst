@@ -9,6 +9,6 @@
     yet. See :ref:`feature-topic-system-amigaos` for more information.
 
     In the mean time, unofficial and possibly incomplete build methods are
-    provided for Windows in :ref:`build-guide-amigaos`.
+    provided for AmigaOS in :ref:`build-guide-amigaos`.
 
 .. |amigaos| image:: amigaos.png

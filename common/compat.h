@@ -42,6 +42,12 @@
 /* Make some data local and mutable. */
 #define CAHUTE_LOCAL_MUTABLE_DATA(TYPE) static TYPE
 
+/* Declare some extern data. */
+#define CAHUTE_EXTERN_DATA(TYPE) extern TYPE const
+
+/* Make some data extern. */
+#define CAHUTE_EXPORT_DATA(TYPE) TYPE const
+
 #if CAHUTE_MSC_PREREQ(12, 0)
 # include <BaseTsd.h>
 
@@ -147,7 +153,7 @@ typedef unsigned long long cahute_uintptr;
 # endif
 #endif
 
-#if defined(_MSC_VER)
+#if CAHUTE_PLATFORM_WIN32
 # define CAHUTE_PSIZE "I"
 #else
 # define CAHUTE_PSIZE "z"

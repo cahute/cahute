@@ -82,8 +82,7 @@ representation.
 
 .. c:macro:: CAHUTE_PATH_TYPE_WIN32_ANSI
 
-    Win32 / Windows NT path, including UNC paths, as used natively under
-    Windows 2000 or above.
+    Win32 path, including UNC paths.
 
     If using UNC, i.e. if the path starts with ``\\`` (two U+005C bytes),
     this path representation has the following properties:
@@ -135,8 +134,7 @@ representation.
 
 .. c:macro:: CAHUTE_PATH_TYPE_WIN32_UNICODE
 
-    Win32 / Windows NT path, including UNC paths, as used natively under
-    Windows 2000 or above.
+    Win32 path, including UNC paths.
 
     This is equivalent to :c:macro:`CAHUTE_PATH_TYPE_WIN32_UNICODE`, except
     the character encoding is fixed to UTF-16 using the system's endianness.

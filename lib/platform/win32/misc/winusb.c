@@ -29,19 +29,19 @@
 #include "../internals.h"
 
 /**
- * Unload the Cfgmgr32 library.
+ * Unload the WinUSB library.
  *
  * @param context
  * @param lib Library to unload.
  */
 CAHUTE_LOCAL(void)
-unload_cfgmgr32_lib(cahute_context *context, cahute_win32_cfgmgr32 *lib) {
+unload_winusb_lib(cahute_context *context, cahute_win32_winusb *lib) {
     FreeLibrary(lib->dll);
     free(lib);
 }
 
 /**
- * Load the Cfgmgr32 library.
+ * Load the WinUSB library.
  *
  * @param context
  * @param libp
@@ -49,20 +49,20 @@ unload_cfgmgr32_lib(cahute_context *context, cahute_win32_cfgmgr32 *lib) {
  * @return
  */
 CAHUTE_LOCAL(int)
-load_cfgmgr32_lib(
+load_winusb_lib(
     cahute_context *context,
-    cahute_win32_cfgmgr32 **libp,
+    cahute_win32_winusb **libp,
     cahute_context_destroy_func **destroy_funcp
 ) {
     int err = CAHUTE_ERROR_UNKNOWN;
     HMODULE dll = NULL;
-    cahute_win32_cfgmgr32 *lib = NULL;
+    cahute_win32_winusb *lib = NULL;
 
-    err = cahute_load_win32_system_library(context, &dll, "cfgmgr32");
+    err = cahute_load_win32_system_library(context, &dll, "winusb");
     if (err)
         goto fail;
 
-    lib = malloc(sizeof(cahute_win32_cfgmgr32));
+    lib = malloc(sizeof(cahute_win32_winusb));
     if (!lib) {
         err = CAHUTE_ERROR_ALLOC;
         goto fail;
@@ -72,78 +72,87 @@ load_cfgmgr32_lib(
 
     err = cahute_get_win32_library_function(
         context,
-        (FARPROC *)&lib->get_device_interface_list_size,
+        (FARPROC *)&lib->initialize,
         dll,
-        "CM_Get_Device_Interface_List_SizeA"
+        "WinUsb_Initialize"
     );
     if (err)
         goto fail;
 
     err = cahute_get_win32_library_function(
         context,
-        (FARPROC *)&lib->get_device_interface_list,
+        (FARPROC *)&lib->free,
         dll,
-        "CM_Get_Device_Interface_ListA"
+        "WinUsb_Free"
     );
     if (err)
         goto fail;
 
     err = cahute_get_win32_library_function(
         context,
-        (FARPROC *)&lib->get_device_id_list_size,
+        (FARPROC *)&lib->query_interface_settings,
         dll,
-        "CM_Get_Device_ID_List_SizeA"
+        "WinUsb_QueryInterfaceSettings"
     );
     if (err)
         goto fail;
 
     err = cahute_get_win32_library_function(
         context,
-        (FARPROC *)&lib->get_device_id_list,
+        (FARPROC *)&lib->query_pipe,
         dll,
-        "CM_Get_Device_ID_ListA"
+        "WinUsb_QueryPipe"
     );
     if (err)
         goto fail;
 
     err = cahute_get_win32_library_function(
         context,
-        (FARPROC *)&lib->locate_devnode,
+        (FARPROC *)&lib->control_transfer,
         dll,
-        "CM_Locate_DevNodeA"
+        "WinUsb_ControlTransfer"
     );
     if (err)
         goto fail;
 
     err = cahute_get_win32_library_function(
         context,
-        (FARPROC *)&lib->open_devnode_key,
+        (FARPROC *)&lib->read_pipe,
         dll,
-        "CM_Open_DevNode_Key"
+        "WinUsb_ReadPipe"
     );
     if (err)
         goto fail;
 
     err = cahute_get_win32_library_function(
         context,
-        (FARPROC *)&lib->get_devnode_registry_property,
+        (FARPROC *)&lib->write_pipe,
         dll,
-        "CM_Get_DevNode_Registry_PropertyA"
+        "WinUsb_WritePipe"
     );
     if (err)
         goto fail;
 
     err = cahute_get_win32_library_function(
         context,
-        (FARPROC *)&lib->get_parent,
+        (FARPROC *)&lib->abort_pipe,
         dll,
-        "CM_Get_Parent"
+        "WinUsb_AbortPipe"
+    );
+    if (err)
+        goto fail;
+
+    err = cahute_get_win32_library_function(
+        context,
+        (FARPROC *)&lib->get_overlapped_result,
+        dll,
+        "WinUsb_GetOverlappedResult"
     );
     if (err)
         goto fail;
 
     *libp = lib;
-    *destroy_funcp = (cahute_context_destroy_func *)&unload_cfgmgr32_lib;
+    *destroy_funcp = (cahute_context_destroy_func *)&unload_winusb_lib;
     return CAHUTE_OK;
 
 fail:
@@ -156,21 +165,18 @@ fail:
 }
 
 /**
- * Get the loaded Cfgmgr32 library.
+ * Get the loaded WinUSB library.
  *
  * @param context
  * @param libp
  * @return
  */
 CAHUTE_EXTERN(int)
-cahute_get_win32_cfgmgr32(
-    cahute_context *context,
-    cahute_win32_cfgmgr32 **libp
-) {
+cahute_get_win32_winusb(cahute_context *context, cahute_win32_winusb **libp) {
     return cahute_get_context_pointer(
         context,
         (void **)libp,
-        CAHUTE_CONTEXT_POINTER_WIN32_CFGMGR32,
-        (cahute_context_init_func *)load_cfgmgr32_lib
+        CAHUTE_CONTEXT_POINTER_WIN32_WINUSB,
+        (cahute_context_init_func *)load_winusb_lib
     );
 }

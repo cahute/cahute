@@ -40,6 +40,7 @@ CAHUTE_DECLARE_TYPE(cahute_win32_cesg_link_cookie)
  *           or write.
  * @property read_in_progress Whether a read operation is currently in
  *           progress.
+ * @property max_read_capacity Maximum read capacity.
  */
 struct cahute_win32_cesg_link_cookie {
     HANDLE handle;
@@ -47,6 +48,7 @@ struct cahute_win32_cesg_link_cookie {
     OVERLAPPED write_overlapped;
     DWORD received;
     DWORD read_in_progress;
+    size_t max_read_capacity;
 };
 
 /**
@@ -92,6 +94,14 @@ receive_on_link(
     /* If a read operation is not already in progress, we want to
      * initiate it now. */
     if (!cookie->read_in_progress) {
+        size_t max_capacity = cookie->max_read_capacity;
+
+        /* Requesting with a capacity too high (e.g. 32768 bytes) results in a
+         * 0x00000057 (ERROR_INVALID_PARAMETER) error with legacy CESG502.
+         * Therefore, we want to limit to that size. */
+        if (max_capacity && capacity > max_capacity)
+            capacity = max_capacity;
+
         cookie->received = 0;
         ret = ReadFile(
             cookie->handle,
@@ -237,19 +247,29 @@ cesg_link_interface = {
  * @param context
  * @param open_params
  * @param path Path to the device interface.
+ * @param max_read_capacity Maximum buffer size to use when reading.
+ *        This parameter is necessary since older versions of the driver
+ *        do not support the read capacity of Cahute (CESG 1.0.0.0 does not
+ *        support reading 32768 bytes at once). Set to 0 for no limit.
  * @return Error, or 0 if successful.
  */
 CAHUTE_EXTERN(int)
 cahute_open_win32_cesg_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
-    char const *path
+    char const *path,
+    size_t max_read_capacity
 ) {
     HANDLE handle = INVALID_HANDLE_VALUE;
     HANDLE read_overlapped_event_handle = INVALID_HANDLE_VALUE;
     HANDLE write_overlapped_event_handle = INVALID_HANDLE_VALUE;
     cahute_win32_cesg_link_cookie cookie;
     int err = CAHUTE_ERROR_UNKNOWN;
+
+    msg(context,
+        ll_info,
+        "Opening a handle to the following device interface: %s",
+        path);
 
     /* The device is a USB device opened using CESG502. */
     handle = CreateFileA(
@@ -292,6 +312,7 @@ cahute_open_win32_cesg_link(
     memset(&cookie.write_overlapped, 0, sizeof(OVERLAPPED));
     cookie.read_overlapped.hEvent = read_overlapped_event_handle;
     cookie.write_overlapped.hEvent = write_overlapped_event_handle;
+    cookie.max_read_capacity = max_read_capacity;
 
     return cahute_open_serial_over_usb_bulk_link_from_interface(
         open_params,

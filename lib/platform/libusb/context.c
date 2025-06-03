@@ -58,8 +58,7 @@ cahute_libusb_global_context_mapping = NULL;
  *        level.
  * @param str Formatted message.
  */
-CAHUTE_LOCAL(void)
-cahute_log_libusb_message(
+static void LIBUSB_CALL cahute_log_libusb_message(
     libusb_context *lu_context,
     enum libusb_log_level level,
     char const *str

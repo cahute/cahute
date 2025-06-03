@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2025 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -28,24 +28,69 @@
 
 #include "internals.h"
 
+CAHUTE_DECLARE_TYPE(detect_cookie)
+
+/**
+ * Cookie for USB detection.
+ *
+ * @property context Current context.
+ * @property func User function to call.
+ * @property cookie Cookie to pass to the user function on call.
+ */
+struct detect_cookie {
+    cahute_context *context;
+    cahute_detect_usb_entry_func *func;
+    void *cookie;
+};
+
+/**
+ * Match a USB device.
+ *
+ * @param cookie Cookie.
+ * @param device Device information.
+ * @return Error, or 0 if ok.
+ */
+CAHUTE_LOCAL(int)
+match_device(detect_cookie *cookie, cahute_win32_usb_device const *device) {
+    cahute_usb_detection_entry entry;
+
+    entry.cahute_usb_detection_entry_bus = device->bus;
+    entry.cahute_usb_detection_entry_address = device->addr;
+    entry.cahute_usb_detection_entry_type = device->entry_type;
+
+    return (*cookie->func)(cookie->cookie, &entry);
+}
+
 /**
  * Detect USB entries available to Cahute.
+ *
+ * The full extent of the Unified Device Property Model is not available until
+ * Windows Vista, and we aim at keeping Windows 2000 and XP compatibility,
+ * so we use registry properties on devices.
  *
  * @param func User function to call back with every USB entry.
  * @param cookie Cookie to pass to the user function.
  * @return Error, or CAHUTE_OK if no error has occurred.
  */
 CAHUTE_EXTERN(int)
-cahute_detect_usb(
-    cahute_context CAHUTE_NNPTR(context),
+cahute_win32_detect_usb(
+    cahute_context *context,
     cahute_detect_usb_entry_func CAHUTE_NNPTR(func),
     void *cookie
-) CAHUTE_NONNULL((1)) {
-#if CAHUTE_PLATFORM_LIBUSB
-    return cahute_libusb_detect_usb(context, func, cookie);
-#elif CAHUTE_PLATFORM_WIN32
-    return cahute_win32_detect_usb(context, func, cookie);
-#else
-    CAHUTE_RETURN_IMPL(context, "No USB device detection method available.");
-#endif
+) {
+    detect_cookie internal_cookie;
+    cahute_win32_usb_device_filter filter;
+
+    internal_cookie.context = context;
+    internal_cookie.func = func;
+    internal_cookie.cookie = cookie;
+
+    filter.type = CAHUTE_WIN32_USB_FILTER_NONE;
+
+    return cahute_enumerate_win32_usb_devices(
+        context,
+        &filter,
+        (cahute_enumerate_win32_usb_device_func *)&match_device,
+        &internal_cookie
+    );
 }

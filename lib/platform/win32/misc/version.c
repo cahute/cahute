@@ -29,61 +29,23 @@
 #include "../internals.h"
 
 /**
- * Log a Windows API error.
+ * Check the Windows NT version.
  *
- * This is implemented as a separate function to the rest, because gathering
- * an error message for a given error code is quite lengthy.
- *
- * @param context Context to use for logging.
- * @param func_name Name of the function from which the log is emitted.
- * @param win_func Name of the Windows API function that returned the
- *        error.
- * @param code Windows API error code that was actually returned.
+ * @param version Version, as 0xMMmm, where 'MM' is the major and 'mm' is the
+ *        minor version.
+ * @return 1 if the version is correct, 0 otherwise.
  */
-CAHUTE_EXTERN(void)
-cahute_win32_log_error(
-    cahute_context *context,
-    char const *func_name,
-    char const *win_func,
-    DWORD code
-) {
-    char buf[1024];
-    DWORD buf_size;
+CAHUTE_EXTERN(int) cahute_check_win32_version(unsigned int version) {
+    OSVERSIONINFOEX vi;
+    DWORDLONG mask = 0;
 
-    buf_size = FormatMessage(
-        FORMAT_MESSAGE_FROM_SYSTEM,
-        NULL,
-        code,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        buf,
-        1023,
-        NULL
-    );
-    if (!buf_size) {
-        cahute_log_message(
-            context,
-            30,
-            func_name,
-            "Error 0x%08lX occurred in %s.",
-            code,
-            win_func
-        );
-        return;
-    }
+    memset(&vi, 0, sizeof(vi));
+    vi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    vi.dwMajorVersion = (version >> 8) & 255;
+    vi.dwMinorVersion = version & 255;
 
-    if (buf_size && buf[buf_size] == '\n')
-        buf_size--;
-    if (buf_size && buf[buf_size] == '\r')
-        buf_size--;
+    VER_SET_CONDITION(mask, VER_MAJORVERSION, VER_GREATER_EQUAL);
+    VER_SET_CONDITION(mask, VER_MINORVERSION, VER_GREATER_EQUAL);
 
-    buf[buf_size] = '\0';
-    cahute_log_message(
-        context,
-        30,
-        func_name,
-        "Error 0x%08lX occurred in %s: %s",
-        code,
-        win_func,
-        buf
-    );
+    return VerifyVersionInfo(&vi, VER_MAJORVERSION | VER_MINORVERSION, mask);
 }

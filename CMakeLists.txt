@@ -1,10 +1,4 @@
-if(WIN32)
-    # CMake 3.24 is required to read the Windows registry.
-    cmake_minimum_required(VERSION 3.24)
-else()
-    cmake_minimum_required(VERSION 3.16)
-endif()
-
+cmake_minimum_required(VERSION 3.16)
 project(
     cahute
     VERSION 0.6
@@ -41,7 +35,7 @@ set(CAHUTE_GIT ON CACHE BOOL
 
 set(CAHUTE_LIBUSB ON CACHE BOOL
     "Enable usage of libusb?")
-if(DEFINED FXSDK_PLATFORM OR DEFINED AMIGA OR DEFINED WATCOM)
+if(DEFINED FXSDK_PLATFORM OR DEFINED AMIGA OR DEFINED WATCOM OR WIN32)
     set_property(CACHE CAHUTE_LIBUSB PROPERTY VALUE OFF)
 endif()
 
@@ -209,10 +203,19 @@ set(PKGCONFIG_DEPS "")
 # pkgconf / pkg-config configuration file when installing the library.
 set(PKGCONFIG_LIBS "")
 
+# USE_LIBUSB represents whether to include and use libusb.
+# It is disabled on Win32 because we manage some drivers libusb does not,
+# that are more important in our case (CESG502, mostly).
+if(CAHUTE_LIBUSB AND NOT WIN32)
+    set(USE_LIBUSB ON)
+else()
+    set(USE_LIBUSB OFF)
+endif()
+
 include(GNUInstallDirs)
 include(CheckTypeSize)
 
-if(CAHUTE_LIBUSB)
+if(USE_LIBUSB)
     find_package(PkgConfig REQUIRED)
 endif()
 
@@ -226,31 +229,18 @@ if(CAHUTE_FEATURE_CLI_P7SCREEN)
     find_package(SDL2 REQUIRED)
 endif()
 
-if(CAHUTE_LIBUSB)
-    if(WIN32 AND DEFINED VCPKG_INSTALLED_DIR)
-        # With vcpkg, libusb <=1.0.23 does not include a pkgconf file,
-        # so we need to add the options manually, hoping it will be enough.
-        pkg_check_modules(libusb libusb-1.0 IMPORTED_TARGET)
-        if(NOT TARGET PkgConfig::libusb)
-            list(APPEND LIB_INCLUDE_DIRS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/libusb-1.0")
-            list(APPEND CLI_LIBRARIES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/libusb-1.0.lib")
-            list(APPEND PKGCONFIG_LIBS "-lusb-1.0")
-        endif()
-    else()
-        pkg_check_modules(libusb REQUIRED libusb-1.0 IMPORTED_TARGET)
-    endif()
+if(USE_LIBUSB)
+    pkg_check_modules(libusb REQUIRED libusb-1.0 IMPORTED_TARGET)
 
-    if(TARGET PkgConfig::libusb)
-        list(APPEND LIB_INCLUDE_DIRS
-            "${libusb_INCLUDE_DIRS}"
-        )
-        list(APPEND CLI_LIBRARIES
-            PkgConfig::libusb
-        )
-        list(APPEND PKGCONFIG_DEPS
-            "libusb-1.0"
-        )
-    endif()
+    list(APPEND LIB_INCLUDE_DIRS
+        "${libusb_INCLUDE_DIRS}"
+    )
+    list(APPEND CLI_LIBRARIES
+        PkgConfig::libusb
+    )
+    list(APPEND PKGCONFIG_DEPS
+        "libusb-1.0"
+    )
 endif()
 
 check_type_size("ssize_t" "SIZEOF_SIZE_T")
@@ -411,15 +401,23 @@ if(CAHUTE_FEATURE_LIB_STATIC)
             lib/platform/win32/file/stdout.c
             lib/platform/win32/file/write.c
             lib/platform/win32/misc/cfgmgr32.c
+            lib/platform/win32/misc/devices.c
             lib/platform/win32/misc/dll.c
+            lib/platform/win32/misc/guid.c
+            lib/platform/win32/misc/guids.c
             lib/platform/win32/misc/logging.c
             lib/platform/win32/misc/monotonic.c
             lib/platform/win32/misc/sleep.c
+            lib/platform/win32/misc/version.c
+            lib/platform/win32/misc/winusb.c
             lib/platform/win32/serial/detection.c
             lib/platform/win32/serial/link.c
             lib/platform/win32/usb/cesg.c
+            lib/platform/win32/usb/detection.c
+            lib/platform/win32/usb/devices.c
             lib/platform/win32/usb/open.c
-            lib/platform/win32/usb/ums.c)
+            lib/platform/win32/usb/ums.c
+            lib/platform/win32/usb/winusb_bulk.c)
     elseif(DEFINED AMIGA)
         list(APPEND LIB_COMPILE_DEFS
             CAHUTE_PLATFORM_AMIGAOS=1)
@@ -451,7 +449,7 @@ if(CAHUTE_FEATURE_LIB_STATIC)
             lib/platform/posix/stdout.c)
     endif()
 
-    if(CAHUTE_LIBUSB)
+    if(USE_LIBUSB)
         list(APPEND LIB_COMPILE_DEFS
             CAHUTE_PLATFORM_LIBUSB=1)
         list(APPEND LIB_SOURCES

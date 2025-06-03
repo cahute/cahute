@@ -381,6 +381,13 @@ cahute_open_usb_link(
 
 #if CAHUTE_PLATFORM_LIBUSB
     return cahute_open_libusb_link(context, &params, bus, address);
+#elif CAHUTE_PLATFORM_WIN32
+    return cahute_open_win32_usb_device_from_address(
+        context,
+        &params,
+        bus,
+        address
+    );
 #else
     (void)params;
     CAHUTE_RETURN_IMPL(

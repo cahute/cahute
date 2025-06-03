@@ -200,29 +200,6 @@ cahute_open_libusb_link(
             err = CAHUTE_ERROR_PRIV;
             goto fail;
 
-#if CAHUTE_PLATFORM_WIN32
-        case LIBUSB_ERROR_NOT_SUPPORTED: {
-            int device_addr = libusb_get_port_number(device_list[i]);
-
-            msg(context,
-                ll_info,
-                "Falling back on manual Win32 driver support.");
-
-            /* We might return here, so we want to free resources now. */
-            libusb_free_device_list(device_list, 1);
-            device_list = NULL;
-
-            err = cahute_open_win32_usb_device_from_address(
-                context,
-                open_params,
-                device_addr
-            );
-            if (!err)
-                return CAHUTE_OK;
-        }
-#endif
-            /* FALLTHRU */
-
         default:
             msg(context,
                 ll_error,

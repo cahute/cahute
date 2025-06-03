@@ -116,7 +116,7 @@ scsi_request(
     if (!wret) {
         werr = GetLastError();
 
-        if (werr == ERROR_SEM_TIMEOUT)
+        if (werr == ERROR_SEM_TIMEOUT || werr == ERROR_NO_SUCH_DEVICE)
             return CAHUTE_ERROR_GONE;
 
         log_windows_error(context, "DeviceIoControl", werr);

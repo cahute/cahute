@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2025 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -27,63 +27,107 @@
  * ************************************************************************* */
 
 #include "../internals.h"
+#undef DEFINE_GUID
+#define DEFINE_GUID(NAME, L, W1, W2, B1, B2, B3, B4, B5, B6, B7, B8) \
+    CAHUTE_EXPORT_DATA(GUID) \
+    NAME = {L, W1, W2, {B1, B2, B3, B4, B5, B6, B7, B8}}
 
-/**
- * Log a Windows API error.
- *
- * This is implemented as a separate function to the rest, because gathering
- * an error message for a given error code is quite lengthy.
- *
- * @param context Context to use for logging.
- * @param func_name Name of the function from which the log is emitted.
- * @param win_func Name of the Windows API function that returned the
- *        error.
- * @param code Windows API error code that was actually returned.
- */
-CAHUTE_EXTERN(void)
-cahute_win32_log_error(
-    cahute_context *context,
-    char const *func_name,
-    char const *win_func,
-    DWORD code
-) {
-    char buf[1024];
-    DWORD buf_size;
+DEFINE_GUID(
+    cahute_guid_devinterface_usb_hub,
+    0xf18a0e88,
+    0xc30c,
+    0x11d0,
+    0x88,
+    0x15,
+    0x00,
+    0xa0,
+    0xc9,
+    0x06,
+    0xbe,
+    0xd8
+);
+DEFINE_GUID(
+    cahute_guid_devinterface_usb_device,
+    0xa5dcbf10,
+    0x6530,
+    0x11d2,
+    0x90,
+    0x1f,
+    0x00,
+    0xc0,
+    0x4f,
+    0xb9,
+    0x51,
+    0xed
+);
+DEFINE_GUID(
+    cahute_guid_devinterface_volume,
+    0x53f5630d,
+    0xb6bf,
+    0x11d0,
+    0x94,
+    0xf2,
+    0x00,
+    0xa0,
+    0xc9,
+    0x1e,
+    0xfb,
+    0x8b
+);
 
-    buf_size = FormatMessage(
-        FORMAT_MESSAGE_FROM_SYSTEM,
-        NULL,
-        code,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        buf,
-        1023,
-        NULL
-    );
-    if (!buf_size) {
-        cahute_log_message(
-            context,
-            30,
-            func_name,
-            "Error 0x%08lX occurred in %s.",
-            code,
-            win_func
-        );
-        return;
-    }
-
-    if (buf_size && buf[buf_size] == '\n')
-        buf_size--;
-    if (buf_size && buf[buf_size] == '\r')
-        buf_size--;
-
-    buf[buf_size] = '\0';
-    cahute_log_message(
-        context,
-        30,
-        func_name,
-        "Error 0x%08lX occurred in %s: %s",
-        code,
-        win_func,
-        buf
-    );
-}
+DEFINE_GUID(
+    cahute_guid_devclass_usb,
+    0x36fc9e60,
+    0xc465,
+    0x11cf,
+    0x80,
+    0x56,
+    0x44,
+    0x45,
+    0x53,
+    0x54,
+    0x00,
+    0x00
+);
+DEFINE_GUID(
+    cahute_guid_devclass_usb_device,
+    0x88bae032,
+    0x5a81,
+    0x49f0,
+    0xbc,
+    0x3d,
+    0xa4,
+    0xff,
+    0x13,
+    0x82,
+    0x16,
+    0xd6
+);
+DEFINE_GUID(
+    cahute_guid_devclass_diskdrive,
+    0x4d36e967,
+    0xe325,
+    0x11ce,
+    0xbf,
+    0xc1,
+    0x08,
+    0x00,
+    0x2b,
+    0xe1,
+    0x03,
+    0x18
+);
+DEFINE_GUID(
+    cahute_guid_devclass_volume,
+    0x71a27cdd,
+    0x812a,
+    0x11d0,
+    0xbe,
+    0xc7,
+    0x08,
+    0x00,
+    0x2b,
+    0xe2,
+    0x09,
+    0x2f
+);

@@ -178,7 +178,7 @@ Link management related function declarations
 
     The format of the device name or path will vary depending on the platform:
 
-    * On Microsoft Windows, it will either be the DOS COM device name (e.g.
+    * On Win32, it will either be the DOS COM device name (e.g.
       ``COM3``) or the path to the device.
     * On other POSIX-compatible platforms, it will be the path to the device,
       usually ``/dev/cu*`` or ``/dev/tty*`` (e.g. ``/dev/ttyUSB0`` for a

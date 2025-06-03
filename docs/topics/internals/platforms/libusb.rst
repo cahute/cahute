@@ -115,12 +115,6 @@ libusb. Then, if the platform supports it, we get the port number
 using |libusb_get_port_number|_, and try to open the device through the
 system-specific interface.
 
-.. note::
-
-    On :ref:`feature-topic-system-windows`, the port number is considered to be
-    a device address; see :ref:`internals-topic-win32-device-address` for more
-    information.
-
 Serial over bulk USB links using libusb
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
