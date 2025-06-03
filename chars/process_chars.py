@@ -479,11 +479,11 @@ def get_sequence_parsing_tree_lines(
     if kind == "u32":
         tree_type = "cahute_u32_parsing_tree"
         match_type = "cahute_u32_match"
-        seq_cast = "(cahute_u32 const [])"
+        seq_typ = "cahute_u32"
     else:
         tree_type = "cahute_byte_parsing_tree"
         match_type = "cahute_byte_match"
-        seq_cast = "(cahute_u8 const [])"
+        seq_typ = "cahute_u8"
 
     def explore_tree(
         symbol: str,
@@ -501,7 +501,19 @@ def get_sequence_parsing_tree_lines(
         for i, (sequence, subtree) in enumerate(tree.subtrees.items()):
             yield from explore_tree(symbol + f"_{i}", subtree)
             yield ""
-            yield f"CAHUTE_LOCAL_DATA(struct {match_type}) {symbol}_m{i} = " + "{"
+
+            s_symbol: str | None = None
+            if sequence:
+                s_symbol = f"{symbol}_m{i}_s"
+                yield (
+                    f"CAHUTE_LOCAL_DATA({seq_typ}) {s_symbol}[] = {{"
+                    + ", ".join(
+                        map(str, sequence)
+                    )
+                    + "};"
+                )
+
+            yield f"CAHUTE_LOCAL_DATA(struct {match_type}) {symbol}_m{i} = {{"
 
             if i == 0:  # Next node.
                 yield "    NULL,"
@@ -510,10 +522,8 @@ def get_sequence_parsing_tree_lines(
 
             yield f"    &{symbol}_{i},"  # Subtree.
 
-            if sequence:
-                yield f"    {seq_cast}" + "{" + ", ".join(
-                    map(str, sequence)
-                ) + "},"  # Sequence.
+            if s_symbol is not None:
+                yield f"    {s_symbol},"
             else:
                 # Do not emit an empty sequence.
                 yield "NULL,"
@@ -566,6 +576,38 @@ def get_chars_c_lines(*, ref: CharacterReference) -> Iterator[str]:
     for symbol, char in sorted(chars_per_symbol.items()):
         # See ``cahute_char_entry`` in ``lib/chars.h`` for more information.
 
+        u_symbol: str | None = None
+        cat_symbol: str | None = None
+        o_symbol: str | None = None
+
+        if char.unicode and char.unicode[0]:
+            u_symbol = f"{symbol}_u"
+            yield (
+                f"CAHUTE_LOCAL_DATA(cahute_u32) {u_symbol}[] = {{"
+                + ", ".join(
+                    map(str, char.unicode[0])
+                )
+                + "};"
+            )
+
+        if char.cat and char.cat[0]:
+            cat_symbol = f"{symbol}_cat"
+            yield (
+                f"CAHUTE_LOCAL_DATA(char) {cat_symbol}[] = {{"
+                + ", ".join(
+                    str(ord(x)) for x in char.cat[0]
+                )
+                + "};"
+            )
+
+        if char.opcode is not None:
+            o_symbol = f"{symbol}_o"
+            yield (
+                f"CAHUTE_LOCAL_DATA(cahute_u16) {o_symbol}[] = {{"
+                + ", ".join(map(str, char.opcode))
+                + "};"
+            )
+
         yield f"CAHUTE_LOCAL_DATA(struct cahute_char_entry) {symbol} = " + "{"
 
         # Legacy character code.
@@ -584,22 +626,18 @@ def get_chars_c_lines(*, ref: CharacterReference) -> Iterator[str]:
         else:
             yield "    0,"
 
-        if char.unicode and char.unicode[0]:
-            yield "    (cahute_u32 const []){" + ", ".join(
-                map(str, char.unicode[0])
-            ) + "},"
+        if u_symbol is not None:
+            yield f"    {u_symbol},"
         else:
             yield "    NULL,"
 
-        if char.cat and char.cat[0]:
-            yield "    (char const []){" + ", ".join(
-                str(ord(x)) for x in char.cat[0]
-            ) + "},"
+        if cat_symbol is not None:
+            yield f"    {cat_symbol},"
         else:
             yield "    NULL,"
 
-        if char.opcode:
-            yield "    (cahute_u16 const []){" + ", ".join(map(str, char.opcode)) + "},"
+        if o_symbol is not None:
+            yield f"    {o_symbol},"
         else:
             yield "    NULL,"
 

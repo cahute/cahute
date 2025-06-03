@@ -27,7 +27,11 @@
  * ************************************************************************* */
 
 #include "internals.h"
-#include <ntddscsi.h>
+#if HAVE_DDK_NTDDSCSI_H
+# include <ddk/ntddscsi.h>
+#else
+# include <ntddscsi.h>
+#endif
 
 CAHUTE_DECLARE_TYPE(cahute_win32_ums_link_cookie)
 
@@ -78,7 +82,7 @@ scsi_request(
     SCSI_PASS_THROUGH_DIRECT req;
     DWORD wret, werr, wcnt;
 
-    SecureZeroMemory(&req, sizeof(SCSI_PASS_THROUGH_DIRECT));
+    memset(&req, 0, sizeof(SCSI_PASS_THROUGH_DIRECT));
     req.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
     req.TimeOutValue = 30;
     req.CdbLength = command_size;

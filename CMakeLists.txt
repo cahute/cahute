@@ -41,7 +41,7 @@ set(CAHUTE_GIT ON CACHE BOOL
 
 set(CAHUTE_LIBUSB ON CACHE BOOL
     "Enable usage of libusb?")
-if(DEFINED FXSDK_PLATFORM OR DEFINED AMIGA)
+if(DEFINED FXSDK_PLATFORM OR DEFINED AMIGA OR DEFINED WATCOM)
     set_property(CACHE CAHUTE_LIBUSB PROPERTY VALUE OFF)
 endif()
 
@@ -53,7 +53,7 @@ set(CAHUTE_REPORT_URL "https://cahuteproject.org/guides/report.html"
 
 set(CAHUTE_SDL ON CACHE BOOL
     "Enable usage of SDL?")
-if(DEFINED FXSDK_PLATFORM OR DEFINED AMIGA)
+if(DEFINED FXSDK_PLATFORM OR DEFINED AMIGA OR DEFINED WATCOM)
     set_property(CACHE CAHUTE_SDL PROPERTY VALUE OFF)
 endif()
 
@@ -156,6 +156,7 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
     add_compile_options(
         -Wall -Wextra -Wno-c99-extensions -Wc23-extensions
     )
+elseif (CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
 else()
     # CMake defines "-O3" by default for the Release target for multiple
     # compilers with the GNU command-line interface.
@@ -257,11 +258,17 @@ endif()
 check_type_size("void*" "SIZEOF_UINTPTR_T")
 
 check_include_file("linux/serial.h" "HAVE_LINUX_SERIAL_H")
+if(WIN32)
+    try_compile("HAVE_DDK_NTDDSCSI_H"
+        SOURCE_FROM_FILE "main.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/misc/ntddscsi_example.c")
+endif()
 
 add_compile_definitions(
     SIZEOF_SIZE_T=${SIZEOF_SIZE_T}
     SIZEOF_UINTPTR_T=${SIZEOF_UINTPTR_T}
     HAVE_LINUX_SERIAL_H=${HAVE_LINUX_SERIAL_H}
+    HAVE_DDK_NTDDSCSI_H=${HAVE_DDK_NTDDSCSI_H}
 )
 
 # ---
@@ -397,7 +404,7 @@ if(CAHUTE_FEATURE_LIB_STATIC)
             lib/platform/win32/usb/cesg.c
             lib/platform/win32/usb/open.c
             lib/platform/win32/usb/ums.c)
-    elseif(AMIGA)
+    elseif(DEFINED AMIGA)
         list(APPEND LIB_COMPILE_DEFS
             CAHUTE_PLATFORM_AMIGAOS=1)
         list(APPEND LIB_SOURCES
@@ -407,7 +414,7 @@ if(CAHUTE_FEATURE_LIB_STATIC)
             lib/platform/amigaos/misc/timer.c
             lib/platform/amigaos/serial/detection.c
             lib/platform/amigaos/serial/link.c)
-    else()
+    elseif(UNIX)
         if(LINUX)
             list(APPEND LIB_COMPILE_DEFS
                 CAHUTE_PLATFORM_LINUX=1)

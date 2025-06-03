@@ -36,7 +36,7 @@
 #include <sys/stat.h>
 #include <sys/select.h>
 
-#if defined(__linux__) && HAVE_LINUX_SERIAL_H
+#if CMAKE_PLATFORM_LINUX && HAVE_LINUX_SERIAL_H
 # include <linux/serial.h>
 #endif
 

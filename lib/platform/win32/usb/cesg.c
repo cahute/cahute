@@ -288,8 +288,8 @@ cahute_open_win32_cesg_link(
     cookie.handle = handle;
     cookie.read_in_progress = 0;
     cookie.received = 0;
-    SecureZeroMemory(&cookie.read_overlapped, sizeof(OVERLAPPED));
-    SecureZeroMemory(&cookie.write_overlapped, sizeof(OVERLAPPED));
+    memset(&cookie.read_overlapped, 0, sizeof(OVERLAPPED));
+    memset(&cookie.write_overlapped, 0, sizeof(OVERLAPPED));
     cookie.read_overlapped.hEvent = read_overlapped_event_handle;
     cookie.write_overlapped.hEvent = write_overlapped_event_handle;
 

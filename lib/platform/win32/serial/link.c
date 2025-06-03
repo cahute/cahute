@@ -277,7 +277,7 @@ set_serial_params_on_link(
         return CAHUTE_ERROR_UNKNOWN;
     }
 
-    SecureZeroMemory(&dcb, sizeof(DCB));
+    memset(&dcb, 0, sizeof(DCB));
     dcb.DCBlength = sizeof(DCB);
     if (!GetCommState(cookie->handle, &dcb)) {
         log_windows_error(context, "GetCommState", GetLastError());
@@ -457,8 +457,8 @@ cahute_open_win32_serial_link(
         goto fail;
     }
 
-    SecureZeroMemory(&cookie.read_overlapped, sizeof(OVERLAPPED));
-    SecureZeroMemory(&cookie.write_overlapped, sizeof(OVERLAPPED));
+    memset(&cookie.read_overlapped, 0, sizeof(OVERLAPPED));
+    memset(&cookie.write_overlapped, 0, sizeof(OVERLAPPED));
     cookie.handle = handle;
     cookie.read_overlapped.hEvent = read_overlapped_event_handle;
     cookie.write_overlapped.hEvent = write_overlapped_event_handle;

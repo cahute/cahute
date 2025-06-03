@@ -1393,6 +1393,7 @@ cahute_seven_receive_raw_data(
     unsigned long packet_count = 0;
     unsigned long offset = 0;
     unsigned int i;
+    size_t current_size;
     int err;
 
     for (i = 1; size; i++) {
@@ -1468,8 +1469,7 @@ cahute_seven_receive_raw_data(
             return CAHUTE_ERROR_UNKNOWN;
         }
 
-        size_t current_size =
-            link->protocol_state.seven.last_packet_data_size - 8;
+        current_size = link->protocol_state.seven.last_packet_data_size - 8;
         if (i < packet_count) {
             if (current_size >= size) {
                 msg(link->context,
