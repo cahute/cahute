@@ -44,12 +44,14 @@
  *
  * @param filep File pointer.
  * @param level Log level for the given message.
+ * @param source Source.
  * @param func Name of the function.
  * @param message Formatted message.
  */
 static void log_to_debug_file(
     FILE *filep,
     int level,
+    char const *source,
     char const *func,
     char const *message
 ) {

@@ -39,6 +39,9 @@
 /* Make some data local. */
 #define CAHUTE_LOCAL_DATA(TYPE) static TYPE const
 
+/* Make some data local and mutable. */
+#define CAHUTE_LOCAL_MUTABLE_DATA(TYPE) static TYPE
+
 #if CAHUTE_MSC_PREREQ(12, 0)
 # include <BaseTsd.h>
 

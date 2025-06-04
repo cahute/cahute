@@ -42,6 +42,7 @@ CAHUTE_BEGIN_DECLS
 typedef void(cahute_log_func)(
     void *cahute__cookie,
     int cahute__level,
+    char const *cahute__source,
     char const *cahute__func,
     char const *cahute__message
 );

@@ -34,8 +34,8 @@ Macro definitions
 Type definitions
 ----------------
 
-.. c:type:: void (cahute_log_func)(void *cookie, int level, char const *func, \
-    char const *message)
+.. c:type:: void (cahute_log_func)(void *cookie, int level, \
+    char const *source, char const *func, char const *message)
 
     Function that can be called to emit a log message with parameters.
 
@@ -46,6 +46,10 @@ Type definitions
 
     ``level``
         Level with which the message was emitted.
+
+    ``source``
+        Source of the message, either set to ``"cahute"`` or the name of
+        the third party library the log comes from.
 
     ``func``
         Name or prototype of the function that emitted the message; may be

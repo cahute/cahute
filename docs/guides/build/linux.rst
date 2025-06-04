@@ -50,7 +50,7 @@ Cahute depends on the following build-only dependencies:
 It also depends on the following build and runtime dependencies:
 
 * SDL_ >= 2.0 (for ``p7screen``);
-* libusb_.
+* libusb_ >= 1.0.23.
 
 In order to install the dependencies, it is recommended you use your native
 package manager. A few examples are the following:

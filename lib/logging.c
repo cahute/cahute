@@ -44,6 +44,7 @@ hexadecimal_alphabet = "0123456789ABCDEF";
  *
  * @param cookie Cookie for the logging function (unused).
  * @param level Log level for the given message.
+ * @param source Source of the log.
  * @param func Name of the function.
  * @param message Formatted message.
  */
@@ -51,6 +52,7 @@ CAHUTE_LOCAL(void)
 cahute_log_to_file(
     void *cookie,
     int level,
+    char const *source,
     char const *func,
     char const *message
 ) {
@@ -91,7 +93,7 @@ cahute_log_to_file(
         tm->tm_min,
         tm->tm_sec
     );
-    sprintf(levelbuf, "cahute %s", level_name);
+    sprintf(levelbuf, "%s %s", source, level_name);
 
     if (!func)
         fprintf(stderr, "\r[%s %14s] ", timebuf, levelbuf);
@@ -163,6 +165,77 @@ CAHUTE_EXTERN(void) cahute_reset_log_func(cahute_context *context) {
 }
 
 /**
+ * Emit a log message to the logging system from a different source.
+ *
+ * @param context Context in which to emit the message.
+ * @param loglevel Logging level at which to emit the message.
+ * @param source Source for the message.
+ * @param func Optional function name for which to emit the message.
+ * @param message Message to push.
+ * @param len Maximum length of the message to push.
+ *        If set to 0, the length will be automatically computed.
+ */
+CAHUTE_EXTERN(void)
+cahute_log_external_message(
+    cahute_context *context,
+    int loglevel,
+    char const *source,
+    char const *func,
+    char const *message,
+    size_t len
+) {
+    char buf[64];
+    char const *result;
+
+    if (context->log_level > loglevel)
+        return;
+
+    if (!len) {
+        (*context->log_callback)(
+            context->log_callback_cookie,
+            loglevel,
+            source,
+            func,
+            message
+        );
+        return;
+    }
+
+    buf[sizeof(buf) - 1] = '\0';
+    for (; len > sizeof(buf) - 1; len -= sizeof(buf) - 1) {
+        result = memchr(message, '\0', sizeof(buf) - 1);
+        if (result) {
+            len = (size_t)(result - message);
+            break;
+        }
+
+        memcpy(buf, message, sizeof(buf) - 1);
+        (*context->log_callback)(
+            context->log_callback_cookie,
+            loglevel,
+            source,
+            func,
+            buf
+        );
+        message += sizeof(buf) - 1;
+    }
+
+    result = memchr(message, '\0', len);
+    if (result)
+        len = (size_t)(result - message);
+
+    memcpy(buf, message, len);
+    buf[len] = '\0';
+    (*context->log_callback)(
+        context->log_callback_cookie,
+        loglevel,
+        source,
+        func,
+        buf
+    );
+}
+
+/**
  * Output a log message with parameters for a given log level.
  *
  * This is the function called behind the "msg(ll_*, fmt, ...)" macro defined
@@ -199,6 +272,7 @@ cahute_log_message(
         (*context->log_callback)(
             context->log_callback_cookie,
             loglevel,
+            "cahute",
             func,
             msg
         );
@@ -237,6 +311,7 @@ cahute_log_memory(
         (*context->log_callback)(
             context->log_callback_cookie,
             loglevel,
+            "cahute",
             func,
             "(nothing)"
         );
@@ -298,6 +373,7 @@ cahute_log_memory(
         (*context->log_callback)(
             context->log_callback_cookie,
             loglevel,
+            "cahute",
             func,
             linebuf
         );

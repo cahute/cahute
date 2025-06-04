@@ -174,6 +174,7 @@ cahute_log_message(
     char const *cahute__format,
     ...
 );
+
 CAHUTE_EXTERN(void)
 cahute_log_memory(
     cahute_context *cahute__context,
@@ -181,6 +182,16 @@ cahute_log_memory(
     char const *cahute__func,
     void const *cahute__memory,
     size_t cahute__size
+);
+
+CAHUTE_EXTERN(void)
+cahute_log_external_message(
+    cahute_context *context,
+    int loglevel,
+    char const *source,
+    char const *func,
+    char const *message,
+    size_t len
 );
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
