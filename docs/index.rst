@@ -120,6 +120,7 @@ They guide you through the steps involved in addressing key problems
 and use-cases.
 
 .. toctree::
+    :caption: How-to guides
     :maxdepth: 3
 
     guides/install
@@ -136,6 +137,7 @@ These sections discuss key topics and concepts at a fairly high level,
 and provide useful background information and explanation.
 
 .. toctree::
+    :caption: Discussion topics
     :maxdepth: 3
 
     topics/communication-protocols
@@ -153,6 +155,7 @@ Cahute's machinery. They go into detail, and therefore, assume you have a
 basic understanding of key concepts.
 
 .. toctree::
+    :caption: References
     :maxdepth: 3
 
     references/cli

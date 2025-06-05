@@ -38,6 +38,7 @@ from docutils.parsers.rst import Directive
 from docutils.parsers.rst.directives import unchanged
 from docutils.statemachine import StringList
 from docutils.utils import SystemMessagePropagation
+from sphinx import addnodes
 from sphinx.directives import SphinxDirective
 from sphinx.writers.html import HTMLTranslator
 
@@ -85,6 +86,15 @@ class MyHTMLTranslator(HTMLTranslator):
     """Custom"""
 
     def visit_title(self, node):
+        # Remove captions in toctrees, only keep them for side navigation.
+        if (
+            isinstance(node.parent, addnodes.compact_paragraph)
+            and node.parent.get("toctree")
+            and isinstance(node.parent.parent, nodes.compound)
+            and "toctree-wrapper" in node.parent.parent.get("classes", ())
+        ):
+            raise nodes.SkipNode()
+
         is_title = (
             not isinstance(
                 node.parent,
