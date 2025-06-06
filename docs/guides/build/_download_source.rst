@@ -13,7 +13,7 @@ the following options:
 
   .. parsed-literal::
 
-      git clone https\://gitlab.com/cahuteproject/cahute.git cahute-|version|
+      git clone https\://gitlab.com/cahute/cahute.git cahute-|version|
       (cd cahute-|version| && git checkout -f |version|)
 
 The project is present in the "cahute-|version|" directory.

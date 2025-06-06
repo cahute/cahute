@@ -14,7 +14,7 @@ Repository issues
 -----------------
 
 The direct way for users to communicate on the project and about bugs and
-requested features are `Gitlab issues on the cahuteproject/cahute repository
+requested features are `Gitlab issues on the cahute/cahute repository
 <Gitlab issues_>`_.
 
 .. _project-topic-forums:
@@ -71,7 +71,7 @@ Here is a preview of what the maintainers can see through the
     A view of which links reference the Cahute documentation on a given
     domain (here, ``tiplanet.org``).
 
-.. _Gitlab issues: https://gitlab.com/cahuteproject/cahute/-/issues
+.. _Gitlab issues: https://gitlab.com/cahute/cahute/-/issues
 .. _Planète Casio topic:
     https://www.planet-casio.com/Fr/forums/topic17699-1-cahute-pour-
     communiquer-efficacement-avec-sa-calculatrice-casio-sous-linux.html

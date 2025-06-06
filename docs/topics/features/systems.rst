@@ -90,7 +90,7 @@ instructions on how to install it.
 .. warning::
 
     Debian is not yet supported as an official target by Cahute.
-    See `#8 <https://gitlab.com/cahuteproject/cahute/-/issues/8>`_
+    See `#8 <https://gitlab.com/cahute/cahute/-/issues/8>`_
     for more information.
 
 Debian_ is a Linux distribution based on APT_ (*Advanced Package Tool*).
@@ -109,7 +109,7 @@ it on such systems for now.
 .. warning::
 
     Void Linux is not yet supported as an official target by Cahute.
-    See `#72 <https://gitlab.com/cahuteproject/cahute/-/issues/72>`_
+    See `#72 <https://gitlab.com/cahute/cahute/-/issues/72>`_
     for more information.
 
 `Void Linux`_ is a Linux distribution based on XBPS_ (*X Binary Package
@@ -175,11 +175,11 @@ NetBSD_ is a BSD-derived system.
 .. warning::
 
     Windows is not yet supported as an official target by Cahute.
-    See `#10 <https://gitlab.com/cahuteproject/cahute/-/issues/10>`_
+    See `#10 <https://gitlab.com/cahute/cahute/-/issues/10>`_
     for more information.
 
     NT 5.0 (Windows 2000) compatibility is also being discussed in
-    `#73 <https://gitlab.com/cahuteproject/cahute/-/issues/73>`_.
+    `#73 <https://gitlab.com/cahute/cahute/-/issues/73>`_.
 
 .. warning::
 
@@ -269,7 +269,7 @@ kernel that takes advance of 32-bit *protected* mode on x86_; see
 .. warning::
 
     AmigaOS is not yet supported as an official target by Cahute.
-    See `#26 <https://gitlab.com/cahuteproject/cahute/-/issues/26>`_
+    See `#26 <https://gitlab.com/cahute/cahute/-/issues/26>`_
     for more information.
 
 AmigaOS_ is a system originally made by Commodore_ for the Amiga_ family of

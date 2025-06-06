@@ -337,5 +337,5 @@ implement its own SCSI commands.
 .. _`Fa 124 pour Graph USB`:
     https://www.planet-casio.com/Fr/logiciels/
     voir_un_logiciel_casio.php?showid=16
-.. _`#3`: https://gitlab.com/cahuteproject/cahute/-/issues/3
-.. _`#31`: https://gitlab.com/cahuteproject/cahute/-/issues/31
+.. _`#3`: https://gitlab.com/cahute/cahute/-/issues/3
+.. _`#31`: https://gitlab.com/cahute/cahute/-/issues/31

@@ -101,7 +101,7 @@ documentation directly, through merge requests.
 See :ref:`contribution-guide-create-merge-request` for more information.
 
 .. _Github repository: https://github.com/cahute/cahute
-.. _Gitlab repository: https://gitlab.com/cahuteproject/cahute
-.. _Repository issues: https://gitlab.com/cahuteproject/cahute/-/issues
-.. _Merge requests: https://gitlab.com/cahuteproject/cahute/-/merge_requests
+.. _Gitlab repository: https://gitlab.com/cahute/cahute
+.. _Repository issues: https://gitlab.com/cahute/cahute/-/issues
+.. _Merge requests: https://gitlab.com/cahute/cahute/-/merge_requests
 .. _justsimply.dev: https://justsimply.dev/

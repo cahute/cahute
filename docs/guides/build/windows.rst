@@ -479,7 +479,7 @@ one of the following command depending on the architecture you're targetting::
     https://cmake.org/cmake/help/book/mastering-cmake/chapter/
     Cross%20Compiling%20With%20CMake.html?highlight=mingw
 .. _MinGW build image for Cahute:
-    https://gitlab.com/cahuteproject/docker-images/-/blob/develop/mingw-w64/
+    https://gitlab.com/cahute/docker-images/-/blob/develop/mingw-w64/
     archlinux.Dockerfile?ref_type=heads
 
 .. _Visual Studio: https://visualstudio.microsoft.com/fr/

@@ -5,7 +5,7 @@ Creating a merge request
 
 In order to contribute modifications on the code, documentation, or most
 elements pertaining to the Cahute project, you must create a `merge request`_
-on the project's `Gitlab repository at gitlab.com/cahuteproject/cahute
+on the project's `Gitlab repository at gitlab.com/cahute/cahute
 <Repository_>`_.
 
 .. warning::
@@ -30,7 +30,7 @@ This process requires having a `Gitlab.com`_ account.
 If you do not yet have one, you must `sign up on Gitlab.com`_ to continue.
 
 If you do not have a fork of the official repository yet, go to the
-`cahuteproject/cahute repository <Repository_>`_ and select "Fork":
+`cahute/cahute repository <Repository_>`_ and select "Fork":
 
 .. figure:: mr1.png
 
@@ -244,7 +244,7 @@ command::
 If everything goes well, your merge request should have been merged.
 Congratulations!
 
-.. _Repository: https://gitlab.com/cahuteproject/cahute
+.. _Repository: https://gitlab.com/cahute/cahute
 .. _Github mirror: https://github.com/cahute/cahute
 
 .. _Git: https://git-scm.com/

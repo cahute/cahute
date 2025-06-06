@@ -40,4 +40,4 @@ is within its scope. In this case, the steps are the following:
 
 .. _Gitlab.com: https://about.gitlab.com/
 .. _Sign up on Gitlab.com: https://gitlab.com/users/sign_up
-.. _Issue tracker at Gitlab: https://gitlab.com/cahuteproject/cahute/-/issues
+.. _Issue tracker at Gitlab: https://gitlab.com/cahute/cahute/-/issues

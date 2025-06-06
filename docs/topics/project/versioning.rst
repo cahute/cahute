@@ -58,8 +58,8 @@ changelog.
 Git repository structure
 ------------------------
 
-Cahute's main repository is at `gitlab.com/cahuteproject/cahute
-<https://gitlab.com/cahuteproject/cahute>`_.
+Cahute's main repository is at `gitlab.com/cahute/cahute
+<https://gitlab.com/cahute/cahute>`_.
 **Only maintainers are allowed to push to it**; other contributors must work
 on a fork, then submit the remote branch as a merge request.
 
@@ -119,6 +119,6 @@ the ``develop`` branch, and as such, may include content that is not yet
 available in the latest release.
 
 .. _Semantic Versioning: https://semver.org/
-.. _Releases: https://gitlab.com/cahuteproject/cahute/-/releases
+.. _Releases: https://gitlab.com/cahute/cahute/-/releases
 .. _cahuteproject.org: https://cahuteproject.org/
 .. _next.cahuteproject.org: https://next.cahuteproject.org/

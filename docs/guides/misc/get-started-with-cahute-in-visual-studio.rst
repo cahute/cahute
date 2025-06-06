@@ -30,7 +30,7 @@ When opening Visual Studio, select "Clone a repository" (first option).
     Initial window for Visual Studio, with the first option selected.
 
 Enter the URL of the repository you're cloning
-(``https://gitlab.com/cahuteproject/cahute.git`` if cloning the upstream),
+(``https://gitlab.com/cahute/cahute.git`` if cloning the upstream),
 and select "Clone".
 
 .. figure:: vscl2.png

@@ -178,7 +178,7 @@ basic understanding of key concepts.
 .. |system-voidlinux| image:: guides/install/voidlinux.svg
 .. |system-amigaos| image:: guides/install/amigaos.png
 
-.. _Cahute on Gitlab: https://gitlab.com/cahuteproject/cahute
+.. _Cahute on Gitlab: https://gitlab.com/cahute/cahute
 .. _Thomas Touhey: https://thomas.touhey.fr/
 .. _CeCILL: http://www.cecill.info/licences.en.html
 .. _Diátaxis: https://diataxis.fr/

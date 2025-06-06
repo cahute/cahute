@@ -8,7 +8,7 @@ pre-commit:
     stage: lint
     rules:
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    image: registry.gitlab.com/cahuteproject/docker-images/pre-commit:latest
+    image: registry.gitlab.com/cahute/docker-images/pre-commit:latest
     script:
         - pre-commit run -v --all-files
 
@@ -25,7 +25,7 @@ build (x86_64-pc-linux-gnu):
           - "include/**/*"
           - "lib/**/*"
           - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahuteproject/docker-images/x86_64-pc-linux-gnu:latest
+    image: registry.gitlab.com/cahute/docker-images/x86_64-pc-linux-gnu:latest
     script:
         - >
             cmake -B build-x86_64-pc-linux-gnu -S .
@@ -45,7 +45,7 @@ build (arm-pc-linux-gnueabihf):
           - "include/**/*"
           - "lib/**/*"
           - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahuteproject/docker-images/arm-pc-linux-gnueabihf:latest
+    image: registry.gitlab.com/cahute/docker-images/arm-pc-linux-gnueabihf:latest
     script:
         - >
             cmake -B build-arm-pc-linux-gnueabihf -S .
@@ -65,7 +65,7 @@ build (arm-pc-linux-musleabihf):
           - "include/**/*"
           - "lib/**/*"
           - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahuteproject/docker-images/arm-pc-linux-musleabihf:latest
+    image: registry.gitlab.com/cahute/docker-images/arm-pc-linux-musleabihf:latest
     script:
         - >
             cmake -B build-arm-pc-linux-musleabihf -S .
@@ -85,7 +85,7 @@ build (i686-w64-mingw32-msvcrt):
           - "include/**/*"
           - "lib/**/*"
           - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahuteproject/docker-images/i686-w64-mingw32-msvcrt:latest
+    image: registry.gitlab.com/cahute/docker-images/i686-w64-mingw32-msvcrt:latest
     script:
         - >
             cmake -B build-i686-w64-mingw32-msvcrt -S .
@@ -105,7 +105,7 @@ build (i686-w64-mingw32-ucrt):
           - "include/**/*"
           - "lib/**/*"
           - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahuteproject/docker-images/i686-w64-mingw32-ucrt:latest
+    image: registry.gitlab.com/cahute/docker-images/i686-w64-mingw32-ucrt:latest
     script:
         - >
             cmake -B build-i686-w64-mingw32-ucrt -S .
@@ -125,7 +125,7 @@ build (x86_64-w64-mingw32-msvcrt):
           - "include/**/*"
           - "lib/**/*"
           - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahuteproject/docker-images/x86_64-w64-mingw32-msvcrt:latest
+    image: registry.gitlab.com/cahute/docker-images/x86_64-w64-mingw32-msvcrt:latest
     script:
         - >
             cmake -B build-x86_64-w64-mingw32-msvcrt -S .
@@ -145,7 +145,7 @@ build (x86_64-w64-mingw32-ucrt):
           - "include/**/*"
           - "lib/**/*"
           - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahuteproject/docker-images/x86_64-w64-mingw32-ucrt:latest
+    image: registry.gitlab.com/cahute/docker-images/x86_64-w64-mingw32-ucrt:latest
     script:
         - >
             cmake -B build-x86_64-w64-mingw32-ucrt -S .
@@ -174,7 +174,7 @@ build (m68k-amigaos):
 
 .build docs:
     stage: build
-    image: registry.gitlab.com/cahuteproject/docker-images/sphinx:latest
+    image: registry.gitlab.com/cahute/docker-images/sphinx:latest
     script:
         - sphinx-build -M html docs docs/_build
     artifacts:
@@ -206,7 +206,7 @@ package source:
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
           changes:
           - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahuteproject/docker-images/package-source:latest
+    image: registry.gitlab.com/cahute/docker-images/package-source:latest
     script:
         - >
             cmake -B build -S .
@@ -219,7 +219,7 @@ package source:
 
 .publish docs:
     stage: publish
-    image: registry.gitlab.com/cahuteproject/docker-images/rsync:latest
+    image: registry.gitlab.com/cahute/docker-images/rsync:latest
     before_script:
         - chmod 400 "$SSH_PRIVATE_KEY"
         - ssh-add "$SSH_PRIVATE_KEY"
@@ -252,7 +252,7 @@ publish source:
     rules:
         - if: $CI_COMMIT_TAG
           when: always
-    image: registry.gitlab.com/cahuteproject/docker-images/rsync:latest
+    image: registry.gitlab.com/cahute/docker-images/rsync:latest
     before_script:
         - chmod 400 "$SSH_PRIVATE_KEY"
         - ssh-add "$SSH_PRIVATE_KEY"

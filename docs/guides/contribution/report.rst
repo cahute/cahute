@@ -25,7 +25,7 @@ must also be included:
 * The cable type, brand and/or model, e.g.:
 
   * E119932-U USB cable (already implicated in at least
-    `#31 <https://gitlab.com/cahuteproject/cahute/-/issues/31>`_);
+    `#31 <https://gitlab.com/cahute/cahute/-/issues/31>`_);
   * `Util-Pocket USB serial cable`_;
   * SB-88 or SB-88(A) USB serial cable;
   * ...
@@ -128,6 +128,6 @@ Gitlab`_.
     Note however that this warning is worst case scenario, and hopefully,
     it won't come to that for any correctly reported issue.
 
-.. _Issue tracker at Gitlab: https://gitlab.com/cahuteproject/cahute/-/issues
+.. _Issue tracker at Gitlab: https://gitlab.com/cahute/cahute/-/issues
 .. _Util-Pocket USB serial cable:
     https://web.archive.org/web/20160324164019/http://www.util-pocket.biz/

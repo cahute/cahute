@@ -5,7 +5,7 @@ Cahute -- Communication and file format handling tools for CASIO calculators
 
     The official and main repository for issue / bug tracking, release notes,
     merge requests, and collaboration in general is at
-    `gitlab.com/cahuteproject/cahute`_. As documented in the contribution
+    `gitlab.com/cahute/cahute`_. As documented in the contribution
     guides listed below, all interactions must go through the official
     repository rather than its mirrors. Thanks!
 
@@ -43,7 +43,7 @@ For more information, consult the following links:
 
 Happy Cahuting!
 
-.. _gitlab.com/cahuteproject/cahute: https://gitlab.com/cahuteproject/cahute
+.. _gitlab.com/cahute/cahute: https://gitlab.com/cahute/cahute
 .. _next.cahuteproject.org (develop branch): https://next.cahuteproject.org/
 .. _cahuteproject.org (latest release): https://cahuteproject.org/
 
@@ -65,6 +65,6 @@ Happy Cahuting!
 .. _CeCILL: http://www.cecill.info/licences.en.html
 .. _cecill.info: http://www.cecill.info/licences.en.html
 
-.. _Releases: https://gitlab.com/cahuteproject/cahute/-/releases
+.. _Releases: https://gitlab.com/cahute/cahute/-/releases
 .. _Community feedback:
     https://next.cahuteproject.org/topics/project/community.html

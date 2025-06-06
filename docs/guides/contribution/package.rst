@@ -144,7 +144,7 @@ following the steps in `Get notified when a release is created`_.
 
 .. _nm: https://sourceware.org/binutils/docs/binutils/nm.html
 
-.. _Releases: https://gitlab.com/cahuteproject/cahute/-/releases
+.. _Releases: https://gitlab.com/cahute/cahute/-/releases
 .. _Get notified when a release is created:
     https://docs.gitlab.com/ee/user/project/releases/
     #get-notified-when-a-release-is-created

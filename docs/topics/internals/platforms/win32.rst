@@ -59,7 +59,7 @@ The available operations use :
     This is because the function is also used by the CESG driver usage
     implementation in Cahute, which may crash under some circumstances
     when trying to cancel an overlapped read call; see
-    `#17 <https://gitlab.com/cahuteproject/cahute/-/issues/17>`_
+    `#17 <https://gitlab.com/cahute/cahute/-/issues/17>`_
     for more information.
 
     The same overlapped event is used between calls to the receive
@@ -85,7 +85,7 @@ For now, most of the USB device management is done using libusb; see
     In order to support older versions of the platform not supported by libusb,
     such as Windows 2000, we are to implement USB device management on Win32
     without libusb; see `#73
-    <https://gitlab.com/cahuteproject/cahute/-/issues/73>`_ for more
+    <https://gitlab.com/cahute/cahute/-/issues/73>`_ for more
     information.
 
 .. _internals-topic-win32-usb-drivers:

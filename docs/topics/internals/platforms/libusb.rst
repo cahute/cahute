@@ -20,7 +20,7 @@ pointer; see :ref:`internals-topic-context-pointers` for more information.
     context, so matching it to a Cahute context would require a global
     mapping.
 
-    See `#80 <https://gitlab.com/cahuteproject/cahute/-/issues/80>`_
+    See `#80 <https://gitlab.com/cahute/cahute/-/issues/80>`_
     for more information.
 
 USB device detection using libusb
@@ -72,7 +72,7 @@ in order to:
     While historical implementations of CASIO's protocols using libusb
     hardcode 0x82 as Bulk IN and 0x01 as Bulk OUT, this has proven to
     change on other platforms such as OS X; see `#3 (comment 1823215641)
-    <https://gitlab.com/cahuteproject/cahute/-/issues/3#note_1823215641>`_
+    <https://gitlab.com/cahute/cahute/-/issues/3#note_1823215641>`_
     for more context.
 
 The interface class to transport mapping is the following:
@@ -106,7 +106,7 @@ Once all metadata has been gathered, the function opens the device using
     ``LIBUSB_ERROR_ACCESS``, are ignored, since libusb is still
     able to communicate with the device on some platforms afterwards.
 
-    See `#3 <https://gitlab.com/cahuteproject/cahute/-/issues/3>`_
+    See `#3 <https://gitlab.com/cahute/cahute/-/issues/3>`_
     for more context.
 
 If the device opening yields ``LIBUSB_ERROR_NOT_SUPPORTED``,
