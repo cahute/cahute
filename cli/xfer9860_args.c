@@ -32,14 +32,9 @@
 #include "common.h"
 #include "options.h"
 
-static char const about_message[] = MAKE_BANNER("xfer9860"
-) "\n"
-  "This utility is a reimplementation of the utility originally made\n"
-  "by Andreas Bertheussen, Manuel Naranjo and Bruno L. Alata in 2007.\n"
-  "\n"
-  "This is free software; see the source for copying conditions.\n"
-  "There is NO warranty; not even for MERCHANTABILITY or\n"
-  "FITNESS FOR A PARTICULAR PURPOSE.\n";
+static char const about_desc[] =
+    "This utility is a reimplementation of the utility originally made\n"
+    "by Andreas Bertheussen, Manuel Naranjo and Bruno L. Alata in 2007.";
 
 static char const help_message[] =
     "Usage: %s [-h] [-a] [-t <throttle>] ...\n"
@@ -67,11 +62,10 @@ static char const help_message[] =
     "                   delay between two packets.\n"
     "\n"
     "For guides, topics and reference, consult the documentation:\n"
-    "    " CAHUTE_URL
-    "\n"
+    "    %s\n"
     "\n"
     "For reporting issues and vulnerabilities, consult the following guide:\n"
-    "    " CAHUTE_ISSUES_URL "\n";
+    "    %s\n";
 
 /**
  * Short options definitions.
@@ -183,7 +177,7 @@ process_params:
     update_positional_parameters(&state, &argc, &argv);
 
     if (about) {
-        fprintf(stderr, about_message);
+        print_version_message("xfer9860", about_desc);
         return 0;
     }
 
@@ -205,7 +199,13 @@ process_params:
     }
 
     if (help) {
-        fprintf(stderr, help_message, command_path);
+        fprintf(
+            stderr,
+            help_message,
+            command_path,
+            get_homepage_url(),
+            get_issues_url()
+        );
         return 0;
     }
 

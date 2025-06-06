@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <version_data.h>
 
 /* On some platforms, for directories, ftell() returns an insanely high
  * number that may be platform-specific, e.g. 9223372036854775807 (2^63 - 1),
@@ -42,6 +43,93 @@
  * See ``read_file_contents()`` for more details on the usage of this
  * constant. */
 #define REASONABLE_FILE_CONTENT_LIMIT 134217728 /* 128 MiB */
+
+/**
+ * Print the banner to standard error.
+ *
+ * @param name Name of the utility for which to print the banner.
+ */
+extern void print_banner(char const *name) {
+    cahute_info const *info = cahute_get_info();
+
+    fprintf(stderr, "%s, from Cahute v%s", name, CAHUTE_VERSION_NAME);
+#if defined(CAHUTE_GIT_COMMIT) && !CAHUTE_GIT_TAGGED
+    fprintf(
+        stderr,
+        " (git commit %s%s on %s)",
+        CAHUTE_GIT_COMMIT,
+        CAHUTE_GIT_DIRTY ? "-dirty" : "",
+        CAHUTE_GIT_BRANCH
+    );
+#endif
+    fprintf(stderr, ".\nRunning on Cahute v%s", CAHUTE_VERSION_NAME);
+
+#if defined(CAHUTE_GIT_COMMIT) && !CAHUTE_GIT_TAGGED
+    /* We want to display a Git commit.
+     * If it is the same from the one displayed above, we want to display
+     * as much. Otherwise, we want to describe it. */
+    if ((info->cahute_info_flags & CAHUTE_INFO_FLAG_GIT)
+        && !strcmp(info->cahute_info_git_commit, CAHUTE_GIT_COMMIT))
+        fprintf(stderr, " (same git commit)");
+    else
+        fprintf(
+            stderr,
+            " (git commit %s%s on %s)",
+            info->cahute_info_git_commit,
+            (info->cahute_info_flags & CAHUTE_INFO_FLAG_GIT_DIRTY) ? "-dirty"
+                                                                   : "",
+            info->cahute_info_git_branch
+        );
+#else
+    /* We only want to display a Git commit if the version is not tagged. */
+    if (info->cahute_info_flags
+        & (CAHUTE_INFO_FLAG_GIT | CAHUTE_INFO_FLAG_GIT_TAGGED)
+              == CAHUTE_INFO_FLAG_GIT)
+        fprintf(
+            stderr,
+            " (git commit %s%s on %s)",
+            info->cahute_info_git_commit,
+            (info->cahute_info_flags & CAHUTE_INFO_FLAG_GIT_DIRTY) ? "-dirty"
+                                                                   : "",
+            info->cahute_info_git_branch
+        );
+#endif
+
+    fprintf(stderr, ".\nLicensed under CeCILL 2.1.\n\n");
+}
+
+/**
+ * Print the version message to standard error.
+ *
+ * @param name Name of the utility for which to print the version message.
+ * @param additional Additional details regarding the utility.
+ *        This can be set to NULL.
+ */
+extern void print_version_message(char const *name, char const *additional) {
+    print_banner(name);
+
+    if (additional)
+        fprintf(stderr, "%s\n\n", additional);
+
+    fprintf(
+        stderr,
+        "This is free software; see the source for copying conditions.\n"
+        "There is NO warranty; not even for MERCHANTABILITY or\n"
+        "FITNESS FOR A PARTICULAR PURPOSE.\n"
+    );
+}
+
+extern char const *get_homepage_url(void) {
+    cahute_info const *info = cahute_get_info();
+
+    return info->cahute_info_homepage_url;
+}
+
+extern char const *get_issues_url(void) {
+    cahute_info const *info = cahute_get_info();
+
+    return info->cahute_info_issues_url;
+}
 
 /**
  * Set the current logging level as a string.

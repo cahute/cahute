@@ -11,6 +11,7 @@
     cahute/detection
     cahute/error
     cahute/file
+    cahute/info
     cahute/link
     cahute/logging
     cahute/path

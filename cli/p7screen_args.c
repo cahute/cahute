@@ -31,12 +31,6 @@
 #include <ctype.h>
 #include "options.h"
 
-static char const version_message[] = MAKE_BANNER("p7screen"
-) "\n"
-  "This is free software; see the source for copying conditions.\n"
-  "There is NO warranty; not even for MERCHANTABILITY or\n"
-  "FITNESS FOR A PARTICULAR PURPOSE.";
-
 static char const help_message[] =
     "Usage: %s\n"
     "          [--help|-h] [--version|-v]\n"
@@ -59,11 +53,10 @@ static char const help_message[] =
     "                    By default, the zoom will be %d.\n"
     "\n"
     "For guides, topics and reference, consult the documentation:\n"
-    "    " CAHUTE_URL
-    "\n"
+    "    %s\n"
     "\n"
     "For reporting issues and vulnerabilities, consult the following guide:\n"
-    "    " CAHUTE_ISSUES_URL "\n";
+    "    %s\n";
 
 /**
  * Short options definitions.
@@ -129,7 +122,7 @@ int parse_args(int argc, char **argv, struct args *args) {
 
         case 'v':
             /* -v, --version: display the version message and quit. */
-            puts(version_message);
+            print_version_message("p7os", NULL);
             return 0;
 
         case 'c':
@@ -188,7 +181,13 @@ int parse_args(int argc, char **argv, struct args *args) {
 
     /* If we want to display the help message, do it here! */
     if (help) {
-        printf(help_message, command, DEFAULT_ZOOM);
+        printf(
+            help_message,
+            command,
+            DEFAULT_ZOOM,
+            get_homepage_url(),
+            get_issues_url()
+        );
         return 0;
     }
 

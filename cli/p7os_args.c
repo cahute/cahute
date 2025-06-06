@@ -36,12 +36,6 @@
 extern size_t const cahute_fxremote_update_exe_size;
 extern cahute_u8 const cahute_fxremote_update_exe[];
 
-static char const version_message[] = MAKE_BANNER("p7os"
-) "\n"
-  "This is free software; see the source for copying conditions.\n"
-  "There is NO warranty; not even for MERCHANTABILITY or\n"
-  "FITNESS FOR A PARTICULAR PURPOSE.\n";
-
 static char const help_main[] =
     "Usage: %s\n"
     "            [--help|-h] [--version|-v]\n"
@@ -82,11 +76,10 @@ static char const help_main[] =
     "Type \"%s <subcommand> --help\" for some help about a subcommand.\n"
     "\n"
     "For guides, topics and reference, consult the documentation:\n"
-    "    " CAHUTE_URL
-    "\n"
+    "    %s\n"
     "\n"
     "For reporting issues and vulnerabilities, consult the following guide:\n"
-    "    " CAHUTE_ISSUES_URL "\n";
+    "    %s\n";
 
 #define SUBCOMMAND_FOOTER \
     "\nType \"%s --help\" for other subcommands and general options.\n"
@@ -305,13 +298,19 @@ int parse_args(int argc, char **argv, struct args *args) {
     }
 
     if (version) {
-        printf(version_message);
+        print_version_message("p7os", NULL);
         return 0;
     }
 
     update_positional_parameters(&state, &argc, &argv);
     if (!argc || !strcmp(argv[0], "help")) {
-        printf(help_main, command, command);
+        printf(
+            help_main,
+            command,
+            command,
+            get_homepage_url(),
+            get_issues_url()
+        );
         return 0;
     }
 
@@ -319,7 +318,7 @@ int parse_args(int argc, char **argv, struct args *args) {
     argc--;
     argv++;
     if (!strcmp(subcommand, "version")) {
-        printf(version_message);
+        print_version_message("p7os", NULL);
         return 0;
     }
 
@@ -365,7 +364,13 @@ int parse_args(int argc, char **argv, struct args *args) {
             goto fail;
     } else {
         /* The subcommand is unknown. */
-        printf(help_main, command, command);
+        printf(
+            help_main,
+            command,
+            command,
+            get_homepage_url(),
+            get_issues_url()
+        );
         return 0;
     }
 

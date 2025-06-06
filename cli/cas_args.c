@@ -35,12 +35,6 @@
 #include <string.h>
 #include <ctype.h>
 
-static char const version_message[] = MAKE_BANNER("CaS"
-) "\n"
-  "This is free software; see the source for copying conditions.\n"
-  "There is NO warranty; not even for MERCHANTABILITY or\n"
-  "FITNESS FOR A PARTICULAR PURPOSE.\n";
-
 static char const help_message[] =
     "Usage: %s\n"
     "          [-h] [-V] [-v] [-d[=<file>]] [-p] [-m=<model>]\n"
@@ -85,11 +79,10 @@ static char const help_message[] =
     "                    operate the file or serial port manipulations.\n"
     "\n"
     "For guides, topics and reference, consult the documentation:\n"
-    "    " CAHUTE_URL
-    "\n"
+    "    %s\n"
     "\n"
     "For reporting issues and vulnerabilities, consult the following guide:\n"
-    "    " CAHUTE_ISSUES_URL "\n";
+    "    %s\n";
 
 /* Short options. */
 static struct short_option const short_options[] = {
@@ -621,17 +614,23 @@ int parse_args(int argc, char **argv, struct args *args) {
         args->in.path = argv[0];
 
     if (version) {
-        fprintf(stderr, version_message);
+        print_version_message("CaS", NULL);
         goto fail;
     }
 
     if (help) {
-        fprintf(stderr, help_message, command);
+        fprintf(
+            stderr,
+            help_message,
+            command,
+            get_homepage_url(),
+            get_issues_url()
+        );
         goto fail;
     }
 
     if (args->verbose)
-        fprintf(stderr, MAKE_BANNER("CaS"));
+        print_banner("CaS");
 
     if (debug_path) {
         if (args->debug_fp)

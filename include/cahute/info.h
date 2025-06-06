@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2025 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -26,18 +26,36 @@
  * knowledge of the CeCILL 2.1 license and that you accept its terms.
  * ************************************************************************* */
 
-#ifndef CAHUTE_H
-#define CAHUTE_H 1
-#include <cahute/cdefs.h>
-#include <cahute/context.h>
-#include <cahute/data.h>
-#include <cahute/detection.h>
-#include <cahute/error.h>
-#include <cahute/file.h>
-#include <cahute/info.h>
-#include <cahute/link.h>
-#include <cahute/logging.h>
-#include <cahute/path.h>
-#include <cahute/picture.h>
-#include <cahute/text.h>
-#endif
+#ifndef CAHUTE_INFO_H
+#define CAHUTE_INFO_H 1
+#include "cdefs.h"
+
+CAHUTE_BEGIN_NAMESPACE
+CAHUTE_BEGIN_DECLS
+
+CAHUTE_DECLARE_TYPE(cahute_info)
+
+#define CAHUTE_INFO_FLAG_GIT        1
+#define CAHUTE_INFO_FLAG_GIT_TAGGED 2
+#define CAHUTE_INFO_FLAG_GIT_DIRTY  4
+
+struct cahute_info {
+    unsigned long cahute_info_flags;
+
+    char const *cahute_info_version_name;
+    char const *cahute_info_homepage_url;
+    char const *cahute_info_issues_url;
+    char const *cahute_info_git_commit;
+    char const *cahute_info_git_branch;
+
+    unsigned int cahute_info_major;
+    unsigned int cahute_info_minor;
+    unsigned int cahute_info__reserved;
+};
+
+CAHUTE_EXTERN(cahute_info const *) cahute_get_info(void);
+
+CAHUTE_END_DECLS
+CAHUTE_END_NAMESPACE
+
+#endif /* CAHUTE_INFO_H */

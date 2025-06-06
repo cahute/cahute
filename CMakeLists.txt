@@ -178,6 +178,7 @@ set(LIB_INCLUDE_DIRS
     "${CMAKE_CURRENT_BINARY_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/common"
+    "${CMAKE_CURRENT_BINARY_DIR}/common"
 )
 
 # LIB_COMPILE_DEFS represents the additional defines to pass to the compiler
@@ -191,6 +192,7 @@ set(CLI_INCLUDE_DIRS
     "${CMAKE_CURRENT_BINARY_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/common"
+    "${CMAKE_CURRENT_BINARY_DIR}/common"
 )
 
 # CLI_LIBRARIES represent the libraries against which to link for any
@@ -283,15 +285,11 @@ if(CAHUTE_FEATURE_LIB_HEADERS)
     add_custom_target(
         cahute-config-header
         COMMAND ${CMAKE_COMMAND}
-            -DCAHUTE_GIT="${CAHUTE_GIT}"
-            -DCAHUTE_CONFIG_CHECK=1
-            -DCAHUTE_GIT_CACHE_PATH="${CMAKE_CURRENT_BINARY_DIR}/git-hash.txt"
             -DCAHUTE_CONFIG_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
             -DPROJECT_VERSION="${PROJECT_VERSION}"
             -DPROJECT_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
             -DPROJECT_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
             -DPROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}"
-            -DCAHUTE_REPORT_URL="${CAHUTE_REPORT_URL}"
             -P misc/CahuteConfig.cmake
         DEPENDS include/cahute/config.h.in
         BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
@@ -313,6 +311,23 @@ if(CAHUTE_FEATURE_LIB_HEADERS)
 endif()
 
 if(CAHUTE_FEATURE_LIB_STATIC)
+    add_custom_target(
+        cahute-version-data-header
+        COMMAND ${CMAKE_COMMAND}
+            -DCAHUTE_GIT="${CAHUTE_GIT}"
+            -DCAHUTE_GIT_CACHE_PATH="${CMAKE_CURRENT_BINARY_DIR}/git-hash.txt"
+            -DCAHUTE_VERSION_DATA_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
+            -DPROJECT_VERSION="${PROJECT_VERSION}"
+            -DPROJECT_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
+            -DPROJECT_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
+            -DPROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}"
+            -DCAHUTE_REPORT_URL="${CAHUTE_REPORT_URL}"
+            -P misc/CahuteVersionData.cmake
+        DEPENDS common/version_data.h.in
+        BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
     add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
         COMMAND "${Python3_EXECUTABLE}" ${CMAKE_SOURCE_DIR}/chars/process_chars.py
@@ -373,6 +388,7 @@ if(CAHUTE_FEATURE_LIB_STATIC)
         lib/data.c
         lib/detect_serial.c
         lib/detect_usb.c
+        lib/info.c
         lib/logging.c
         lib/mcs.c
         lib/misc.c
@@ -449,7 +465,7 @@ if(CAHUTE_FEATURE_LIB_STATIC)
 
     add_library(cahute STATIC ${LIB_SOURCES})
 
-    add_dependencies(cahute cahute-headers)
+    add_dependencies(cahute cahute-headers cahute-version-data-header)
     target_include_directories(cahute PRIVATE
         ${LIB_INCLUDE_DIRS}
         "${CMAKE_SOURCE_DIR}/lib")

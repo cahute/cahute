@@ -33,12 +33,6 @@
 #include <string.h>
 #include "options.h"
 
-static char const version_message[] = MAKE_BANNER("p7"
-) "\n"
-  "This is free software; see the source for copying conditions.\n"
-  "There is NO warranty; not even for MERCHANTABILITY or\n"
-  "FITNESS FOR A PARTICULAR PURPOSE.";
-
 static char const help_main[] =
     "Usage: %s\n"
     "          [--version|-v] [--help|-h] [-l|--log <level>]\n"
@@ -87,11 +81,10 @@ static char const help_main[] =
     "about the subcommand.\n"
     "\n"
     "For guides, topics and reference, consult the documentation:\n"
-    "    " CAHUTE_URL
-    "\n"
+    "    %s\n"
     "\n"
     "For reporting issues and vulnerabilities, consult the following guide:\n"
-    "    " CAHUTE_ISSUES_URL "\n";
+    "    %s\n";
 
 #define SUBCOMMAND_FOOTER \
     "\nType \"%s --help\" for other subcommands and general options.\n"
@@ -361,7 +354,7 @@ int parse_args(int argc, char **argv, struct args *args) {
 
         case 'v':
             /* -v, --version: display the version message and quit. */
-            puts(version_message);
+            print_version_message("p7", NULL);
             return 0;
 
         case 'f':
@@ -485,7 +478,13 @@ int parse_args(int argc, char **argv, struct args *args) {
 
     update_positional_parameters(&state, &param_count, &params);
     if (!param_count || !strcmp(params[0], "help")) {
-        printf(help_main, command, command);
+        printf(
+            help_main,
+            command,
+            command,
+            get_homepage_url(),
+            get_issues_url()
+        );
         return 0;
     }
 
@@ -494,7 +493,7 @@ int parse_args(int argc, char **argv, struct args *args) {
     param_count--;
 
     if (!strcmp(subcommand, "version")) {
-        puts(version_message);
+        print_version_message("p7", NULL);
         return 0;
     }
 
@@ -607,7 +606,13 @@ int parse_args(int argc, char **argv, struct args *args) {
         args->command = COMMAND_IDLE;
     } else {
         /* The subcommand is unknown. */
-        printf(help_main, command, command);
+        printf(
+            help_main,
+            command,
+            command,
+            get_homepage_url(),
+            get_issues_url()
+        );
         return 0;
     }
 
