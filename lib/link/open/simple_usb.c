@@ -122,9 +122,9 @@ cahute_find_simple_usb_device(
     return 0;
 
 filtered_out:
-    msg(cookie->context, ll_info, "Device was filtered out:");
+    msg(cookie->context, ll_debug, "Device was filtered out:");
     msg(cookie->context,
-        ll_info,
+        ll_debug,
         "  %03d:%03d: %s",
         entry->cahute_usb_detection_entry_bus,
         entry->cahute_usb_detection_entry_address,

@@ -110,8 +110,8 @@ cahute_cas100_handle_mdl1(cahute_link *link, cahute_u8 const *header) {
             return err;
 
         header = buf;
-        msg(link->context, ll_info, "Received the following header:");
-        mem(link->context, ll_info, header, 40);
+        msg(link->context, ll_debug, "Received the following header:");
+        mem(link->context, ll_debug, header, 40);
     }
 
     if (memcmp(header, "\x3AMDL1", 5)) {
@@ -178,8 +178,8 @@ cahute_cas100_determine_data_description(
     desc->last_part_repeat = 1;
     desc->part_sizes[0] = 0;
 
-    msg(context, ll_info, "Raw CAS100 header is the following:");
-    mem(context, ll_info, data, 40);
+    msg(context, ll_debug, "Raw CAS100 header is the following:");
+    mem(context, ll_debug, data, 40);
 
     if (!memcmp(&data[1], "BKU1", 4)) {
         /* Backup packet for CAS100. */
@@ -348,7 +348,7 @@ cahute_cas100_receive_raw_data(
             return err;
 
         if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_END) {
-            msg(link->context, ll_info, "CAS100 data type is an END packet.");
+            msg(link->context, ll_debug, "CAS100 data type is an END packet.");
             link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
             return CAHUTE_ERROR_TERMINATED;
         } else if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_MDL) {
@@ -438,8 +438,8 @@ CAHUTE_EXTERN(int) cahute_cas100_terminate(cahute_link *link) {
     buf[4] = '1';
     buf[39] = cahute_checksub(&buf[1], 38);
 
-    msg(link->context, ll_info, "Sending the following end packet:");
-    mem(link->context, ll_info, buf, 40);
+    msg(link->context, ll_debug, "Sending the following end packet:");
+    mem(link->context, ll_debug, buf, 40);
 
     err = cahute_send_on_link_transport(link, buf, 40);
     if (err)
@@ -474,8 +474,8 @@ cahute_cas100_exchange_model_information(cahute_link *link) {
     if (err)
         return err;
 
-    msg(link->context, ll_info, "Received the following header:");
-    mem(link->context, ll_info, buf, 40);
+    msg(link->context, ll_debug, "Received the following header:");
+    mem(link->context, ll_debug, buf, 40);
 
     if (memcmp(buf, "\x3AMDL1", 5)) {
         int sub_err;

@@ -80,7 +80,7 @@
     if (link->protocol_state.seven.last_packet_type != (TYPE) \
         || link->protocol_state.seven.last_packet_subtype != (SUBTYPE)) { \
         msg(link->context, \
-            ll_info, \
+            ll_debug, \
             "Expected a packet of type %02X and subtype %02X, " \
             "got a packet of type %02X and subtype %02X.", \
             (TYPE), \
@@ -94,7 +94,7 @@
     if (link->protocol_state.seven.last_packet_type != (TYPE) \
         || link->protocol_state.seven.last_packet_subtype != (SUBTYPE)) { \
         msg(link->context, \
-            ll_info, \
+            ll_debug, \
             "Expected a packet of type %02X and subtype %02X, " \
             "got a packet of type %02X and subtype %02X.", \
             (TYPE), \
@@ -282,8 +282,8 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
         msg(link->context,
             ll_error,
             "Invalid format for the usual packet header.");
-        msg(link->context, ll_info, "Data read so far is the following:");
-        mem(link->context, ll_info, buf, 6);
+        msg(link->context, ll_debug, "Data read so far is the following:");
+        mem(link->context, ll_debug, buf, 6);
         return CAHUTE_ERROR_UNKNOWN;
     }
 
@@ -308,8 +308,8 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
         if (!cahute_is_ascii_hex(buf[4]) || !cahute_is_ascii_hex(buf[5])
             || !cahute_is_ascii_hex(buf[6]) || !cahute_is_ascii_hex(buf[7])) {
             msg(link->context, ll_error, "Invalid format for the data size.");
-            msg(link->context, ll_info, "Data read so far is the following:");
-            mem(link->context, ll_info, buf, 10);
+            msg(link->context, ll_debug, "Data read so far is the following:");
+            mem(link->context, ll_debug, buf, 10);
             return CAHUTE_ERROR_UNKNOWN;
         }
 
@@ -325,8 +325,8 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
                 "Invalid data size %" CAHUTE_PRIuSIZE
                 " for the extended packet.",
                 data_size);
-            msg(link->context, ll_info, "Data read so far is the following:");
-            mem(link->context, ll_info, buf, 10);
+            msg(link->context, ll_debug, "Data read so far is the following:");
+            mem(link->context, ll_debug, buf, 10);
 
             if (data_size)
                 cahute_receive_on_link_transport(
@@ -357,8 +357,8 @@ cahute_seven_receive(cahute_link *link, unsigned long timeout) {
         packet_size = 10 + data_size;
     }
 
-    msg(link->context, ll_info, "Received packet data is the following:");
-    mem(link->context, ll_info, buf, packet_size);
+    msg(link->context, ll_debug, "Received packet data is the following:");
+    mem(link->context, ll_debug, buf, packet_size);
 
     if (!cahute_is_ascii_hex(buf[packet_size - 2])
         || !cahute_is_ascii_hex(buf[packet_size - 1])) {
@@ -448,9 +448,9 @@ cahute_seven_send_and_receive(
 
     for (attempts = initial_attempts; attempts > 0; attempts--) {
         msg(link->context,
-            ll_info,
+            ll_debug,
             "Sending the following packet to the device:");
-        mem(link->context, ll_info, raw_packet, raw_packet_size);
+        mem(link->context, ll_debug, raw_packet, raw_packet_size);
 
         err = cahute_send_on_link_transport(link, raw_packet, raw_packet_size);
         if (err)
@@ -464,7 +464,7 @@ cahute_seven_send_and_receive(
         }
 
         msg(link->context,
-            ll_info,
+            ll_debug,
             "Packet sent successfully, now waiting for response.");
         err = cahute_seven_receive(link, timeout);
         if (err == CAHUTE_ERROR_TIMEOUT_START
@@ -472,7 +472,7 @@ cahute_seven_send_and_receive(
             /* We are about to continue, but if the timeout recovery flow
              * succeeds, we want to restore the number of attempts. */
             msg(link->context,
-                ll_info,
+                ll_debug,
                 "Link did not respond in a timely manner; sending timeout "
                 "check:");
             mem(link->context, ll_info, timeout_check_packet, 6);
@@ -484,7 +484,7 @@ cahute_seven_send_and_receive(
             err = cahute_seven_receive(link, TIMEOUT_PACKET_TIMEOUT);
             if (err == CAHUTE_ERROR_TIMEOUT_START) {
                 msg(link->context,
-                    ll_info,
+                    ll_debug,
                     "Link did not respond on sent packet nor timeout check.");
                 link->flags |= CAHUTE_LINK_FLAG_IRRECOVERABLE;
                 return CAHUTE_ERROR_TIMEOUT_START;
@@ -501,7 +501,7 @@ cahute_seven_send_and_receive(
                 || link->protocol_state.seven.last_packet_subtype
                        != PACKET_SUBTYPE_NAK_RESEND) {
                 msg(link->context,
-                    ll_info,
+                    ll_debug,
                     "Expected a resend error on timeout check, got a packet "
                     "of type %02X and subtype %02X.",
                     link->protocol_state.seven.last_packet_type,
@@ -1601,7 +1601,7 @@ cahute_seven_receive_raw_data_into_buf(
                             | cahute_ascii_hex_to_nibble(p_buf[3]);
         if (!read_packet_count) {
             msg(link->context,
-                ll_info,
+                ll_error,
                 "Unexpected packet count %u in first packet.",
                 read_packet_count);
             return CAHUTE_ERROR_UNKNOWN;
@@ -2818,7 +2818,7 @@ cahute_seven_send_file_to_storage(
         if (err)
             return err;
 
-        msg(link->context, ll_info, "Storage capacity is %lud.", capacity);
+        msg(link->context, ll_info, "Storage capacity is %luB.", capacity);
         if ((size_t)capacity < file_size) {
             msg(link->context,
                 ll_info,
@@ -2827,7 +2827,8 @@ cahute_seven_send_file_to_storage(
             err = cahute_seven_optimize_storage(link, storage);
             if (err)
                 return err;
-        }
+        } else
+            msg(link->context, ll_info, "Enough storage is available!");
     }
 
     err = cahute_seven_send_command(

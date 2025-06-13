@@ -239,7 +239,8 @@ cahute_convert_picture(
         break;
 
     default:
-        msg(context, ll_info, "Picture format identifier was: %d", src_format);
+        msg(context, ll_debug, "Picture format identifier was: %d", src_format
+        );
         CAHUTE_RETURN_IMPL(
             context,
             "Unhandled picture format for conversion."

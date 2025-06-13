@@ -306,11 +306,13 @@ cahute_casiolink_receive_packet(
     if (checksum != buf[1 + size] && checksum_alt != buf[1 + size]) {
         msg(link->context,
             ll_warn,
-            "Invalid checksum (obtained: 0x%02X, computed: "
-            "0x%02X).",
+            "Received a packet with an invalid checksum.");
+        msg(link->context,
+            ll_debug,
+            "  Obtained: 0x%02X, computed: 0x%02X",
             buf[1 + size],
             checksum);
-        mem(link->context, ll_info, buf, size);
+        mem(link->context, ll_debug, buf, size);
 
         return CAHUTE_ERROR_CORRUPT;
     }
@@ -337,7 +339,8 @@ cahute_casiolink_decode_data(
     int err;
 
     /* Read the header start. */
-    msg(file->context, ll_info, "Reading new header at offset %lu.", *offsetp);
+    msg(file->context, ll_debug, "Reading new header at offset %lu.", *offsetp
+    );
     err = cahute_read_from_file(file, *offsetp, header_buf, 40);
     if (err)
         return err;
@@ -366,7 +369,7 @@ cahute_casiolink_log_data_description(
     cahute_context *context,
     struct cahute_casiolink_data_description const *desc
 ) {
-    msg(context, ll_info, "Data description was the following:");
+    msg(context, ll_debug, "Data description was the following:");
 
     {
         char flags_buf[50], *p = flags_buf;
@@ -435,7 +438,7 @@ cahute_casiolink_log_data_description(
         *p = '\0';
 
         msg(context,
-            ll_info,
+            ll_debug,
             "  Flags: %s",
             flags_buf[0] ? &flags_buf[3] : "(none)");
     }
@@ -450,7 +453,7 @@ cahute_casiolink_log_data_description(
         }
 
         if (!part_count)
-            msg(context, ll_info, "  Part count: 0");
+            msg(context, ll_debug, "  Part count: 0");
         else {
             char sizes[60], *p = sizes;
             size_t i;
@@ -471,9 +474,11 @@ cahute_casiolink_log_data_description(
             else
                 sprintf(p, "%" CAHUTE_PRIuSIZE "o", desc->part_sizes[i]);
 
-            msg(context, ll_info, "  Part count: %" CAHUTE_PRIuSIZE, part_count
-            );
-            msg(context, ll_info, "  Part sizes: %s", sizes);
+            msg(context,
+                ll_debug,
+                "  Part count: %" CAHUTE_PRIuSIZE,
+                part_count);
+            msg(context, ll_debug, "  Part sizes: %s", sizes);
         }
     }
 }
@@ -585,7 +590,7 @@ cahute_casiolink_receive_raw_data(
             nparts);
         if ((~desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_NO_LOG)
             && part_size <= 4096) /* Let's not flood the terminal. */
-            mem(link->context, ll_info, buf, part_size);
+            mem(link->context, ll_debug, buf, part_size);
 
         buf += part_size + 2;
         received += part_size + 2;
@@ -730,7 +735,7 @@ CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link) {
         TIMEOUT_INIT);
     for (attempts = initial_attempts; attempts > 0; attempts--) {
         msg(link->context,
-            ll_info,
+            ll_debug,
             "Sending 0x%02X start packet.",
             PACKET_TYPE_START);
 

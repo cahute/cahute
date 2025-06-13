@@ -343,7 +343,7 @@ sequence_found:
         else {
             /* This may be an implementation oversight, it's targeted towards
              * contributors to this function / protocol :-) */
-            msg(link->context, ll_info, "Picture type is: %d", format);
+            msg(link->context, ll_debug, "Picture type is: %d", format);
             CAHUTE_RETURN_IMPL(
                 link->context,
                 "No size estimation method for found format."
@@ -379,7 +379,7 @@ sequence_found:
 
         if (frame_length > link->data_buffer_capacity) {
             msg(link->context,
-                ll_info,
+                ll_warn,
                 "Frame length %" CAHUTE_PRIuSIZE
                 "o exceeded data buffer "
                 "capacity %" CAHUTE_PRIuSIZE "o.",
@@ -445,8 +445,8 @@ sequence_found:
         return CAHUTE_ERROR_UNKNOWN;
     }
 
-    msg(link->context, ll_info, "Received the following packet header:");
-    mem(link->context, ll_info, buf, packet_size);
+    msg(link->context, ll_debug, "Received the following packet header:");
+    mem(link->context, ll_debug, buf, packet_size);
 
     /* We can now compute the checksum.
      * Note that adding checksums works, i.e.
@@ -515,8 +515,8 @@ cahute_seven_ohp_send_basic(
     memcpy(&buf[1], subtype, 5);
     cahute_set_ascii_hex(&buf[6], cahute_checksub(&buf[1], 5));
 
-    msg(link->context, ll_info, "Sending the following packet:");
-    mem(link->context, ll_info, buf, 8);
+    msg(link->context, ll_debug, "Sending the following packet:");
+    mem(link->context, ll_debug, buf, 8);
 
     return cahute_send_on_link_transport(link, buf, 8);
 }

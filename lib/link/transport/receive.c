@@ -214,7 +214,7 @@ cahute_receive_on_link_transport(
     if (!cahute_monotonic(link->context, &last_time)) {
         if (first_time > start_time + 20) {
             msg(link->context,
-                ll_info,
+                ll_debug,
                 "Received %" CAHUTE_PRIuSIZE
                 " bytes in %lums (after waiting %lums).",
                 original_size + link->transport_receive_size
@@ -223,7 +223,7 @@ cahute_receive_on_link_transport(
                 first_time - start_time);
         } else {
             msg(link->context,
-                ll_info,
+                ll_debug,
                 "Received %" CAHUTE_PRIuSIZE " bytes in %lums.",
                 original_size + link->transport_receive_size
                     - link->transport_receive_start,

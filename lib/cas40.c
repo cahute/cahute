@@ -102,8 +102,8 @@ cahute_cas40_determine_data_description(
     desc->last_part_repeat = 1;
     desc->part_sizes[0] = 0;
 
-    msg(context, ll_info, "Raw CAS40 header is the following:");
-    mem(context, ll_info, data, 40);
+    msg(context, ll_debug, "Raw CAS40 header is the following:");
+    mem(context, ll_debug, data, 40);
 
     if (!memcmp(&data[1], "\x17\x17", 2)) {
         /* CAS40 AL End */
@@ -561,8 +561,9 @@ cahute_cas40_receive_raw_data(
                 return CAHUTE_ERROR_UNKNOWN;
             }
 
-            msg(link->context, ll_info, "Calculator has started CAS40 AL mode."
-            );
+            msg(link->context,
+                ll_debug,
+                "Calculator has started CAS40 AL mode.");
             link->protocol_state.casiolink.flags |=
                 CASIOLINK_FLAG_DEVICE_INFO_CAS40_AL;
             continue;
@@ -578,7 +579,7 @@ cahute_cas40_receive_raw_data(
 
             /* The communication is ending. */
             msg(link->context,
-                ll_info,
+                ll_debug,
                 "Calculator has terminated CAS40 AL mode.");
             link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
             return CAHUTE_ERROR_TERMINATED;
@@ -587,14 +588,15 @@ cahute_cas40_receive_raw_data(
              * active, hence the condition. */
             if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_END) {
                 /* The communication is ending. */
-                msg(link->context, ll_info, "CAS40 data type is an END packet."
-                );
+                msg(link->context,
+                    ll_debug,
+                    "CAS40 data type is an END packet.");
                 link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
                 return CAHUTE_ERROR_TERMINATED;
             } else if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_FINAL) {
                 /* Communication will end after reception of current data.
                  * Note that we still want to receive data. */
-                msg(link->context, ll_info, "CAS40 data type is final.");
+                msg(link->context, ll_debug, "CAS40 data type is final.");
                 link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
             }
         }
@@ -793,8 +795,8 @@ CAHUTE_EXTERN(int) cahute_cas40_terminate(cahute_link *link) {
     if (link->flags & CAHUTE_LINK_FLAG_TERMINATED)
         return CAHUTE_OK;
 
-    msg(link->context, ll_info, "Sending the following end packet:");
-    mem(link->context, ll_info, end_packet, 40);
+    msg(link->context, ll_debug, "Sending the following end packet:");
+    mem(link->context, ll_debug, end_packet, 40);
 
     err = cahute_send_on_link_transport(link, end_packet, 40);
     if (err)

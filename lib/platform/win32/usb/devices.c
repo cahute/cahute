@@ -368,9 +368,10 @@ match_win32_usb_device(dev_cookie *cookie, cahute_win32_device const *device) {
         vid = conn_info.DeviceDescriptor.idVendor;
         pid = conn_info.DeviceDescriptor.idProduct;
 
-        msg(cookie->context, ll_info, "Data obtained from device descriptor:");
-        msg(cookie->context, ll_info, "  idVendor: %04X", vid);
-        msg(cookie->context, ll_info, "  idProduct: %04X", pid);
+        msg(cookie->context, ll_debug, "Data obtained from device descriptor:"
+        );
+        msg(cookie->context, ll_debug, "  idVendor: %04X", vid);
+        msg(cookie->context, ll_debug, "  idProduct: %04X", pid);
 
         err = CAHUTE_OK;
         if (vid != 0x07cf || (pid != 0x6101 && pid != 0x6102 && pid != 0x6103))
@@ -389,7 +390,7 @@ match_win32_usb_device(dev_cookie *cookie, cahute_win32_device const *device) {
         if (hub_number != cookie->filter->data.addr.bus
             || addr != cookie->filter->data.addr.address) {
             msg(cookie->context,
-                ll_info,
+                ll_debug,
                 "Address mismatch (obtained: %03d:%03d, expected: %03d:%03d)",
                 hub_number,
                 addr,
@@ -530,16 +531,16 @@ match_win32_usb_device(dev_cookie *cookie, cahute_win32_device const *device) {
         free(req);
 
         msg(cookie->context,
-            ll_info,
+            ll_debug,
             "Data obtained from interface descriptor:");
-        msg(cookie->context, ll_info, "  bInterfaceClass: %u", interface_class
+        msg(cookie->context, ll_debug, "  bInterfaceClass: %u", interface_class
         );
         msg(cookie->context,
-            ll_info,
+            ll_debug,
             "  bInterfaceSubClass: %u",
             interface_subclass);
         msg(cookie->context,
-            ll_info,
+            ll_debug,
             "  bInterfaceProtocol: %u",
             interface_proto);
 

@@ -1106,10 +1106,10 @@ cahute_convert_text(
 end:
     if (err && err == CAHUTE_ERROR_INVALID) {
         msg(context,
-            ll_info,
+            ll_warn,
             "Unable to parse from encoding %d, starting from:",
             source_encoding);
-        mem(context, ll_info, data, data_size > 20 ? 20 : data_size);
+        mem(context, ll_warn, data, data_size > 20 ? 20 : data_size);
     }
 
     *bufp = buf;

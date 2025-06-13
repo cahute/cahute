@@ -331,8 +331,8 @@ cahute_open_libusb_link(
     cookie.bulk_in = bulk_in;
     cookie.bulk_out = bulk_out;
 
-    msg(context, ll_info, "Bulk in endpoint address is: 0x%02X", bulk_in);
-    msg(context, ll_info, "Bulk out endpoint address is: 0x%02X", bulk_out);
+    msg(context, ll_debug, "Bulk in endpoint address is: 0x%02X", bulk_in);
+    msg(context, ll_debug, "Bulk out endpoint address is: 0x%02X", bulk_out);
 
     switch (transport) {
     case CAHUTE_LINK_TRANSPORT_UMS:

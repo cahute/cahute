@@ -266,9 +266,10 @@ determine_protocol_as_sender(
 
     for (attempts = 3; attempts; attempts--) {
         /* We want to complete the Protocol 7.00 check packet. */
-        msg(link->context, ll_info, "Sending the Protocol 7.00 check packet:");
+        msg(link->context, ll_debug, "Sending the Protocol 7.00 check packet:"
+        );
         mem(link->context,
-            ll_info,
+            ll_debug,
             seven_check_packet,
             sizeof(seven_check_packet));
 
@@ -287,7 +288,7 @@ determine_protocol_as_sender(
             return err;
 
         /* Try writing a CASIOLINK start packet to see if we get an answer. */
-        msg(link->context, ll_info, "Sending the CASIOLINK check packet.");
+        msg(link->context, ll_debug, "Sending the CASIOLINK check packet.");
         err = cahute_send_byte_on_link_transport(link, 0x16);
         if (err)
             return err;
@@ -306,9 +307,9 @@ determine_protocol_as_sender(
          * Protocol 7.00 device is listening, we want to send the command in
          * two parts. */
         msg(link->context,
-            ll_info,
+            ll_debug,
             "Sending the start of the CAS300 discovery command:");
-        mem(link->context, ll_info, cas300_discover_packet, 6);
+        mem(link->context, ll_debug, cas300_discover_packet, 6);
 
         err = cahute_send_on_link_transport(link, cas300_discover_packet, 6);
         if (err)
@@ -321,10 +322,10 @@ determine_protocol_as_sender(
             return err;
 
         msg(link->context,
-            ll_info,
+            ll_debug,
             "Sending the rest of the CAS300 discovery command:");
         mem(link->context,
-            ll_info,
+            ll_debug,
             &cas300_discover_packet[6],
             sizeof(cas300_discover_packet) - 6);
 
@@ -579,9 +580,9 @@ determine_protocol_as_sender(
 
             if (!memcmp(buf, seven_nak_packet, 6)) {
                 msg(link->context,
-                    ll_info,
+                    ll_debug,
                     "Received Protocol 7.00 NAK packet:");
-                mem(link->context, ll_info, buf, 6);
+                mem(link->context, ll_debug, buf, 6);
 
                 switch (protocol) {
                 case PROTOCOL_SERIAL_AUTO:
@@ -611,10 +612,10 @@ determine_protocol_as_sender(
             goto fail;
         else {
             msg(link->context,
-                ll_info,
+                ll_debug,
                 "Received possible CAS300 out-of-order error is the following:"
             );
-            mem(link->context, ll_info, buf, 3);
+            mem(link->context, ll_debug, buf, 3);
 
             if (!cahute_is_ascii_hex(buf[1]) || !cahute_is_ascii_hex(buf[2])) {
                 msg(link->context,

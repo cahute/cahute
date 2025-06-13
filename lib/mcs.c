@@ -84,10 +84,10 @@ cahute_mcs_decode_data(
     if (name_size && (p = memchr(name, 0x00, name_size)))
         name_size = (size_t)(p - (cahute_u8 const *)name);
 
-    msg(context, ll_info, "Data Type: 0x%02X", data_type);
-    msg(context, ll_info, "Directory Name: %.*s", directory_size, directory);
-    msg(context, ll_info, "Data Name: %.*s", name_size, name);
-    msg(context, ll_info, "Group Name: %.*s", group_size, group);
+    msg(context, ll_debug, "Data Type: 0x%02X", data_type);
+    msg(context, ll_debug, "Directory Name: %.*s", directory_size, directory);
+    msg(context, ll_debug, "Data Name: %.*s", name_size, name);
+    msg(context, ll_debug, "Group Name: %.*s", group_size, group);
 
     if (data_type == DATA_TYPE_PROGRAM) {
         cahute_u8 program_header[10];

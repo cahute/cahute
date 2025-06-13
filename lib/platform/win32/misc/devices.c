@@ -56,7 +56,7 @@ cahute_enumerate_win32_devices(
     DWORD cret;
     int err = CAHUTE_ERROR_UNKNOWN;
 
-    msg(context, ll_info, "Looking for devices.");
+    msg(context, ll_debug, "Looking for devices.");
 
     if (filter && filter->device_class) {
         char buf[40];
@@ -64,7 +64,7 @@ cahute_enumerate_win32_devices(
         device_class = filter->device_class;
         cahute_serialize_win32_guid(context, buf, sizeof(buf), device_class);
 
-        msg(context, ll_info, "  With device class: %s", buf);
+        msg(context, ll_debug, "  With device class: %s", buf);
     }
 
     if (filter && filter->interface_class) {
@@ -78,12 +78,12 @@ cahute_enumerate_win32_devices(
             interface_class
         );
 
-        msg(context, ll_info, "  With interface class: %s", buf);
+        msg(context, ll_debug, "  With interface class: %s", buf);
     }
 
     if (filter && filter->related_to_device_id) {
         msg(context,
-            ll_info,
+            ll_debug,
             "  With bus relations to: %s",
             filter->related_to_device_id);
 
@@ -92,7 +92,7 @@ cahute_enumerate_win32_devices(
             0x20 /* CM_GETIDLIST_FILTER_BUSRELATIONS */;
     } else if (filter && filter->in_removal_relations_of_device_id) {
         msg(context,
-            ll_info,
+            ll_debug,
             "  With removal relations to: %s",
             filter->in_removal_relations_of_device_id);
 
@@ -194,9 +194,9 @@ cahute_enumerate_win32_devices(
             goto fail;
         }
 
-        msg(context, ll_info, "New device!");
-        msg(context, ll_info, "  Device ID: %s", device_id);
-        msg(context, ll_info, "  Device instance: %d", devinst);
+        msg(context, ll_debug, "New device!");
+        msg(context, ll_debug, "  Device ID: %s", device_id);
+        msg(context, ll_debug, "  Device instance: %d", devinst);
 
         /* Obtain the device address / port number. */
         property_size = sizeof(obtained_address);
@@ -209,17 +209,17 @@ cahute_enumerate_win32_devices(
             0
         );
         if (cret) {
-            msg(context, ll_info, "  Address: <ERR 0x%08lX>", cret);
+            msg(context, ll_debug, "  Address: <ERR 0x%08lX>", cret);
             is_invalid = 1;
         } else if (property_type != REG_DWORD) {
             msg(context,
-                ll_info,
+                ll_debug,
                 "  Address: <INVALID TYPE=%08lX SIZE=%lu>",
                 property_type,
                 property_size);
             is_invalid = 1;
         } else
-            msg(context, ll_info, "  Address: %lu", obtained_address);
+            msg(context, ll_debug, "  Address: %lu", obtained_address);
 
         /* Obtain the device class. */
         property_size = sizeof(obtained_raw_guid);
@@ -233,7 +233,7 @@ cahute_enumerate_win32_devices(
             0
         );
         if (cret) {
-            msg(context, ll_info, "  Device class: <ERR 0x%08lX>", cret);
+            msg(context, ll_debug, "  Device class: <ERR 0x%08lX>", cret);
             is_invalid = 1;
         } else if (property_type == REG_BINARY && property_size == sizeof(obtained_device_class)) {
             memcpy(
@@ -246,7 +246,7 @@ cahute_enumerate_win32_devices(
             is_guid_valid = 1;
         } else {
             msg(context,
-                ll_info,
+                ll_debug,
                 "  Device class: <INVALID TYPE=%08lX SIZE=%lu>",
                 property_type,
                 property_size);
@@ -260,7 +260,7 @@ cahute_enumerate_win32_devices(
                 sizeof(guid_buf),
                 &obtained_device_class
             );
-            msg(context, ll_info, "  Device class: %s", guid_buf);
+            msg(context, ll_debug, "  Device class: %s", guid_buf);
         }
 
         /* Obtain the service. */
@@ -274,17 +274,17 @@ cahute_enumerate_win32_devices(
             0
         );
         if (cret)
-            msg(context, ll_info, "  Service: <ERR 0x%08lX>", cret);
+            msg(context, ll_debug, "  Service: <ERR 0x%08lX>", cret);
         else if (property_type != REG_SZ)
             msg(context,
-                ll_info,
+                ll_debug,
                 "  Service: <INVALID TYPE=%08lX SIZE=%lu>",
                 property_type,
                 property_size);
         else {
             service_buf[property_size] = '\0';
             service = service_buf;
-            msg(context, ll_info, "  Service: %s", service);
+            msg(context, ll_debug, "  Service: %s", service);
         }
 
         /* Obtain the driver name. */
@@ -297,8 +297,8 @@ cahute_enumerate_win32_devices(
             1 /* CM_REGISTRY_SOFTWARE */
         );
         if (cret) {
-            msg(context, ll_info, "  Driver name: <ERR 0x%08lX>", cret);
-            msg(context, ll_info, "  Driver version: <ERR 0x%08lX>", cret);
+            msg(context, ll_debug, "  Driver name: <ERR 0x%08lX>", cret);
+            msg(context, ll_debug, "  Driver version: <ERR 0x%08lX>", cret);
         } else {
             LSTATUS lstatus_name, lstatus_version;
             DWORD name_type, version_type;
@@ -327,10 +327,10 @@ cahute_enumerate_win32_devices(
                 driver_name_buf[name_size] = '\0';
                 driver_name = driver_name_buf;
 
-                msg(context, ll_info, "  Driver name: %s", driver_name);
+                msg(context, ll_debug, "  Driver name: %s", driver_name);
             } else
                 msg(context,
-                    ll_info,
+                    ll_debug,
                     "  Driver name: <WINERR 0x%08lX>",
                     lstatus_name);
 
@@ -338,10 +338,10 @@ cahute_enumerate_win32_devices(
                 driver_version_buf[version_size] = '\0';
                 driver_version = driver_version_buf;
 
-                msg(context, ll_info, "  Driver version: %s", driver_version);
+                msg(context, ll_debug, "  Driver version: %s", driver_version);
             } else
                 msg(context,
-                    ll_info,
+                    ll_debug,
                     "  Driver version: <WINERR 0x%08lX>",
                     lstatus_version);
         }
@@ -349,7 +349,7 @@ cahute_enumerate_win32_devices(
         /* Check the device. */
         if (is_invalid) {
             msg(context,
-                ll_info,
+                ll_debug,
                 "One or more of the properties could not be obtained, "
                 "ignoring the device.");
             continue;
@@ -362,7 +362,7 @@ cahute_enumerate_win32_devices(
                 device_class,
                 sizeof(*device_class)
             )) {
-            msg(context, ll_info, "Skipped: incorrect device class.");
+            msg(context, ll_debug, "Skipped: incorrect device class.");
             continue;
         }
 
@@ -389,7 +389,7 @@ cahute_enumerate_win32_devices(
 
             if (interface_list_size <= 1) {
                 msg(context,
-                    ll_info,
+                    ll_debug,
                     "Skipped: no device interface with the correct class.");
                 continue;
             }

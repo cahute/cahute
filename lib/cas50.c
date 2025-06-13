@@ -105,8 +105,8 @@ cahute_cas50_determine_data_description(
     desc->last_part_repeat = 1;
     desc->part_sizes[0] = 0;
 
-    msg(context, ll_info, "Raw CAS50 header is the following:");
-    mem(context, ll_info, data, 50);
+    msg(context, ll_debug, "Raw CAS50 header is the following:");
+    mem(context, ll_debug, data, 50);
 
     if (!memcmp(&data[1], "END\xFF", 4)) {
         /* End packet for CAS50. */
@@ -376,11 +376,11 @@ cahute_cas50_receive_raw_data(
         return err;
 
     if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_END) {
-        msg(link->context, ll_info, "CAS50 data type is an END packet.");
+        msg(link->context, ll_debug, "CAS50 data type is an END packet.");
         link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
         return CAHUTE_ERROR_TERMINATED;
     } else if (desc->flags & CAHUTE_CASIOLINK_DATA_FLAG_FINAL) {
-        msg(link->context, ll_info, "CAS50 data type is final.");
+        msg(link->context, ll_debug, "CAS50 data type is final.");
         link->flags |= CAHUTE_LINK_FLAG_TERMINATED;
     }
 
@@ -466,8 +466,8 @@ CAHUTE_EXTERN(int) cahute_cas50_terminate(cahute_link *link) {
     if (link->flags & CAHUTE_LINK_FLAG_TERMINATED)
         return CAHUTE_OK;
 
-    msg(link->context, ll_info, "Sending the following end packet:");
-    mem(link->context, ll_info, end_packet, sizeof(end_packet));
+    msg(link->context, ll_debug, "Sending the following end packet:");
+    mem(link->context, ll_debug, end_packet, sizeof(end_packet));
 
     err = cahute_send_on_link_transport(link, end_packet, sizeof(end_packet));
     if (err)

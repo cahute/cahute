@@ -111,10 +111,10 @@ cahute_get_data_from_mainmem_file(
                       | (group_header[18] << 8) | group_header[19];
 
         msg(file->context,
-            ll_info,
+            ll_debug,
             "(0x%04lX) Group header:",
             offset - sizeof(group_header));
-        mem(file->context, ll_info, group_header, sizeof(group_header));
+        mem(file->context, ll_debug, group_header, sizeof(group_header));
 
         for (; group_count; group_count--) {
             unsigned long data_size;
@@ -132,10 +132,10 @@ cahute_get_data_from_mainmem_file(
             data_size = (file_header[17] << 24) | (file_header[18] << 16)
                         | (file_header[19] << 8) | file_header[20];
 
-            msg(file->context, ll_info, "File header:");
-            mem(file->context, ll_info, file_header, sizeof(file_header));
+            msg(file->context, ll_debug, "File header:");
+            mem(file->context, ll_debug, file_header, sizeof(file_header));
             msg(file->context,
-                ll_info,
+                ll_debug,
                 "  Data size: %" CAHUTE_PRIuSIZE,
                 data_size);
 
