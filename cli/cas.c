@@ -58,6 +58,9 @@ static void log_to_debug_file(
     char const *level_name;
 
     switch (level) {
+    case CAHUTE_LOGLEVEL_DEBUG:
+        level_name = "debug";
+        break;
     case CAHUTE_LOGLEVEL_INFO:
         level_name = "info";
         break;

@@ -24,8 +24,8 @@ For concrete steps on using p7screen, see :ref:`cli-guide-display-screen`.
 Available options are the following:
 
 ``-l``, ``--log``
-    Logging level to set the library as, as any of ``info``, ``warning``,
-    ``error``, ``fatal``, ``none``.
+    Logging level to set the library as, as any of ``debug``, ``info``,
+    ``warning``, ``error``, ``fatal``, ``none``.
 
     This option may allow contributors to visualize the effects of their
     contribution better, and allows users to produce a full output to join

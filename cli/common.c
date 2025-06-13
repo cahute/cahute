@@ -140,7 +140,9 @@ extern char const *get_issues_url(void) {
 extern void set_log_level(cahute_context *context, char const *loglevel) {
     int value = CAHUTE_LOGLEVEL_NONE;
 
-    if (!strcmp(loglevel, "info"))
+    if (!strcmp(loglevel, "debug"))
+        value = CAHUTE_LOGLEVEL_DEBUG;
+    else if (!strcmp(loglevel, "info"))
         value = CAHUTE_LOGLEVEL_INFO;
     else if (!strcmp(loglevel, "warning"))
         value = CAHUTE_LOGLEVEL_WARNING;

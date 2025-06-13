@@ -570,7 +570,7 @@ int parse_args(int argc, char **argv, struct args *args) {
             break;
 
         case 'd':
-            args->log_level = CAHUTE_LOGLEVEL_INFO;
+            args->log_level = CAHUTE_LOGLEVEL_DEBUG;
             if (optattr)
                 debug_path = optattr;
             break;

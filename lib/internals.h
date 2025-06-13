@@ -204,10 +204,11 @@ cahute_log_external_message(
 # define CAHUTE_LOGFUNC NULL
 #endif
 
-#define ll_info  10, CAHUTE_LOGFUNC
-#define ll_warn  20, CAHUTE_LOGFUNC
-#define ll_error 30, CAHUTE_LOGFUNC
-#define ll_fatal 40, CAHUTE_LOGFUNC
+#define ll_debug 10, CAHUTE_LOGFUNC
+#define ll_info  20, CAHUTE_LOGFUNC
+#define ll_warn  30, CAHUTE_LOGFUNC
+#define ll_error 40, CAHUTE_LOGFUNC
+#define ll_fatal 50, CAHUTE_LOGFUNC
 
 #define msg cahute_log_message
 #define mem cahute_log_memory

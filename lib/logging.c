@@ -72,6 +72,9 @@ cahute_log_to_file(
 
     (void)cookie;
     switch (level) {
+    case CAHUTE_LOGLEVEL_DEBUG:
+        level_name = "debug";
+        break;
     case CAHUTE_LOGLEVEL_INFO:
         level_name = "info";
         break;

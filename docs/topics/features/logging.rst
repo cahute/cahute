@@ -8,8 +8,10 @@ logging levels.
 
 Every log is accompanied with a level, among the following:
 
-* ``info`` (:c:macro:`CAHUTE_LOGLEVEL_INFO`): debug messages, e.g. packet
-  contents or activated behaviour tweaks that have been encountered.
+* ``debug`` (:c:macro:`CAHUTE_LOGLEVEL_DEBUG`): debug messages, e.g. packet
+  contents, system calls, tracability, and so on.
+* ``info`` (:c:macro:`CAHUTE_LOGLEVEL_INFO`): status messages, i.e. macro
+  operations that can make sense to an informed non-developer end user.
 * ``warning`` (:c:macro:`CAHUTE_LOGLEVEL_WARNING`): messages signifying
   abnormal behaviours that are recoverable and recovered by the library.
 * ``error`` (:c:macro:`CAHUTE_LOGLEVEL_ERROR`): messages signifying abnormal
@@ -35,9 +37,12 @@ above.
 
 By that rationale:
 
-* If the currently configured logging level is ``info``, then messages will
-  be displayed for all logging levels, since ``info`` has the lowest
+* If the currently configured logging level is ``debug``, then messages will
+  be displayed for all logging levels, since ``debug`` has the lowest
   importance.
+* If the currently configured logging level is ``info``, then messages will
+  be displayed for the ``info``, ``warning``, ``error`` and ``fatal``
+  logging level only.
 * If the currently configured logging level is ``warning``, then messages
   will be displayed for the ``warning``, ``error`` and ``fatal`` logging
   level only.

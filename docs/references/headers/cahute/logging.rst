@@ -6,6 +6,11 @@
 Macro definitions
 -----------------
 
+.. c:macro:: CAHUTE_LOGLEVEL_DEBUG
+
+    Constant representing the ``debug`` logging level; see
+    :ref:`feature-topic-logging` for more information.
+
 .. c:macro:: CAHUTE_LOGLEVEL_INFO
 
     Constant representing the ``info`` logging level; see

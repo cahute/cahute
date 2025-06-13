@@ -16,9 +16,9 @@ include(CMakeDependentOption)
 set(CAHUTE_DEFAULT_LOGLEVEL "warning" CACHE STRING
     "Default logging level used when creating a context?")
 set_property(CACHE CAHUTE_DEFAULT_LOGLEVEL PROPERTY STRINGS
-    "info" "warning" "error" "fatal" "none")
+    "debug" "info" "warning" "error" "fatal" "none")
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set_property(CACHE CAHUTE_DEFAULT_LOGLEVEL PROPERTY VALUE "info")
+    set_property(CACHE CAHUTE_DEFAULT_LOGLEVEL PROPERTY VALUE "debug")
 endif()
 
 set(CAHUTE_CLI ON CACHE BOOL

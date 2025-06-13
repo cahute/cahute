@@ -78,8 +78,11 @@ static void LIBUSB_CALL cahute_log_libusb_message(
         break;
 
     case LIBUSB_LOG_LEVEL_INFO:
-    case LIBUSB_LOG_LEVEL_DEBUG:
         loglevel = CAHUTE_LOGLEVEL_INFO;
+        break;
+
+    case LIBUSB_LOG_LEVEL_DEBUG:
+        loglevel = CAHUTE_LOGLEVEL_DEBUG;
         break;
 
     default:
