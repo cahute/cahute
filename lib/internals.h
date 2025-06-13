@@ -546,8 +546,6 @@ struct cahute_ums_link_interface {
  *           current role in the protocol and details regarding the last
  *           received packet.
  *           The protocol data buffer is not included within this property.
- * @property cached_device_info Device information, if it has been requested
- *           at least once, so it can be free'd when the link is closed.
  * @property data_buffer General-purpose buffer for the protocol
  *           implementation to use. This can contain payloads, frame data,
  *           etc.
@@ -580,8 +578,6 @@ struct cahute_link {
     cahute_link_scsi_request_from_func *transport_scsi_request_from_func;
 
     union cahute_link_protocol_state protocol_state;
-
-    cahute_device_info *cached_device_info;
 
     /* Raw data buffer, used by the protocol implementation to store raw data.
      * This can be of varying length depending on the protocol in use.
@@ -918,17 +914,14 @@ cahute_set_ascii_hex(cahute_u8 *buf, unsigned int number) {
  * SECURITY: The destination buffer is expected to be at least
  * ``max_size + 1`` long.
  *
- * @param bufp Pointer to the buffer pointer for where to copy the data.
- *        This method will increment the pointer to after the end of the
- *        copied string with the null terminator, so that other strings or
- *        pieces of data can be copied after.
+ * @param buf Buffer pointer for where to copy the data.
  * @param raw Raw data from which to get the string.
  * @param max_size Maximum size to read from raw data.
  * @return Pointer to the obtained string.
  */
 CAHUTE_INLINE(char *)
-cahute_copy_ff_string(char **bufp, cahute_u8 const *raw, size_t max_size) {
-    char *buf = *bufp, *result = buf;
+cahute_copy_ff_string(char *buf, cahute_u8 const *raw, size_t max_size) {
+    char *result = buf;
 
     for (; max_size--; raw++) {
         int byte = *raw;
@@ -940,7 +933,6 @@ cahute_copy_ff_string(char **bufp, cahute_u8 const *raw, size_t max_size) {
     }
 
     *buf++ = '\0';
-    *bufp = buf;
     return result;
 }
 
@@ -1253,12 +1245,6 @@ cahute_casiolink_receive_data(
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int)
-cahute_casiolink_make_device_info(
-    cahute_link *link,
-    cahute_device_info **infop
-);
-
 /* ---
  * CAS40 protocol functions, defined in cas40.c
  * --- */
@@ -1322,10 +1308,16 @@ cahute_cas100_receive_data(
 );
 
 CAHUTE_EXTERN(int)
-cahute_cas100_make_device_info(
-    cahute_device_info **infop,
-    cahute_u8 const *raw_info
-);
+cahute_cas100_get_flash_rom_capacity(cahute_link *link, unsigned long *valuep);
+
+CAHUTE_EXTERN(int)
+cahute_cas100_get_ram_capacity(cahute_link *link, unsigned long *valuep);
+
+CAHUTE_EXTERN(int)
+cahute_cas100_get_os_version(cahute_link *link, char *buf, size_t size);
+
+CAHUTE_EXTERN(int)
+cahute_cas100_get_hwid(cahute_link *link, char *buf, size_t size);
 
 CAHUTE_EXTERN(int) cahute_cas100_exchange_model_information(cahute_link *link);
 CAHUTE_EXTERN(int)
@@ -1359,11 +1351,16 @@ CAHUTE_EXTERN(int) cahute_cas300_discover(cahute_link *link);
 CAHUTE_EXTERN(int) cahute_cas300_terminate(cahute_link *link);
 
 CAHUTE_EXTERN(int)
-cahute_cas300_make_device_info(
-    cahute_context *context,
-    cahute_device_info **infop,
-    cahute_u8 const *raw_info
-);
+cahute_cas300_get_flash_rom_capacity(cahute_link *link, unsigned long *valuep);
+
+CAHUTE_EXTERN(int)
+cahute_cas300_get_bootcode_version(cahute_link *link, char *buf, size_t size);
+
+CAHUTE_EXTERN(int)
+cahute_cas300_get_os_version(cahute_link *link, char *buf, size_t size);
+
+CAHUTE_EXTERN(int)
+cahute_cas300_get_hwid(cahute_link *link, char *buf, size_t size);
 
 /* ---
  * Protocol 7.00 functions, defined in seven.c
@@ -1390,7 +1387,49 @@ cahute_seven_negotiate_serial_params(
 );
 
 CAHUTE_EXTERN(int)
-cahute_seven_make_device_info(cahute_link *link, cahute_device_info **infop);
+cahute_seven_get_product_id(cahute_link *link, char *buf, size_t size);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_username(cahute_link *link, char *buf, size_t size);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_organisation(cahute_link *link, char *buf, size_t size);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_hwid(cahute_link *link, char *buf, size_t size);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_cpuid(cahute_link *link, char *buf, size_t size);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_rom_capacity(cahute_link *link, unsigned long *valuep);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_flash_rom_capacity(cahute_link *link, unsigned long *valuep);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_ram_capacity(cahute_link *link, unsigned long *valuep);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_rom_version(cahute_link *link, char *buf, size_t size);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_bootcode_version(cahute_link *link, char *buf, size_t size);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_bootcode_offset(cahute_link *link, unsigned long *valuep);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_bootcode_size(cahute_link *link, unsigned long *valuep);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_os_version(cahute_link *link, char *buf, size_t size);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_os_offset(cahute_link *link, unsigned long *valuep);
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_os_size(cahute_link *link, unsigned long *valuep);
 
 CAHUTE_EXTERN(int)
 cahute_seven_request_storage_capacity(

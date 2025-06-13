@@ -62,6 +62,8 @@ CAHUTE_EXTERN(char const *) cahute_get_error_name(int code) {
         return "CAHUTE_ERROR_INCOMPAT";
     case CAHUTE_ERROR_TERMINATED:
         return "CAHUTE_ERROR_TERMINATED";
+    case CAHUTE_ERROR_UNAVAIL:
+        return "CAHUTE_ERROR_UNAVAIL";
     case CAHUTE_ERROR_NOT_FOUND:
         return "CAHUTE_ERROR_NOT_FOUND";
     case CAHUTE_ERROR_TOO_MANY:

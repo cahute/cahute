@@ -39,9 +39,6 @@ CAHUTE_EXTERN(void) cahute_close_link(cahute_link *link) {
 
     msg(link->context, ll_info, "Closing the link.");
 
-    if (link->cached_device_info)
-        free(link->cached_device_info);
-
     if ((link->flags & CAHUTE_LINK_FLAG_TERMINATE)
         && !(
             link->flags

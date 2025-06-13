@@ -230,6 +230,31 @@ static int open_link(
     return 0;
 }
 
+#define PRINT_CHAR_PROPERTY(NAME, LABEL) \
+    { \
+        char buf[30]; \
+\
+        if (!cahute_get_device_property(link, (NAME), buf, sizeof(buf)) \
+            && buf[0]) \
+            printf("%s: %s\n", (LABEL), buf); \
+    }
+
+#define PRINT_SIZE_PROPERTY(NAME, LABEL) \
+    { \
+        unsigned long value; \
+\
+        if (!cahute_get_device_property(link, (NAME), &value) && value) \
+            printf("%s: %luKiB\n", (LABEL), value / 1024); \
+    }
+
+#define PRINT_HEX_PROPERTY(NAME, LABEL) \
+    { \
+        unsigned long value; \
+\
+        if (!cahute_get_device_property(link, (NAME), &value)) \
+            printf("%s: 0x%08lX\n", (LABEL), value); \
+    }
+
 /**
  * Display device information.
  *
@@ -237,91 +262,31 @@ static int open_link(
  * @return Cahute error.
  */
 static int print_device_info(cahute_link *link) {
-    cahute_device_info *info;
-    int err;
+    PRINT_CHAR_PROPERTY("cpuid", "CPU ID (probably out of date)")
+    PRINT_CHAR_PROPERTY("hwid", "Environnement ID")
+    PRINT_CHAR_PROPERTY("product_id", "Product ID")
 
-    if ((err = cahute_get_device_info(link, &info)))
-        return err;
+    /* Preprogrammed ROM. */
+    PRINT_CHAR_PROPERTY("rom_version", "Preprogrammed ROM version")
+    PRINT_SIZE_PROPERTY("rom_capacity", "Preprogrammed ROM capacity")
 
-    /* Wiped out things */
-    if (~info->cahute_device_info_flags & CAHUTE_DEVICE_INFO_FLAG_PREPROG)
-        fprintf(
-            stderr,
-            "Warning: Preprogrammed ROM information looks wiped out!\n"
-        );
-    if (~info->cahute_device_info_flags & CAHUTE_DEVICE_INFO_FLAG_BOOTCODE)
-        fprintf(stderr, "Warning: Bootcode information looks wiped out!\n");
-    if (~info->cahute_device_info_flags & CAHUTE_DEVICE_INFO_FLAG_OS)
-        fprintf(stderr, "Warning: OS information looks wiped out!\n");
-    if (!info->cahute_device_info_username[0])
-        fprintf(stderr, "Warning: Username is not set.\n");
+    /* ROM and RAM. */
+    PRINT_SIZE_PROPERTY("flash_rom_capacity", "ROM capacity")
+    PRINT_SIZE_PROPERTY("ram_capacity", "RAM capacity")
 
-    printf(
-        "CPU ID (probably out of date): %s\n",
-        info->cahute_device_info_cpuid
-    );
-    printf("Environnement ID: %s\n", info->cahute_device_info_hwid);
-    if (info->cahute_device_info_product_id[0])
-        printf("Product ID: %s\n", info->cahute_device_info_product_id);
+    /* Bootcode. */
+    PRINT_CHAR_PROPERTY("bootcode_version", "Bootcode version")
+    PRINT_HEX_PROPERTY("bootcode_offset", "Bootcode offset")
+    PRINT_SIZE_PROPERTY("bootcode_size", "Bootcode size")
 
-    /* Preprogrammed ROM */
-    if (info->cahute_device_info_flags & CAHUTE_DEVICE_INFO_FLAG_PREPROG) {
-        printf(
-            "Preprogrammed ROM version: %s",
-            info->cahute_device_info_rom_version
-        );
-        printf(
-            "\nPreprogrammed ROM capacity: %luKiB\n",
-            info->cahute_device_info_rom_capacity / 1024
-        );
-    }
-
-    /* ROM and RAM */
-    printf(
-        "ROM capacity: %luKiB\n",
-        info->cahute_device_info_flash_rom_capacity / 1024
-    );
-    if (info->cahute_device_info_ram_capacity > 0)
-        printf(
-            "RAM capacity: %luKiB\n",
-            info->cahute_device_info_ram_capacity / 1024
-        );
-
-    /* Bootcode */
-    if (info->cahute_device_info_flags & CAHUTE_DEVICE_INFO_FLAG_BOOTCODE) {
-        printf(
-            "Bootcode version: %s\n",
-            info->cahute_device_info_bootcode_version
-        );
-        if (info->cahute_device_info_bootcode_offset > 0)
-            printf(
-                "Bootcode offset: 0x%08lX\n",
-                info->cahute_device_info_bootcode_offset
-            );
-        if (info->cahute_device_info_bootcode_size > 0)
-            printf(
-                "Bootcode size: %luKiB\n",
-                info->cahute_device_info_bootcode_size / 1024
-            );
-    }
-
-    /* OS */
-    if (info->cahute_device_info_flags & CAHUTE_DEVICE_INFO_FLAG_OS) {
-        printf("OS version: %s\n", info->cahute_device_info_os_version);
-        if (info->cahute_device_info_os_offset > 0)
-            printf("OS offset: 0x%08lX\n", info->cahute_device_info_os_offset);
-        if (info->cahute_device_info_os_size > 0)
-            printf(
-                "OS size: %luKiB\n",
-                info->cahute_device_info_os_size / 1024
-            );
-    }
+    /* OS. */
+    PRINT_CHAR_PROPERTY("os_version", "OS version")
+    PRINT_HEX_PROPERTY("os_offset", "OS offset")
+    PRINT_SIZE_PROPERTY("os_size", "OS size")
 
     /* Miscallenous information */
-    if (info->cahute_device_info_username[0])
-        printf("Username: %s\n", info->cahute_device_info_username);
-    if (info->cahute_device_info_organisation[0])
-        printf("Organisation: %s\n", info->cahute_device_info_organisation);
+    PRINT_CHAR_PROPERTY("username", "Username")
+    PRINT_CHAR_PROPERTY("organisation", "Organization")
 
     return 0;
 }

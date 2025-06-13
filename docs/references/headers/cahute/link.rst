@@ -6,110 +6,6 @@ This header declares link-related utilities for Cahute.
 Type definitions
 ----------------
 
-.. c:struct:: cahute_device_info
-
-    Device information.
-
-    .. c:member:: unsigned long cahute_device_info_flags
-
-        Flags for the link information.
-
-        .. c:macro:: CAHUTE_DEVICE_INFO_FLAG_PREPROG
-
-            Preprogrammed ROM information available.
-
-        .. c:macro:: CAHUTE_DEVICE_INFO_FLAG_BOOTCODE
-
-            Bootcode information available.
-
-        .. c:macro:: CAHUTE_DEVICE_INFO_FLAG_OS
-
-            OS information available.
-
-    .. c:member:: unsigned long cahute_device_info_rom_capacity
-
-        Preprogrammed ROM capacity, in KiB.
-
-        Only available if the :c:macro:`CAHUTE_DEVICE_INFO_FLAG_PREPROG`
-        flag is set.
-
-    .. c:member:: char const *cahute_device_info_rom_version
-
-        Preprogrammed ROM version.
-
-        Only available if the :c:macro:`CAHUTE_DEVICE_INFO_FLAG_PREPROG`
-        flag is set.
-
-    .. c:member:: unsigned long cahute_device_info_flash_rom_capacity
-
-        Flash ROM capacity, in KiB.
-
-    .. c:member:: unsigned long cahute_device_info_ram_capacity
-
-        RAM capacity, in KiB.
-
-    .. c:member:: char const *cahute_device_info_bootcode_version
-
-        Bootcode version.
-
-        Only available if the :c:macro:`CAHUTE_DEVICE_INFO_FLAG_BOOTCODE`
-        flag is set.
-
-    .. c:member:: unsigned long cahute_device_info_bootcode_offset
-
-        Bootcode offset.
-
-        Only available if the :c:macro:`CAHUTE_DEVICE_INFO_FLAG_BOOTCODE`
-        flag is set.
-
-    .. c:member:: unsigned long cahute_device_info_bootcode_size
-
-        Bootcode size, in KiB.
-
-        Only available if the :c:macro:`CAHUTE_DEVICE_INFO_FLAG_BOOTCODE`
-        flag is set.
-
-    .. c:member:: char const *cahute_device_info_os_version
-
-        OS version.
-
-        Only available if the :c:macro:`CAHUTE_DEVICE_INFO_FLAG_OS` flag
-        is set.
-
-    .. c:member:: unsigned long cahute_device_info_os_offset
-
-        OS offset.
-
-        Only available if the :c:macro:`CAHUTE_DEVICE_INFO_FLAG_OS` flag
-        is set.
-
-    .. c:member:: unsigned long cahute_device_info_os_size
-
-        OS size, in KiB.
-
-        Only available if the :c:macro:`CAHUTE_DEVICE_INFO_FLAG_OS` flag
-        is set.
-
-    .. c:member:: char const *cahute_device_info_product_id
-
-        Null-terminated product identifier, up to 16 characters.
-
-    .. c:member:: char const *cahute_device_info_username
-
-        Null-terminated username, up to 20 characters long.
-
-    .. c:member:: char const *cahute_device_info_organisation
-
-        Null-terminated organisation, up to 20 characters long.
-
-    .. c:member:: char const *cahute_device_info_hwid
-
-        Null-terminated hardware identifier, up to 8 characters.
-
-    .. c:member:: char const *cahute_device_info_cpuid
-
-        Null-terminated hardware platform identifier, up to 16 characters.
-
 .. c:struct:: cahute_storage_entry
 
     Entry when listing the contents of a storage device or directory.
@@ -771,19 +667,76 @@ Link transport access related function declarations
 Device metadata access related function declarations
 ----------------------------------------------------
 
-.. c:function:: int cahute_get_device_info(cahute_link *link, \
-    cahute_device_info **infop)
+.. c:function:: int cahute_get_device_property(cahute_link *link, \
+    char const *name, ...)
 
-    Gather information on the device (calculator or other).
+    Get a property from the device.
 
-    .. warning::
+    Parameters depend on the provided name:
 
-        In all cases, ``*infop`` **musn't be freed**.
-        In case of error, ``*infop`` mustn't be used.
+    ``"product_id", char *buf, size_t size``
+        Null-terminated product identifier, up to 16 characters.
 
-    :param link: The link on which to gather information.
-    :param infop: The pointer to set to the information to.
-    :return: The error, or 0 if the operation was successful.
+    ``"username", char *buf, size_t size``
+        Null-terminated username, up to 20 characters long.
+
+    ``"organisation", char *buf, size_t size``
+        Null-terminated organisation, up to 20 characters long.
+
+    ``"hwid", char *buf, size_t size``
+        Null-terminated hardware identifier, up to 8 characters.
+
+    ``"cpuid", char *buf, size_t size``
+        Null-terminated hardware platform identifier, up to 16 characters.
+
+    ``"os_version", char *buf, size_t size``
+        OS version.
+
+    ``"os_offset", unsigned long *valuep``
+        OS offset.
+
+    ``"os_size", unsigned long *valuep``
+        OS size, in bytes.
+
+    ``"rom_capacity", unsigned long *valuep``
+        Preprogrammed ROM capacity, in bytes.
+
+    ``"rom_version", char *buf, size_t size``
+        Preprogrammed ROM version.
+
+    ``"flash_rom_capacity", unsigned long *valuep``
+        Flash ROM capacity, in bytes.
+
+    ``"ram_capacity", unsigned long *valuep``
+        RAM capacity, in bytes.
+
+    ``"bootcode_version", char *buf, size_t size``
+        Bootcode version.
+
+    ``"bootcode_offset", unsigned long *valuep``
+        Bootcode offset.
+
+    ``"bootcode_size", unsigned long *valuep``
+        Bootcode size, in bytes.
+
+    Possible errors are the following:
+
+    :c:macro:`CAHUTE_ERROR_INVALID`
+        The property was not supported by the current version of Cahute.
+
+    :c:macro:`CAHUTE_ERROR_INCOMPAT`
+        The property was not supported by the underlying protocol.
+
+    :c:macro:`CAHUTE_ERROR_UNAVAIL`
+        The property was supported by the underlying protocol, but was
+        declared unavailable or provided blank by the device.
+
+    :c:macro:`CAHUTE_ERROR_SIZE`
+        The buffer provided for the property is not big enough.
+
+    :param link: Link from which to gather information.
+    :param name: Name of the property to get.
+    :return: Error, or 0 if the operation was successful.
 
 Data transfer related function declarations
 -------------------------------------------

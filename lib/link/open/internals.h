@@ -167,7 +167,6 @@ cahute_alloc_link(
 
     link->transport_stream_cookie = link->transport_cookie;
     link->context = context;
-    link->cached_device_info = NULL;
     link->data_buffer_capacity = DEFAULT_DATA_BUFFER_SIZE;
     link->transport_close_func = (cahute_link_close_func *)0;
     link->transport_receive_func = (cahute_link_receive_func *)0;

@@ -838,99 +838,122 @@ CAHUTE_EXTERN(int) cahute_cas300_discover(cahute_link *link) {
     return CAHUTE_OK;
 }
 
+/* ---
+ * Device information.
+ * --- */
+
 /**
- * Produce generic device information using CAS300 device information.
+ * Obtain raw CAS300 device information.
  *
- * @param context Context in which the function is run.
- * @param infop Pointer to set to the allocated device information structure.
- * @param raw_info Raw information to read from, expected to be 49 bytes long.
- * @return Cahute error, or 0 if no error has occurred.
+ * @param link Link from which to obtain the device information.
+ * @param rawp Pointer to set to the raw data.
+ * @param sizep Pointer to set to the raw data size.
+ * @return Error, or 0 if successful.
  */
+CAHUTE_LOCAL(int)
+obtain_raw_device_info(cahute_link *link, cahute_u8 const **rawp) {
+    *rawp = link->protocol_state.casiolink.raw_device_info;
+    return CAHUTE_OK;
+}
+
 CAHUTE_EXTERN(int)
-cahute_cas300_make_device_info(
-    cahute_context *context,
-    cahute_device_info **infop,
-    cahute_u8 const *raw_info
+cahute_cas300_get_flash_rom_capacity(
+    cahute_link *link,
+    unsigned long *valuep
 ) {
-    cahute_device_info *info = NULL;
-    char *buf;
-    char rawsize_buf[9], *rawsize = rawsize_buf;
-    char rawver_buf[17], *rawver = rawver_buf;
+    cahute_u8 const *raw;
+    char raw_buf[10];
+    int err;
 
-    info = malloc(sizeof(cahute_device_info) + 46);
-    if (!info)
-        return CAHUTE_ERROR_ALLOC;
+    err = obtain_raw_device_info(link, &raw);
+    if (err)
+        return err;
 
-    buf = (void *)(&info[1]);
-
-    info->cahute_device_info_flags =
-        CAHUTE_DEVICE_INFO_FLAG_BOOTCODE | CAHUTE_DEVICE_INFO_FLAG_OS;
-    info->cahute_device_info_rom_capacity = 0;
-    info->cahute_device_info_rom_version = "";
-
-    /* Flash ROM capacity is presented in a human-readable format,
-     * we want to try to determine the machine-readable format here. */
-    cahute_copy_ff_string(&rawsize, &raw_info[32], 8);
-    if (!strcmp(rawsize_buf, "16M"))
-        info->cahute_device_info_flash_rom_capacity = 16777216;
+    /* Flash ROM capacity is presented in a human-readable format.
+     * We want to try to determine the machine-readable format here. */
+    cahute_copy_ff_string(raw_buf, &raw[32], 8);
+    if (!strcmp(raw_buf, "16M"))
+        *valuep = 16777216;
     else {
-        msg(context, ll_error, "Unknown ROM capacity: %s", rawsize_buf);
-        goto fail;
+        msg(link->context, ll_error, "Unknown RAM capacity: %s", raw_buf);
+        return CAHUTE_ERROR_UNKNOWN;
     }
 
-    info->cahute_device_info_ram_capacity = 0;
+    return CAHUTE_OK;
+}
 
-    info->cahute_device_info_bootcode_version = buf;
-    cahute_copy_ff_string(&buf, &raw_info[24], 8);
+CAHUTE_EXTERN(int)
+cahute_cas300_get_bootcode_version(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    char raw_buf[10];
+    int err;
 
-    info->cahute_device_info_bootcode_offset = 0;
-    info->cahute_device_info_bootcode_size = 0;
+    err = obtain_raw_device_info(link, &raw);
+    if (err)
+        return err;
+
+    cahute_copy_ff_string(raw_buf, &raw[24], 8);
+    if (size < strlen(raw_buf) + 1)
+        return CAHUTE_ERROR_SIZE;
+
+    strcpy(buf, raw_buf);
+    return CAHUTE_OK;
+}
+
+CAHUTE_EXTERN(int)
+cahute_cas300_get_os_version(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    char raw_buf[20];
+    int err;
+
+    err = obtain_raw_device_info(link, &raw);
+    if (err)
+        return err;
 
     /* OS version seems to be presented in a strange format, being
      * "00.00.0(03050000" for OS 03.05.0000. We want to try to extract
      * the OS version from that. */
-    cahute_copy_ff_string(&rawver, &raw_info[8], 16);
-    if (strlen(rawver_buf) != 16) {
-        msg(context,
+    cahute_copy_ff_string(raw_buf, &raw[8], 16);
+    if (strlen(raw_buf) != 16) {
+        msg(link->context,
             ll_error,
             "Unable to extract OS version from: %s",
-            rawver_buf);
-        goto fail;
+            raw_buf);
+        return CAHUTE_ERROR_UNKNOWN;
     }
 
-    buf[0] = rawver_buf[8];
-    buf[1] = rawver_buf[9];
-    buf[2] = '.';
-    buf[3] = rawver_buf[10];
-    buf[4] = rawver_buf[11];
-    buf[5] = '.';
-    buf[6] = rawver_buf[12];
-    buf[7] = rawver_buf[13];
-    buf[8] = rawver_buf[14];
-    buf[9] = rawver_buf[15];
-    buf[10] = 0;
+    if (size < 11)
+        return CAHUTE_ERROR_SIZE;
 
-    info->cahute_device_info_os_version = buf;
-    buf += 12;
+    *buf++ = raw_buf[8];
+    *buf++ = raw_buf[9];
+    *buf++ = '.';
+    *buf++ = raw_buf[10];
+    *buf++ = raw_buf[11];
+    *buf++ = '.';
+    *buf++ = raw_buf[12];
+    *buf++ = raw_buf[13];
+    *buf++ = raw_buf[14];
+    *buf++ = raw_buf[15];
+    *buf = 0;
 
-    info->cahute_device_info_os_offset = 0;
-    info->cahute_device_info_os_size = 0;
-
-    info->cahute_device_info_product_id = "";
-    info->cahute_device_info_username = "";
-    info->cahute_device_info_organisation = "";
-
-    info->cahute_device_info_hwid = buf;
-    cahute_copy_ff_string(&buf, &raw_info[0], 8);
-
-    info->cahute_device_info_cpuid = "";
-
-    *infop = info;
     return CAHUTE_OK;
+}
 
-fail:
-    if (info)
-        free(info);
+CAHUTE_EXTERN(int)
+cahute_cas300_get_hwid(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    char raw_buf[10];
+    int err;
 
-    return CAHUTE_ERROR_ALLOC;
+    err = obtain_raw_device_info(link, &raw);
+    if (err)
+        return err;
+
+    cahute_copy_ff_string(raw_buf, raw, 8);
+    if (size < strlen(raw_buf) + 1)
+        return CAHUTE_ERROR_SIZE;
+
+    strcpy(buf, raw_buf);
+    return CAHUTE_OK;
 }

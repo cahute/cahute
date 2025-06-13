@@ -135,39 +135,6 @@ fake_device_info[164] = {
 };
 
 /**
- * Copy a string from a payload to a buffer, while null-terminating it
- * and detecting 0xFF characters as end of strings.
- *
- * SECURITY: The destination buffer is expected to be at least
- * ``max_size + 1`` long.
- *
- * @param bufp Pointer to the buffer pointer for where to copy the data.
- *        This method will increment the pointer to after the end of the
- *        copied string with the null terminator, so that other strings or
- *        pieces of data can be copied after.
- * @param raw Raw data from which to get the string.
- * @param max_size Maximum size to read from raw data.
- * @return Pointer to the obtained string.
- */
-CAHUTE_INLINE(char *)
-cahute_seven_store_string(void **bufp, cahute_u8 const *raw, size_t max_size) {
-    char *buf = *bufp, *result = buf;
-
-    for (; max_size--; raw++) {
-        int byte = *raw;
-
-        if (!byte || byte >= 128)
-            break;
-
-        *(unsigned char *)buf++ = byte;
-    }
-
-    *buf++ = '\0';
-    *bufp = buf;
-    return result;
-}
-
-/**
  * Obtain a 32-bit integer from raw data, if available.
  *
  * SECURITY: The raw buffer is expected to be at least 8 bytes long.
@@ -2360,23 +2327,24 @@ end:
     return CAHUTE_OK;
 }
 
-/**
- * Produce generic device information using the optionally stored
- * EACK information from discovery.
- *
- * For more information on this flow, see :ref:`seven-get-device-information`.
- *
- * @param link Link from which to get the cached EACK response.
- * @param infop Pointer to set to the allocated device information structure.
- * @return Cahute error, or 0 if no error has occurred.
- */
-CAHUTE_EXTERN(int)
-cahute_seven_make_device_info(cahute_link *link, cahute_device_info **infop) {
-    cahute_device_info *info = NULL;
-    void *buf;
-    cahute_u8 const *raw_info;
-    size_t raw_info_size;
+/* ---
+ * Device information.
+ * --- */
 
+/**
+ * Obtain raw Protocol 7.00 device information.
+ *
+ * @param link Link from which to obtain the device information.
+ * @param rawp Pointer to set to the raw data.
+ * @param sizep Pointer to set to the raw data size.
+ * @return Error, or 0 if successful.
+ */
+CAHUTE_LOCAL(int)
+obtain_raw_device_info(
+    cahute_link *link,
+    cahute_u8 const **rawp,
+    size_t *sizep
+) {
     if (~link->protocol_state.seven.flags & SEVEN_FLAG_DEVICE_INFO_REQUESTED) {
         /* We don't have a 'generic device information' if discovery has
          * been disabled. */
@@ -2386,65 +2354,284 @@ cahute_seven_make_device_info(cahute_link *link, cahute_device_info **infop) {
         );
     }
 
-    info = malloc(sizeof(cahute_device_info) + 200);
-    if (!info)
-        return CAHUTE_ERROR_ALLOC;
-
-    buf = (void *)(&info[1]);
-    raw_info = link->protocol_state.seven.raw_device_info;
-    raw_info_size = link->protocol_state.seven.raw_device_info_size;
-
-    info->cahute_device_info_flags = 0;
-    if (raw_info[50] == '.')
-        info->cahute_device_info_flags |= CAHUTE_DEVICE_INFO_FLAG_PREPROG;
-    if (raw_info[66] == '.')
-        info->cahute_device_info_flags |= CAHUTE_DEVICE_INFO_FLAG_BOOTCODE;
-    if (raw_info[98] == '.')
-        info->cahute_device_info_flags |= CAHUTE_DEVICE_INFO_FLAG_OS;
-
-    info->cahute_device_info_hwid =
-        cahute_seven_store_string(&buf, raw_info, 8);
-    info->cahute_device_info_cpuid =
-        cahute_seven_store_string(&buf, &raw_info[8], 16);
-    info->cahute_device_info_rom_capacity =
-        cahute_get_long_dec(&raw_info[24]) * 1024;
-    info->cahute_device_info_flash_rom_capacity =
-        cahute_get_long_dec(&raw_info[32]) * 1024;
-    info->cahute_device_info_ram_capacity =
-        cahute_get_long_dec(&raw_info[40]) * 1024;
-
-    info->cahute_device_info_rom_version =
-        cahute_seven_store_string(&buf, &raw_info[48], 16);
-
-    info->cahute_device_info_bootcode_version =
-        cahute_seven_store_string(&buf, &raw_info[64], 16);
-    info->cahute_device_info_bootcode_offset =
-        cahute_get_long_hex(&raw_info[80]);
-    info->cahute_device_info_bootcode_size =
-        cahute_get_long_dec(&raw_info[88]) * 1024;
-
-    info->cahute_device_info_os_version =
-        cahute_seven_store_string(&buf, &raw_info[96], 16);
-    info->cahute_device_info_os_offset = cahute_get_long_hex(&raw_info[112]);
-    info->cahute_device_info_os_size =
-        cahute_get_long_dec(&raw_info[120]) * 1024;
-    info->cahute_device_info_product_id =
-        cahute_seven_store_string(&buf, &raw_info[132], 16);
-
-    if (raw_info_size == 164) {
-        info->cahute_device_info_username =
-            cahute_seven_store_string(&buf, &raw_info[148], 16);
-        info->cahute_device_info_organisation = "";
-    } else {
-        info->cahute_device_info_username =
-            cahute_seven_store_string(&buf, &raw_info[148], 20);
-        info->cahute_device_info_organisation =
-            cahute_seven_store_string(&buf, &raw_info[168], 20);
-    }
-
-    *infop = info;
+    *rawp = link->protocol_state.seven.raw_device_info;
+    *sizep = link->protocol_state.seven.raw_device_info_size;
     return CAHUTE_OK;
 }
+
+/**
+ * Copy a string from a payload to a buffer, while null-terminating it
+ * and detecting 0xFF characters as end of strings.
+ *
+ * @param buf Destination buffer.
+ * @param size Size of the destination buffer.
+ * @param raw Raw data from which to get the string.
+ * @param max_size Maximum size to read from raw data.
+ * @return Pointer to the obtained string.
+ */
+CAHUTE_INLINE(int)
+extract_info_string(
+    char *buf,
+    size_t size,
+    cahute_u8 const *raw,
+    size_t max_size
+) {
+    for (; max_size--; raw++, size--) {
+        int byte = *raw;
+
+        if (!size)
+            return CAHUTE_ERROR_SIZE;
+
+        if (!byte || byte >= 128)
+            break;
+
+        *(unsigned char *)buf++ = byte;
+    }
+
+    if (!size)
+        return CAHUTE_ERROR_SIZE;
+
+    *buf++ = '\0';
+    return CAHUTE_OK;
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_product_id(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    return extract_info_string(buf, size, &raw[132], 16);
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_username(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    return extract_info_string(
+        buf,
+        size,
+        &raw[148],
+        raw_size == 164 ? 16 : 20
+    );
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_organisation(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    if (raw_size == 164)
+        return CAHUTE_ERROR_INCOMPAT;
+
+    return extract_info_string(buf, size, &raw[168], 20);
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_hwid(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    return extract_info_string(buf, size, raw, 8);
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_cpuid(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    return extract_info_string(buf, size, &raw[8], 16);
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_rom_capacity(cahute_link *link, unsigned long *valuep) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    if (raw[50] != '.')
+        return CAHUTE_ERROR_UNAVAIL;
+
+    *valuep = cahute_get_long_dec(&raw[24]) * 1024;
+    return CAHUTE_OK;
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_flash_rom_capacity(cahute_link *link, unsigned long *valuep) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    *valuep = cahute_get_long_dec(&raw[32]) * 1024;
+    return CAHUTE_OK;
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_ram_capacity(cahute_link *link, unsigned long *valuep) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    *valuep = cahute_get_long_dec(&raw[40]) * 1024;
+    return CAHUTE_OK;
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_rom_version(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    if (raw[50] != '.')
+        return CAHUTE_ERROR_UNAVAIL;
+
+    return extract_info_string(buf, size, &raw[48], 16);
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_bootcode_version(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    if (raw[66] != '.')
+        return CAHUTE_ERROR_UNAVAIL;
+
+    return extract_info_string(buf, size, &raw[64], 16);
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_bootcode_offset(cahute_link *link, unsigned long *valuep) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    if (raw[66] != '.')
+        return CAHUTE_ERROR_UNAVAIL;
+
+    *valuep = cahute_get_long_hex(&raw[80]);
+    return CAHUTE_OK;
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_bootcode_size(cahute_link *link, unsigned long *valuep) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    if (raw[66] != '.')
+        return CAHUTE_ERROR_UNAVAIL;
+
+    *valuep = cahute_get_long_dec(&raw[88]) * 1024;
+    return CAHUTE_OK;
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_os_version(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    if (raw[98] != '.')
+        return CAHUTE_ERROR_UNAVAIL;
+
+    return extract_info_string(buf, size, &raw[96], 16);
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_os_offset(cahute_link *link, unsigned long *valuep) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    if (raw[98] != '.')
+        return CAHUTE_ERROR_UNAVAIL;
+
+    *valuep = cahute_get_long_hex(&raw[112]);
+    return CAHUTE_OK;
+}
+
+CAHUTE_EXTERN(int)
+cahute_seven_get_os_size(cahute_link *link, unsigned long *valuep) {
+    cahute_u8 const *raw;
+    size_t raw_size;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw, &raw_size);
+    if (err)
+        return err;
+
+    if (raw[98] != '.')
+        return CAHUTE_ERROR_UNAVAIL;
+
+    *valuep = cahute_get_long_dec(&raw[120]) * 1024;
+    return CAHUTE_OK;
+}
+
+/* ---
+ * Use cases.
+ * --- */
 
 /**
  * Negotiate new serial parameters with the passive side.

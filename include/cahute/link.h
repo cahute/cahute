@@ -38,44 +38,7 @@ CAHUTE_BEGIN_NAMESPACE
 CAHUTE_BEGIN_DECLS
 
 CAHUTE_DECLARE_TYPE(cahute_link)
-CAHUTE_DECLARE_TYPE(cahute_device_info)
 CAHUTE_DECLARE_TYPE(cahute_storage_entry)
-
-/* Preprogrammed ROM information available. */
-#define CAHUTE_DEVICE_INFO_FLAG_PREPROG 0x0001UL
-/* Bootcode information available. */
-#define CAHUTE_DEVICE_INFO_FLAG_BOOTCODE 0x0002UL
-/* OS information available. */
-#define CAHUTE_DEVICE_INFO_FLAG_OS 0x0004UL
-
-struct cahute_device_info {
-    unsigned long cahute_device_info_flags;
-
-    /* Preprogrammed ROM information. */
-    unsigned long cahute_device_info_rom_capacity;
-    char const *cahute_device_info_rom_version;
-
-    /* Flash ROM and RAM information. */
-    unsigned long cahute_device_info_flash_rom_capacity;
-    unsigned long cahute_device_info_ram_capacity;
-
-    /* Bootcode information. */
-    char const *cahute_device_info_bootcode_version;
-    unsigned long cahute_device_info_bootcode_offset;
-    unsigned long cahute_device_info_bootcode_size;
-
-    /* OS information. */
-    char const *cahute_device_info_os_version;
-    unsigned long cahute_device_info_os_offset;
-    unsigned long cahute_device_info_os_size;
-
-    /* Other information. */
-    char const *cahute_device_info_product_id;
-    char const *cahute_device_info_username;
-    char const *cahute_device_info_organisation;
-    char const *cahute_device_info_hwid;
-    char const *cahute_device_info_cpuid;
-};
 
 typedef int(cahute_confirm_overwrite_func)(void *cahute__cookie);
 
@@ -231,9 +194,10 @@ cahute_set_serial_params_to_link(
  * --- */
 
 CAHUTE_EXTERN(int)
-cahute_get_device_info(
+cahute_get_device_property(
     cahute_link *cahute__link,
-    cahute_device_info **cahute__infop
+    char const *cahute__name,
+    ...
 );
 
 /* ---

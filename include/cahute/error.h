@@ -53,6 +53,7 @@ CAHUTE_BEGIN_DECLS
 #define CAHUTE_ERROR_INVALID    0x000A /* Invalid data or behaviour. */
 #define CAHUTE_ERROR_INCOMPAT   0x000B /* Incompatibility detected. */
 #define CAHUTE_ERROR_TERMINATED 0x000C /* Input or link was terminated. */
+#define CAHUTE_ERROR_UNAVAIL    0x000D /* A property is unavailable. */
 
 #define CAHUTE_ERROR_NOT_FOUND     0x0101 /* Device could not be found. */
 #define CAHUTE_ERROR_TOO_MANY      0x0102 /* Too Many Devices found. */

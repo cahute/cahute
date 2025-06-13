@@ -81,6 +81,11 @@ Macro definitions
       requested operation is therefore not possible.
     * An input buffer contained a sentinel, for text conversion.
 
+.. c:macro:: CAHUTE_ERROR_UNAVAIL
+
+    Error raised if a property should have been obtained, but was not
+    available.
+
 .. c:macro:: CAHUTE_ERROR_NOT_FOUND
 
     Error code raised if a device could not be found using the provided

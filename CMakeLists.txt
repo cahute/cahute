@@ -353,7 +353,7 @@ if(CAHUTE_FEATURE_LIB_STATIC)
         lib/link/copy_file_on_storage.c
         lib/link/delete_file_from_storage.c
         lib/link/flash_system_using_fxremote_method.c
-        lib/link/get_device_info.c
+        lib/link/get_device_property.c
         lib/link/list_storage_entries.c
         lib/link/negotiate_serial_params.c
         lib/link/optimize_storage.c

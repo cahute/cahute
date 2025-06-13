@@ -516,63 +516,84 @@ cahute_cas100_exchange_model_information(cahute_link *link) {
     return CAHUTE_OK;
 }
 
+/* ---
+ * Device information.
+ * --- */
+
 /**
- * Produce generic device information using CAS100 device information.
+ * Obtain raw CAS100 device information.
  *
- * @param infop Pointer to set to the allocated device information structure.
- * @param raw_info Raw information to read from, expected to be 33 bytes long.
- * @return Cahute error, or 0 if no error has occurred.
+ * @param link Link from which to obtain the device information.
+ * @param rawp Pointer to set to the raw data.
+ * @param sizep Pointer to set to the raw data size.
+ * @return Error, or 0 if successful.
  */
+CAHUTE_LOCAL(int)
+obtain_raw_device_info(cahute_link *link, cahute_u8 const **rawp) {
+    *rawp = link->protocol_state.casiolink.raw_device_info;
+    return CAHUTE_OK;
+}
+
 CAHUTE_EXTERN(int)
-cahute_cas100_make_device_info(
-    cahute_device_info **infop,
-    cahute_u8 const *raw_info
+cahute_cas100_get_flash_rom_capacity(
+    cahute_link *link,
+    unsigned long *valuep
 ) {
-    cahute_device_info *info;
-    char *buf;
+    cahute_u8 const *raw;
+    int err;
 
-    info = malloc(sizeof(cahute_device_info) + 20);
-    if (!info)
-        return CAHUTE_ERROR_ALLOC;
+    err = obtain_raw_device_info(link, &raw);
+    if (err)
+        return err;
 
-    buf = (void *)(&info[1]);
+    *valuep = ((unsigned long)raw[20] << 24) | ((unsigned long)raw[19] << 16)
+              | ((unsigned long)raw[18] << 8) | raw[17];
+    return CAHUTE_OK;
+}
 
-    info->cahute_device_info_flags = CAHUTE_DEVICE_INFO_FLAG_OS;
-    info->cahute_device_info_rom_capacity = 0;
-    info->cahute_device_info_rom_version = "";
+CAHUTE_EXTERN(int)
+cahute_cas100_get_ram_capacity(cahute_link *link, unsigned long *valuep) {
+    cahute_u8 const *raw;
+    int err;
 
-    info->cahute_device_info_flash_rom_capacity =
-        ((unsigned long)raw_info[20] << 24)
-        | ((unsigned long)raw_info[19] << 16)
-        | ((unsigned long)raw_info[18] << 8) | raw_info[17];
-    info->cahute_device_info_ram_capacity =
-        ((unsigned long)raw_info[24] << 24)
-        | ((unsigned long)raw_info[23] << 16)
-        | ((unsigned long)raw_info[22] << 8) | raw_info[21];
+    err = obtain_raw_device_info(link, &raw);
+    if (err)
+        return err;
 
-    info->cahute_device_info_bootcode_version = "";
-    info->cahute_device_info_bootcode_offset = 0;
-    info->cahute_device_info_bootcode_size = 0;
+    *valuep = ((unsigned long)raw[24] << 24) | ((unsigned long)raw[23] << 16)
+              | ((unsigned long)raw[22] << 8) | raw[21];
+    return CAHUTE_OK;
+}
 
-    memcpy(buf, &raw_info[13], 4);
+CAHUTE_EXTERN(int)
+cahute_cas100_get_os_version(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    int err;
+
+    err = obtain_raw_device_info(link, &raw);
+    if (err)
+        return err;
+
+    if (size < 5)
+        return CAHUTE_ERROR_SIZE;
+
+    memcpy(buf, &raw[13], 4);
     buf[4] = 0;
-    info->cahute_device_info_os_version = buf;
-    buf += 5;
+    return CAHUTE_OK;
+}
 
-    info->cahute_device_info_os_offset = 0;
-    info->cahute_device_info_os_size = 0;
+CAHUTE_EXTERN(int)
+cahute_cas100_get_hwid(cahute_link *link, char *buf, size_t size) {
+    cahute_u8 const *raw;
+    int err;
 
-    info->cahute_device_info_product_id = "";
-    info->cahute_device_info_username = "";
-    info->cahute_device_info_organisation = "";
+    err = obtain_raw_device_info(link, &raw);
+    if (err)
+        return err;
 
-    memcpy(buf, raw_info, 6);
-    buf[6] = 0;
-    info->cahute_device_info_hwid = buf;
-    buf += 7;
+    if (size < 7)
+        return CAHUTE_ERROR_SIZE;
 
-    info->cahute_device_info_cpuid = "";
-
-    *infop = info;
+    cahute_copy_ff_string(buf, raw, 6);
     return CAHUTE_OK;
 }
