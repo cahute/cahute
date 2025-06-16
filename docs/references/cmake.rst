@@ -28,7 +28,7 @@ more relevant to Cahute here.
 
     .. note::
 
-        As described `in the CMake package guidelines
+        As described `in the CMake package guidelines for Archlinux
         <CMake Release undesired behaviour_>`_, CMake automatically
         forces ``-O3`` when ``Release`` is selected.
         Cahute overrides this with ``-O2`` instead.
@@ -36,8 +36,8 @@ more relevant to Cahute here.
 |CMAKE_INSTALL_PREFIX|_
     Install prefix.
 
-    In the :ref:`build-guide` guide, it is recommended to set this to
-    ``/usr`` rather than the default ``/usr/local`` value.
+    In the :ref:`build from source guides <build-guide>`, it is recommended
+    to set this to ``/usr`` rather than the default ``/usr/local`` value.
 
 |CMAKE_VERBOSE_MAKEFILE|_
     Optional switch to set to ``ON`` to see the commands executed when
@@ -50,19 +50,25 @@ Cahute-specific general settings
 
 The following variables are specific to Cahute.
 
-``CAHUTE_DEFAULT_LOGLEVEL``
-    Default logging level used when creating a context, among
-    ``info``, ``warning`` (*by default*), ``error``, ``fatal`` and ``none``.
-
-    See :ref:`feature-topic-logging` for more information.
+.. _cmake-ref-setting-cahute-cli:
 
 ``CAHUTE_CLI``
     Enable command-line utilities.
+
+    This is enabled by default.
 
 .. _cmake-ref-setting-cahute-cli-experimental:
 
 ``CAHUTE_CLI_EXPERIMENTAL``
     Enable experimental / unfinished command-line utilities.
+
+    This is disabled by default.
+
+``CAHUTE_DEFAULT_LOGLEVEL``
+    Default logging level used when creating a context, among ``debug``
+    ``info``, ``warning`` (*by default*), ``error``, ``fatal`` and ``none``.
+
+    See :ref:`feature-topic-logging` for more information.
 
 ``CAHUTE_GIT``
     Include git_\ -related information to the built targets, i.e. if the
@@ -75,11 +81,23 @@ The following variables are specific to Cahute.
     * :c:macro:`CAHUTE_GIT_TAGGED`;
     * :c:macro:`CAHUTE_GIT_DIRTY`.
 
+    This is enabled by default.
+
 ``CAHUTE_LIBUSB``
     Enable the use of libusb_.
 
+    .. note::
+
+        This will be ignored on Win32, since Cahute needs to support drivers
+        libusb doesn't.
+
+    This is enabled by default on `platforms libusb support
+    <libusb features_>`_.
+
 ``CAHUTE_PKGCONF``
     Enable installing pkgconf_ / `pkg-config`_ files.
+
+    This is supported by default.
 
 ``CAHUTE_REPORT_URL``
     URL to the bug reporting guide included within the library and
@@ -88,8 +106,13 @@ The following variables are specific to Cahute.
 ``CAHUTE_SDL``
     Enable the use of SDL_.
 
+    This is enabled by default on `platforms SDL2 support
+    <SDL2 platforms_>`_.
+
 ``CAHUTE_UDEV``
     Enable building and installing the udev rule.
+
+    This is enabled by default when building for Linux.
 
 ``CAHUTE_UDEV_GROUP``
     Name of the group to which the udev rule gives permission to calculators
@@ -106,65 +129,43 @@ The following variables are specific to Cahute.
     * `Debian system groups`_;
     * `Void Linux default groups`_.
 
-.. _cmake-ref-feature-switches:
+    This is set to ``uucp`` by default.
 
-Cahute feature switches (advanced)
-----------------------------------
+.. _cmake-ref-cli:
 
-The following variables can be used to toggle features within the CMake
-configuration on or off directly.
+Cahute-specific command-line utility switches
+---------------------------------------------
 
-.. warning::
+Most command-line utilities in Cahute can be enabled using the :ref:`CAHUTE_CLI
+<cmake-ref-setting-cahute-cli>` setting.
 
-    These switches are for advanced users, and should be indirectly defined
-    through settings defined in :ref:`cmake-ref-general-settings`.
+However, they can also be individually enabled using the following switches:
 
-``CAHUTE_FEATURE_CLI_CAS``
-    Enable and include the :ref:`cli-ref-cas` target.
+``CAHUTE_CLI_P7``
+    Enable building :ref:`p7 <cli-ref-p7>`.
 
-    By default, this is enabled if both ``CAHUTE_CLI`` and
-    ``CAHUTE_CLI_EXPERIMENTAL`` are enabled.
+``CAHUTE_CLI_P7OS``
+    Enable building :ref:`p7os <cli-ref-p7os>`.
 
-``CAHUTE_FEATURE_CLI_P7``
-    Enable and include the :ref:`cli-ref-p7` target.
+``CAHUTE_CLI_P7SCREEN``
+    Enable building :ref:`p7screen <cli-ref-p7screen>`.
 
-    By default, this is enabled if ``CAHUTE_CLI`` is enabled.
+``CAHUTE_CLI_XFER9860``
+    Enable building :ref:`xfer9860 <cli-ref-xfer9860>`.
 
-``CAHUTE_FEATURE_CLI_P7OS``
-    Enable and include the :ref:`cli-ref-p7os` target.
+Cahute-specific experimental command-line utility switches
+----------------------------------------------------------
 
-    By default, this is enabled if ``CAHUTE_CLI`` is enabled.
+Some command-line utilities in Cahute are considered experimental (not fully
+implemented), and can be enabled by enabling both the :ref:`CAHUTE_CLI
+<cmake-ref-setting-cahute-cli>` and :ref:`CAHUTE_CLI_EXPERIMENTAL
+<cmake-ref-setting-cahute-cli-experimental>` settings.
 
-``CAHUTE_FEATURE_CLI_P7SCREEN``
-    Enable and include the :ref:`cli-ref-p7screen` target.
+However, they can also be individually enabled using the following
+switches:
 
-    By default, this is enabled if both ``CAHUTE_CLI`` and ``CAHUTE_SDL``
-    are enabled.
-
-``CAHUTE_FEATURE_CLI_XFER9860``
-    Enable and include the :ref:`cli-ref-xfer9860` target.
-
-    By default, this is enabled if ``CAHUTE_CLI`` is enabled.
-
-``CAHUTE_FEATURE_LIB_HEADERS``
-    Enable and include the library headers.
-
-    By default, this is enabled.
-
-``CAHUTE_FEATURE_LIB_PKGCONF``
-    Enble and include the pkgconf_ / `pkg-config`_ files for the library.
-
-    By default, this is enabled if ``CAHUTE_PKGCONF`` is enabled.
-
-``CAHUTE_FEATURE_LIB_STATIC``
-    Enable and include the target to build the static library.
-
-    By default, this is enabled.
-
-``CAHUTE_FEATURE_UDEV``
-    Enable and include the udev rules.
-
-    By default, this is enabled if ``CAHUTE_UDEV`` is enabled.
+``CAHUTE_CLI_CAS``
+    Enable building :ref:`CaS <cli-ref-cas>`.
 
 .. |CMAKE_BUILD_TYPE| replace:: ``CMAKE_BUILD_TYPE``
 .. |CMAKE_INSTALL_PREFIX| replace:: ``CMAKE_INSTALL_PREFIX``
@@ -184,7 +185,10 @@ configuration on or off directly.
 
 .. _git: https://git-scm.com/
 .. _libusb: https://libusb.info/
+.. _libusb features: https://github.com/libusb/libusb/wiki#features
 .. _SDL: https://libsdl.org/
+.. _SDL2 platforms:
+    https://wiki.libsdl.org/SDL2/Introduction#what_platforms_does_sdl_run_on
 .. _pkgconf: https://github.com/pkgconf/pkgconf
 .. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
 

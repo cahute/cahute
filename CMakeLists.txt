@@ -13,19 +13,19 @@ project(
 
 include(CMakeDependentOption)
 
-set(CAHUTE_DEFAULT_LOGLEVEL "warning" CACHE STRING
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(_DEFAULT_LOGLEVEL "debug")
+else()
+    set(_DEFAULT_LOGLEVEL "warning")
+endif()
+
+set(CAHUTE_DEFAULT_LOGLEVEL "${_DEFAULT_LOGLEVEL}" CACHE STRING
     "Default logging level used when creating a context?")
 set_property(CACHE CAHUTE_DEFAULT_LOGLEVEL PROPERTY STRINGS
     "debug" "info" "warning" "error" "fatal" "none")
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set_property(CACHE CAHUTE_DEFAULT_LOGLEVEL PROPERTY VALUE "debug")
-endif()
 
 set(CAHUTE_CLI ON CACHE BOOL
     "Enable command-line utilities?")
-if(DEFINED FXSDK_PLATFORM)
-    set_property(CACHE CAHUTE_CLI PROPERTY VALUE OFF)
-endif()
 
 set(CAHUTE_CLI_EXPERIMENTAL OFF CACHE BOOL
     "Enable experimental command-line utilities?")
@@ -33,11 +33,14 @@ set(CAHUTE_CLI_EXPERIMENTAL OFF CACHE BOOL
 set(CAHUTE_GIT ON CACHE BOOL
     "Include git-related information if available?")
 
-set(CAHUTE_LIBUSB ON CACHE BOOL
-    "Enable usage of libusb?")
-if(DEFINED FXSDK_PLATFORM OR DEFINED AMIGA OR DEFINED WATCOM OR WIN32)
-    set_property(CACHE CAHUTE_LIBUSB PROPERTY VALUE OFF)
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Android|Darwin|Haiku|iOS|Linux|NetBSD|OpenBSD|SunOS")
+    set(_DEFAULT_LIBUSB ON)
+else()
+    set(_DEFAULT_LIBUSB OFF)
 endif()
+
+set(CAHUTE_LIBUSB ${_DEFAULT_LIBUSB} CACHE BOOL
+    "Enable usage of libusb?")
 
 set(CAHUTE_PKGCONF ON CACHE BOOL
     "Enable installation of pkgconf files?")
@@ -45,68 +48,57 @@ set(CAHUTE_PKGCONF ON CACHE BOOL
 set(CAHUTE_REPORT_URL "https://cahuteproject.org/guides/report.html"
     CACHE STRING "Bug report guide URL?")
 
-set(CAHUTE_SDL ON CACHE BOOL
-    "Enable usage of SDL?")
-if(DEFINED FXSDK_PLATFORM OR DEFINED AMIGA OR DEFINED WATCOM)
-    set_property(CACHE CAHUTE_SDL PROPERTY VALUE OFF)
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Android|Darwin|iOS|Linux|Windows")
+    set(_DEFAULT_SDL ON)
+else()
+    set(_DEFAULT_SDL OFF)
 endif()
 
-set(CAHUTE_UDEV OFF CACHE BOOL
-    "Enable installation of udev rule?")
+set(CAHUTE_SDL ${_DEFAULT_SDL} CACHE BOOL
+    "Enable usage of SDL?")
+
 if(LINUX)
-    set_property(CACHE CAHUTE_UDEV PROPERTY VALUE ON)
+    set(_DEFAULT_UDEV ON)
+else()
+    set(_DEFAULT_UDEV OFF)
 endif()
+
+set(CAHUTE_UDEV ${_DEFAULT_UDEV} CACHE BOOL
+    "Enable installation of udev rule?")
 
 set(CAHUTE_UDEV_GROUP "uucp" CACHE STRING
     "Name of the group inserted into the udev rule?")
 
 # ---
-# Feature switches.
+# Command-line utilities.
 # ---
 
-cmake_dependent_option(CAHUTE_FEATURE_CLI_CAS
-    "Enable CaS target?"
+cmake_dependent_option(CAHUTE_CLI_CAS
+    "Enable CaS command-line utility?"
     ON "CAHUTE_CLI AND CAHUTE_CLI_EXPERIMENTAL" OFF)
 
-cmake_dependent_option(CAHUTE_FEATURE_CLI_P7
-    "Enable p7 target?"
+cmake_dependent_option(CAHUTE_CLI_P7
+    "Enable p7 command-line utility?"
     ON "CAHUTE_CLI" OFF)
 
-cmake_dependent_option(CAHUTE_FEATURE_CLI_P7OS
-    "Enable p7os target?"
+cmake_dependent_option(CAHUTE_CLI_P7OS
+    "Enable p7os command-line-utility?"
     ON "CAHUTE_CLI" OFF)
 
-cmake_dependent_option(CAHUTE_FEATURE_CLI_P7SCREEN
-    "Enable p7screen target?"
+cmake_dependent_option(CAHUTE_CLI_P7SCREEN
+    "Enable p7screen command-line-utility?"
     ON "CAHUTE_CLI AND CAHUTE_SDL" OFF)
 
-cmake_dependent_option(CAHUTE_FEATURE_CLI_XFER9860
-    "Enable xfer9860 target?"
+cmake_dependent_option(CAHUTE_CLI_XFER9860
+    "Enable xfer9860 command-line-utility?"
     ON "CAHUTE_CLI" OFF)
 
-set(CAHUTE_FEATURE_LIB_HEADERS ON CACHE BOOL
-    "Enable Cahute headers?")
-
-set(CAHUTE_FEATURE_LIB_PKGCONF ON CACHE BOOL
-    "Enable Cahute pkgconf / pkg-config files?")
-
-set(CAHUTE_FEATURE_LIB_STATIC ON CACHE BOOL
-    "Enable Cahute (static library) target?")
-
-cmake_dependent_option(CAHUTE_FEATURE_UDEV
-    "Enable udev rules?"
-    ON "CAHUTE_UDEV" OFF)
-
 mark_as_advanced(
-    CAHUTE_FEATURE_CLI_CAS
-    CAHUTE_FEATURE_CLI_P7
-    CAHUTE_FEATURE_CLI_P7OS
-    CAHUTE_FEATURE_CLI_P7SCREEN
-    CAHUTE_FEATURE_CLI_XFER9860
-    CAHUTE_FEATURE_LIB_HEADERS
-    CAHUTE_FEATURE_LIB_PKGCONF
-    CAHUTE_FEATURE_LIB_STATIC
-    CAHUTE_FEATURE_UDEV)
+    CAHUTE_CLI_CAS
+    CAHUTE_CLI_P7
+    CAHUTE_CLI_P7OS
+    CAHUTE_CLI_P7SCREEN
+    CAHUTE_CLI_XFER9860)
 
 # ---
 # Packaging options.
@@ -225,7 +217,7 @@ if(WIN32 OR MINGW)
     set(SDL2_NO_MWINDOWS 1)
 endif()
 
-if(CAHUTE_FEATURE_CLI_P7SCREEN)
+if(CAHUTE_CLI_P7SCREEN)
     find_package(SDL2 REQUIRED)
 endif()
 
@@ -264,215 +256,219 @@ add_compile_definitions(
 )
 
 # ---
-# Feature definitions.
+# "cahute-headers" target.
 # ---
 
-if(CAHUTE_FEATURE_LIB_HEADERS)
-    FILE(GLOB_RECURSE CAHUTE_HEADERS
-        RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/include"
-        "*.h")
+FILE(GLOB_RECURSE CAHUTE_HEADERS
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "*.h")
 
-    add_custom_target(
-        cahute-config-header
-        COMMAND ${CMAKE_COMMAND}
-            -DCAHUTE_CONFIG_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
-            -DPROJECT_VERSION="${PROJECT_VERSION}"
-            -DPROJECT_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
-            -DPROJECT_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
-            -DPROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}"
-            -P misc/CahuteConfig.cmake
-        DEPENDS include/cahute/config.h.in
-        BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    )
+add_custom_target(
+    cahute-config-header
+    COMMAND ${CMAKE_COMMAND}
+        -DCAHUTE_CONFIG_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
+        -DPROJECT_VERSION="${PROJECT_VERSION}"
+        -DPROJECT_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
+        -DPROJECT_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
+        -DPROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}"
+        -P misc/CahuteConfig.cmake
+    DEPENDS include/cahute/config.h.in
+    BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+)
 
-    add_custom_target(cahute-headers
-        SOURCES
-            include/cahute/cdefs.h
-            "${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
-            include/cahute/context.h
-    )
+add_custom_target(cahute-headers
+    SOURCES
+        include/cahute/cdefs.h
+        "${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
+        include/cahute/context.h
+)
 
-    install(
-        DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" "${CMAKE_CURRENT_BINARY_DIR}/include/"
-        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/cahute-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
-        FILES_MATCHING PATTERN "*.h"
-    )
-endif()
+install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" "${CMAKE_CURRENT_BINARY_DIR}/include/"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/cahute-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+    FILES_MATCHING PATTERN "*.h"
+)
 
-if(CAHUTE_FEATURE_LIB_STATIC)
-    add_custom_target(
-        cahute-version-data-header
-        COMMAND ${CMAKE_COMMAND}
-            -DCAHUTE_GIT="${CAHUTE_GIT}"
-            -DCAHUTE_GIT_CACHE_PATH="${CMAKE_CURRENT_BINARY_DIR}/git-hash.txt"
-            -DCAHUTE_VERSION_DATA_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
-            -DPROJECT_VERSION="${PROJECT_VERSION}"
-            -DPROJECT_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
-            -DPROJECT_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
-            -DPROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}"
-            -DCAHUTE_REPORT_URL="${CAHUTE_REPORT_URL}"
-            -P misc/CahuteVersionData.cmake
-        DEPENDS common/version_data.h.in
-        BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    )
+# ---
+# "cahute" (static library) target.
+# ---
 
-    add_custom_command(
-        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
-        COMMAND "${Python3_EXECUTABLE}" ${CMAKE_SOURCE_DIR}/chars/process_chars.py
-            "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
-        DEPENDS chars/process_chars.py chars/chars.toml
-        VERBATIM
-    )
+add_custom_target(
+    cahute-version-data-header
+    COMMAND ${CMAKE_COMMAND}
+        -DCAHUTE_GIT="${CAHUTE_GIT}"
+        -DCAHUTE_GIT_CACHE_PATH="${CMAKE_CURRENT_BINARY_DIR}/git-hash.txt"
+        -DCAHUTE_VERSION_DATA_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
+        -DPROJECT_VERSION="${PROJECT_VERSION}"
+        -DPROJECT_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
+        -DPROJECT_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
+        -DPROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}"
+        -DCAHUTE_REPORT_URL="${CAHUTE_REPORT_URL}"
+        -P misc/CahuteVersionData.cmake
+    DEPENDS common/version_data.h.in
+    BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+)
 
-    set(LIB_SOURCES
-        lib/file/checksum.c
-        lib/file/close.c
-        lib/file/create.c
-        lib/file/data.c
-        lib/file/examine.c
-        lib/file/open.c
-        lib/file/open_memory.c
-        lib/file/open_stdout.c
-        lib/file/read.c
-        lib/file/size.c
-        lib/file/write.c
-        lib/link/open/init.c
-        lib/link/open/serial.c
-        lib/link/open/simple_usb.c
-        lib/link/open/usb.c
-        lib/link/transport/receive.c
-        lib/link/transport/scsi_request_from.c
-        lib/link/transport/scsi_request_to.c
-        lib/link/transport/send.c
-        lib/link/transport/set_serial_params.c
-        lib/link/backup_rom.c
-        lib/link/check.c
-        lib/link/close.c
-        lib/link/copy_file_on_storage.c
-        lib/link/delete_file_from_storage.c
-        lib/link/flash_system_using_fxremote_method.c
-        lib/link/get_device_property.c
-        lib/link/list_storage_entries.c
-        lib/link/negotiate_serial_params.c
-        lib/link/optimize_storage.c
-        lib/link/receive.c
-        lib/link/receive_data.c
-        lib/link/receive_screen.c
-        lib/link/request_file_from_storage.c
-        lib/link/request_storage_capacity.c
-        lib/link/reset_storage.c
-        lib/link/send.c
-        lib/link/send_file_to_storage.c
-        lib/link/set_serial_params.c
-        lib/link/upload_and_run_program.c
-        lib/cas40.c
-        lib/cas50.c
-        lib/cas100.c
-        lib/cas300.c
-        lib/casiolink.c
-        lib/cdefs.c
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
+    COMMAND "${Python3_EXECUTABLE}" ${CMAKE_SOURCE_DIR}/chars/process_chars.py
         "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
-        lib/context.c
-        lib/data.c
-        lib/detect_serial.c
-        lib/detect_usb.c
-        lib/info.c
-        lib/logging.c
-        lib/mcs.c
-        lib/misc.c
-        lib/path.c
-        lib/picture.c
-        lib/seven.c
-        lib/seven_ohp.c
-        lib/text.c
-    )
+    DEPENDS chars/process_chars.py chars/chars.toml
+    VERBATIM
+)
 
-    if(WIN32)
-        list(APPEND LIB_COMPILE_DEFS
-            CAHUTE_PLATFORM_WIN32=1)
-        list(APPEND LIB_SOURCES
-            lib/platform/win32/file/close.c
-            lib/platform/win32/file/create.c
-            lib/platform/win32/file/move.c
-            lib/platform/win32/file/open.c
-            lib/platform/win32/file/read.c
-            lib/platform/win32/file/stdout.c
-            lib/platform/win32/file/write.c
-            lib/platform/win32/misc/cfgmgr32.c
-            lib/platform/win32/misc/devices.c
-            lib/platform/win32/misc/dll.c
-            lib/platform/win32/misc/guid.c
-            lib/platform/win32/misc/guids.c
-            lib/platform/win32/misc/logging.c
-            lib/platform/win32/misc/monotonic.c
-            lib/platform/win32/misc/sleep.c
-            lib/platform/win32/misc/version.c
-            lib/platform/win32/misc/winusb.c
-            lib/platform/win32/serial/detection.c
-            lib/platform/win32/serial/link.c
-            lib/platform/win32/usb/cesg.c
-            lib/platform/win32/usb/detection.c
-            lib/platform/win32/usb/devices.c
-            lib/platform/win32/usb/open.c
-            lib/platform/win32/usb/ums.c
-            lib/platform/win32/usb/winusb_bulk.c)
-    elseif(DEFINED AMIGA)
-        list(APPEND LIB_COMPILE_DEFS
-            CAHUTE_PLATFORM_AMIGAOS=1)
-        list(APPEND LIB_SOURCES
-            lib/platform/amigaos/misc/device_path.c
-            lib/platform/amigaos/misc/monotonic.c
-            lib/platform/amigaos/misc/sleep.c
-            lib/platform/amigaos/misc/timer.c
-            lib/platform/amigaos/serial/detection.c
-            lib/platform/amigaos/serial/link.c)
-    elseif(UNIX)
-        if(LINUX)
-            list(APPEND LIB_COMPILE_DEFS
-                CAHUTE_PLATFORM_LINUX=1)
-            list(APPEND LIB_SOURCES
-                lib/platform/linux/serial_detection.c)
-        endif()
+set(LIB_SOURCES
+    lib/file/checksum.c
+    lib/file/close.c
+    lib/file/create.c
+    lib/file/data.c
+    lib/file/examine.c
+    lib/file/open.c
+    lib/file/open_memory.c
+    lib/file/open_stdout.c
+    lib/file/read.c
+    lib/file/size.c
+    lib/file/write.c
+    lib/link/open/init.c
+    lib/link/open/serial.c
+    lib/link/open/simple_usb.c
+    lib/link/open/usb.c
+    lib/link/transport/receive.c
+    lib/link/transport/scsi_request_from.c
+    lib/link/transport/scsi_request_to.c
+    lib/link/transport/send.c
+    lib/link/transport/set_serial_params.c
+    lib/link/backup_rom.c
+    lib/link/check.c
+    lib/link/close.c
+    lib/link/copy_file_on_storage.c
+    lib/link/delete_file_from_storage.c
+    lib/link/flash_system_using_fxremote_method.c
+    lib/link/get_device_property.c
+    lib/link/list_storage_entries.c
+    lib/link/negotiate_serial_params.c
+    lib/link/optimize_storage.c
+    lib/link/receive.c
+    lib/link/receive_data.c
+    lib/link/receive_screen.c
+    lib/link/request_file_from_storage.c
+    lib/link/request_storage_capacity.c
+    lib/link/reset_storage.c
+    lib/link/send.c
+    lib/link/send_file_to_storage.c
+    lib/link/set_serial_params.c
+    lib/link/upload_and_run_program.c
+    lib/cas40.c
+    lib/cas50.c
+    lib/cas100.c
+    lib/cas300.c
+    lib/casiolink.c
+    lib/cdefs.c
+    "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
+    lib/context.c
+    lib/data.c
+    lib/detect_serial.c
+    lib/detect_usb.c
+    lib/info.c
+    lib/logging.c
+    lib/mcs.c
+    lib/misc.c
+    lib/path.c
+    lib/picture.c
+    lib/seven.c
+    lib/seven_ohp.c
+    lib/text.c
+)
 
+if(WIN32 OR MINGW)
+    list(APPEND LIB_COMPILE_DEFS
+        CAHUTE_PLATFORM_WIN32=1)
+    list(APPEND LIB_SOURCES
+        lib/platform/win32/file/close.c
+        lib/platform/win32/file/create.c
+        lib/platform/win32/file/move.c
+        lib/platform/win32/file/open.c
+        lib/platform/win32/file/read.c
+        lib/platform/win32/file/stdout.c
+        lib/platform/win32/file/write.c
+        lib/platform/win32/misc/cfgmgr32.c
+        lib/platform/win32/misc/devices.c
+        lib/platform/win32/misc/dll.c
+        lib/platform/win32/misc/guid.c
+        lib/platform/win32/misc/guids.c
+        lib/platform/win32/misc/logging.c
+        lib/platform/win32/misc/monotonic.c
+        lib/platform/win32/misc/sleep.c
+        lib/platform/win32/misc/version.c
+        lib/platform/win32/misc/winusb.c
+        lib/platform/win32/serial/detection.c
+        lib/platform/win32/serial/link.c
+        lib/platform/win32/usb/cesg.c
+        lib/platform/win32/usb/detection.c
+        lib/platform/win32/usb/devices.c
+        lib/platform/win32/usb/open.c
+        lib/platform/win32/usb/ums.c
+        lib/platform/win32/usb/winusb_bulk.c)
+elseif(DEFINED AMIGA)
+    list(APPEND LIB_COMPILE_DEFS
+        CAHUTE_PLATFORM_AMIGAOS=1)
+    list(APPEND LIB_SOURCES
+        lib/platform/amigaos/misc/device_path.c
+        lib/platform/amigaos/misc/monotonic.c
+        lib/platform/amigaos/misc/sleep.c
+        lib/platform/amigaos/misc/timer.c
+        lib/platform/amigaos/serial/detection.c
+        lib/platform/amigaos/serial/link.c)
+elseif(UNIX)
+    if(LINUX)
         list(APPEND LIB_COMPILE_DEFS
-            CAHUTE_PLATFORM_POSIX=1)
+            CAHUTE_PLATFORM_LINUX=1)
         list(APPEND LIB_SOURCES
-            lib/platform/posix/file.c
-            lib/platform/posix/file_create.c
-            lib/platform/posix/file_open.c
-            lib/platform/posix/misc.c
-            lib/platform/posix/path.c
-            lib/platform/posix/serial.c
-            lib/platform/posix/serial_detection.c
-            lib/platform/posix/stdout.c)
+            lib/platform/linux/serial_detection.c)
     endif()
 
-    if(USE_LIBUSB)
-        list(APPEND LIB_COMPILE_DEFS
-            CAHUTE_PLATFORM_LIBUSB=1)
-        list(APPEND LIB_SOURCES
-            lib/platform/libusb/bulk.c
-            lib/platform/libusb/close.c
-            lib/platform/libusb/context.c
-            lib/platform/libusb/detection.c
-            lib/platform/libusb/open.c
-            lib/platform/libusb/ums.c)
-    endif()
-
-    add_library(cahute STATIC ${LIB_SOURCES})
-
-    add_dependencies(cahute cahute-headers cahute-version-data-header)
-    target_include_directories(cahute PRIVATE
-        ${LIB_INCLUDE_DIRS}
-        "${CMAKE_SOURCE_DIR}/lib")
-    target_compile_definitions(cahute PRIVATE ${LIB_COMPILE_DEFS})
-
-    install(TARGETS cahute ARCHIVE)
+    list(APPEND LIB_COMPILE_DEFS
+        CAHUTE_PLATFORM_POSIX=1)
+    list(APPEND LIB_SOURCES
+        lib/platform/posix/file.c
+        lib/platform/posix/file_create.c
+        lib/platform/posix/file_open.c
+        lib/platform/posix/misc.c
+        lib/platform/posix/path.c
+        lib/platform/posix/serial.c
+        lib/platform/posix/serial_detection.c
+        lib/platform/posix/stdout.c)
 endif()
 
-if(CAHUTE_FEATURE_LIB_PKGCONF)
+if(USE_LIBUSB)
+    list(APPEND LIB_COMPILE_DEFS
+        CAHUTE_PLATFORM_LIBUSB=1)
+    list(APPEND LIB_SOURCES
+        lib/platform/libusb/bulk.c
+        lib/platform/libusb/close.c
+        lib/platform/libusb/context.c
+        lib/platform/libusb/detection.c
+        lib/platform/libusb/open.c
+        lib/platform/libusb/ums.c)
+endif()
+
+add_library(cahute STATIC ${LIB_SOURCES})
+
+add_dependencies(cahute cahute-headers cahute-version-data-header)
+target_include_directories(cahute PRIVATE
+    ${LIB_INCLUDE_DIRS}
+    "${CMAKE_SOURCE_DIR}/lib")
+target_compile_definitions(cahute PRIVATE ${LIB_COMPILE_DEFS})
+
+install(TARGETS cahute ARCHIVE)
+
+# ---
+# Additional configuration files.
+# ---
+
+if(CAHUTE_PKGCONF)
     configure_file(misc/cahute.pc.in misc/cahute.pc ESCAPE_QUOTES @ONLY)
 
     install(
@@ -481,7 +477,7 @@ if(CAHUTE_FEATURE_LIB_PKGCONF)
     )
 endif()
 
-if(CAHUTE_FEATURE_UDEV)
+if(CAHUTE_UDEV)
     configure_file(
         misc/60-casio-calculators.rules.in
         misc/60-casio-calculators.rules
@@ -494,7 +490,11 @@ if(CAHUTE_FEATURE_UDEV)
     )
 endif()
 
-if(CAHUTE_FEATURE_CLI_CAS)
+# ---
+# Command-line utilities.
+# ---
+
+if(CAHUTE_CLI_CAS)
     add_executable(CaS
         cli/cas.c
         cli/cas_args.c
@@ -508,7 +508,7 @@ if(CAHUTE_FEATURE_CLI_CAS)
     install(TARGETS CaS RUNTIME)
 endif()
 
-if(CAHUTE_FEATURE_CLI_P7)
+if(CAHUTE_CLI_P7)
     add_executable(p7
         cli/p7.c
         cli/p7_args.c
@@ -521,7 +521,7 @@ if(CAHUTE_FEATURE_CLI_P7)
     install(TARGETS p7 RUNTIME)
 endif()
 
-if(CAHUTE_FEATURE_CLI_P7OS)
+if(CAHUTE_CLI_P7OS)
     add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/cli/fxremote-update.exe.bin.c"
         COMMAND "${Python3_EXECUTABLE}" ${CMAKE_SOURCE_DIR}/misc/process_bin.py
@@ -544,7 +544,7 @@ if(CAHUTE_FEATURE_CLI_P7OS)
     install(TARGETS p7os RUNTIME)
 endif()
 
-if(CAHUTE_FEATURE_CLI_P7SCREEN)
+if(CAHUTE_CLI_P7SCREEN)
     add_executable(p7screen
         cli/p7screen.c
         cli/p7screen_args.c
@@ -563,7 +563,7 @@ if(CAHUTE_FEATURE_CLI_P7SCREEN)
     install(TARGETS p7screen RUNTIME)
 endif()
 
-if(CAHUTE_FEATURE_CLI_XFER9860)
+if(CAHUTE_CLI_XFER9860)
     add_executable(xfer9860
         cli/xfer9860.c
         cli/xfer9860_args.c
