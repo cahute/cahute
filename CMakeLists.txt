@@ -48,7 +48,7 @@ set(CAHUTE_PKGCONF ON CACHE BOOL
 set(CAHUTE_REPORT_URL "https://cahuteproject.org/guides/report.html"
     CACHE STRING "Bug report guide URL?")
 
-if("${CMAKE_SYSTEM_NAME}" MATCHES "Android|Darwin|iOS|Linux|Windows")
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Android|Darwin|iOS|Linux|Windows$")
     set(_DEFAULT_SDL ON)
 else()
     set(_DEFAULT_SDL OFF)
@@ -446,7 +446,6 @@ set(LIB_SOURCES
     lib/picture.c
     lib/text.c
 )
-
 if(WIN32 OR MINGW)
     list(APPEND LIB_COMPILE_DEFS
         CAHUTE_PLATFORM_WIN32=1)
@@ -476,6 +475,14 @@ if(WIN32 OR MINGW)
         lib/platform/win32/usb/open.c
         lib/platform/win32/usb/ums.c
         lib/platform/win32/usb/winusb_bulk.c)
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows3x")
+    list(APPEND LIB_COMPILE_DEFS
+        CAHUTE_PLATFORM_WIN16=1)
+    list(APPEND LIB_SOURCES
+        lib/platform/win16/serial/detection.c
+        lib/platform/win16/serial/link.c
+        lib/platform/win16/monotonic.c
+        lib/platform/win16/sleep.c)
 elseif(DEFINED AMIGA)
     list(APPEND LIB_COMPILE_DEFS
         CAHUTE_PLATFORM_AMIGAOS=1)

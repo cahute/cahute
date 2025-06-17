@@ -66,6 +66,8 @@ Officially supported systems are the following:
             <build-guide-windows-vs-mingw>`
           - :ref:`Build using MinGW-w64 from Archlinux
             <build-guide-windows-mingw>`
+          - :ref:`Build for Win 1.x+ using OpenWatcom from Archlinux
+            <build-guide-windows-ow-win16>`
         * - |system-amigaos|
           - :ref:`feature-topic-system-amigaos`
           - :ref:`Build from Linux <build-guide-amigaos-linux>`

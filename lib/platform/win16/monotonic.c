@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2025 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -28,40 +28,8 @@
 
 #include "internals.h"
 
-/**
- * Detect serial entries available to Cahute.
- *
- * @param func User function to call back with every serial entry.
- * @param cookie Cookie to pass to the user function.
- * @return Error, or CAHUTE_OK if no error has occurred.
- */
 CAHUTE_EXTERN(int)
-cahute_detect_serial(
-    cahute_context CAHUTE_NNPTR(context),
-    cahute_detect_serial_entry_func CAHUTE_NNPTR(func),
-    void *cookie
-) CAHUTE_NONNULL((1)) {
-#if CAHUTE_PLATFORM_AMIGAOS
-    return cahute_amigaos_detect_serial(context, func, cookie);
-#elif CAHUTE_PLATFORM_POSIX
-# if CAHUTE_PLATFORM_LINUX
-    {
-        int err = cahute_linux_detect_serial(context, func, cookie);
-
-        if (err != CAHUTE_ERROR_NOT_FOUND)
-            return err;
-    }
-# endif
-
-    return cahute_posix_detect_serial(context, func, cookie);
-#elif CAHUTE_PLATFORM_WIN32
-    return cahute_win32_detect_serial(context, func, cookie);
-#elif CAHUTE_PLATFORM_WIN16
-    return cahute_win16_detect_serial(context, func, cookie);
-#else
-    CAHUTE_RETURN_IMPL(
-        context,
-        "No serial device detection method available."
-    );
-#endif
+cahute_monotonic(cahute_context *context, unsigned long *msp) {
+    *msp = GetCurrentTime();
+    return CAHUTE_OK;
 }

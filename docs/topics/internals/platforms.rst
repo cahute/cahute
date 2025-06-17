@@ -10,4 +10,5 @@ the following sections:
     platforms/amigaos
     platforms/libusb
     platforms/posix
+    platforms/win16
     platforms/win32

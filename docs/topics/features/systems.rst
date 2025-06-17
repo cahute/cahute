@@ -189,7 +189,9 @@ following subsections.
 
 .. warning::
 
-    This platform is currently unsupported by Cahute.
+    Win16 is not yet supported as an official target by Cahute.
+    See `#102 <https://gitlab.com/cahute/cahute/-/issues/102>`_
+    for more information.
 
 Win16 is the 16-bit Windows API, only present on the x86_ architecture,
 first introduced with `Windows 1.0`_ in 1985.
@@ -204,6 +206,8 @@ It is supported by the following systems:
   Edition*);
 * `Windows NT`_ based Windows systems up to and including `Windows 2000`_
   (NT 5.0).
+
+See :ref:`internals-topic-win16` for more information.
 
 .. _feature-topic-system-win32:
 
@@ -239,7 +243,8 @@ from other platforms such as Linux. See :ref:`build-guide-windows` for more
 details.
 
 Cahute currently supports Win32 starting from `Windows 2000`_ (NT 5.0), for
-both the UCRT and MSVCRT runtimes.
+both the UCRT and MSVCRT runtimes. See :ref:`internals-topic-win32` for
+more information.
 
 .. _feature-topic-system-win32-drivers:
 

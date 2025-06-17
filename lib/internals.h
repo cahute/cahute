@@ -590,6 +590,22 @@ cahute_open_win32_stdout(
 );
 #endif
 
+#if CAHUTE_PLATFORM_WIN16
+CAHUTE_EXTERN(int)
+cahute_win16_detect_serial(
+    cahute_context *context,
+    cahute_detect_serial_entry_func *func,
+    void *cookie
+);
+
+CAHUTE_EXTERN(int)
+cahute_open_win16_serial_link(
+    cahute_context *context,
+    cahute_serial_link_open_params *open_params,
+    char const *name_or_path
+);
+#endif
+
 #if CAHUTE_PLATFORM_LIBUSB
 CAHUTE_EXTERN(int)
 cahute_libusb_detect_usb(

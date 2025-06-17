@@ -372,6 +372,8 @@ cahute_open_serial_link(
 
 #if CAHUTE_PLATFORM_WIN32
     err = cahute_open_win32_serial_link(context, &params, name_or_path);
+#elif CAHUTE_PLATFORM_WIN16
+    err = cahute_open_win16_serial_link(context, &params, name_or_path);
 #elif CAHUTE_PLATFORM_AMIGAOS
     err = cahute_open_amigaos_serial_link(context, &params, name_or_path);
 #elif CAHUTE_PLATFORM_POSIX
