@@ -340,6 +340,78 @@ set(LIB_SOURCES
     lib/link/transport/scsi_request_to.c
     lib/link/transport/send.c
     lib/link/transport/set_serial_params.c
+    lib/link/cas40/decode_data.c
+    lib/link/cas40/decode_data_using_description.c
+    lib/link/cas40/determine_data_description.c
+    lib/link/cas40/receive_data.c
+    lib/link/cas40/receive_raw_data.c
+    lib/link/cas40/receive_screen.c
+    lib/link/cas40/terminate.c
+    lib/link/cas50/decode_data.c
+    lib/link/cas50/decode_data_using_description.c
+    lib/link/cas50/determine_data_description.c
+    lib/link/cas50/receive_data.c
+    lib/link/cas50/receive_raw_data.c
+    lib/link/cas50/terminate.c
+    lib/link/cas100/decode_data_using_description.c
+    lib/link/cas100/determine_data_description.c
+    lib/link/cas100/exchange_model_information.c
+    lib/link/cas100/handle_mdl1.c
+    lib/link/cas100/obtain_device_info.c
+    lib/link/cas100/receive_data.c
+    lib/link/cas100/receive_raw_data.c
+    lib/link/cas100/send_model_information.c
+    lib/link/cas100/terminate.c
+    lib/link/cas300/discover.c
+    lib/link/cas300/initiate_as_receiver.c
+    lib/link/cas300/initiate_as_sender.c
+    lib/link/cas300/obtain_device_info.c
+    lib/link/cas300/receive_data.c
+    lib/link/cas300/receive_packet.c
+    lib/link/cas300/send_command.c
+    lib/link/cas300/send_data_packet.c
+    lib/link/cas300/terminate.c
+    lib/link/casiolink/check_file_data.c
+    lib/link/casiolink/decode_data.c
+    lib/link/casiolink/determine_header_variant.c
+    lib/link/casiolink/initiate_as_receiver.c
+    lib/link/casiolink/initiate_as_sender.c
+    lib/link/casiolink/log_data_description.c
+    lib/link/casiolink/receive_data.c
+    lib/link/casiolink/receive_first_byte.c
+    lib/link/casiolink/receive_packet.c
+    lib/link/casiolink/receive_raw_data.c
+    lib/link/seven/backup_rom.c
+    lib/link/seven/copy_file_on_storage.c
+    lib/link/seven/decode_command.c
+    lib/link/seven/delete_file_from_storage.c
+    lib/link/seven/discover.c
+    lib/link/seven/flash_system_using_fxremote_method.c
+    lib/link/seven/initialize.c
+    lib/link/seven/list_storage_entries.c
+    lib/link/seven/negotiate_serial_params.c
+    lib/link/seven/obtain_device_info.c
+    lib/link/seven/optimize_storage.c
+    lib/link/seven/receive_bytes.c
+    lib/link/seven/receive_bytes_into_stream.c
+    lib/link/seven/receive_data.c
+    lib/link/seven/receive_packet.c
+    lib/link/seven/request_file_from_storage.c
+    lib/link/seven/request_file_type.c
+    lib/link/seven/request_storage_capacity.c
+    lib/link/seven/reset_storage.c
+    lib/link/seven/send_basic_packet.c
+    lib/link/seven/send_bytes.c
+    lib/link/seven/send_bytes_from_stream.c
+    lib/link/seven/send_command.c
+    lib/link/seven/send_extended_packet.c
+    lib/link/seven/send_file_to_storage.c
+    lib/link/seven/send_packet.c
+    lib/link/seven/terminate.c
+    lib/link/seven/upload_and_run_program.c
+    lib/link/seven_ohp/receive_packet.c
+    lib/link/seven_ohp/receive_screen.c
+    lib/link/seven_ohp/send_basic.c
     lib/link/backup_rom.c
     lib/link/check.c
     lib/link/close.c
@@ -347,6 +419,7 @@ set(LIB_SOURCES
     lib/link/delete_file_from_storage.c
     lib/link/flash_system_using_fxremote_method.c
     lib/link/get_device_property.c
+    lib/link/get_protocol_name.c
     lib/link/list_storage_entries.c
     lib/link/negotiate_serial_params.c
     lib/link/optimize_storage.c
@@ -360,11 +433,6 @@ set(LIB_SOURCES
     lib/link/send_file_to_storage.c
     lib/link/set_serial_params.c
     lib/link/upload_and_run_program.c
-    lib/cas40.c
-    lib/cas50.c
-    lib/cas100.c
-    lib/cas300.c
-    lib/casiolink.c
     lib/cdefs.c
     "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
     lib/context.c
@@ -377,8 +445,6 @@ set(LIB_SOURCES
     lib/misc.c
     lib/path.c
     lib/picture.c
-    lib/seven.c
-    lib/seven_ohp.c
     lib/text.c
 )
 

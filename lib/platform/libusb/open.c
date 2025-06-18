@@ -70,7 +70,7 @@ cahute_open_libusb_link(
     cahute_libusb_link_cookie cookie;
     cahute_ssize device_count;
     int i, libusberr, bulk_in = -1, bulk_out = -1;
-    int transport = 0;
+    int is_ums = 0;
     int err = CAHUTE_ERROR_UNKNOWN;
 
     err = cahute_get_libusb_context(context, &lu_context);
@@ -144,9 +144,9 @@ cahute_open_libusb_link(
 
         if (interface_class == 8 && interface_subclass == 6
             && interface_proto == 80)
-            transport = CAHUTE_LINK_TRANSPORT_UMS;
+            is_ums = 1;
         else if (interface_class == 255 && interface_subclass == 0 && interface_proto == 255)
-            transport = CAHUTE_LINK_TRANSPORT_SERIAL_OVER_USB_BULK;
+            is_ums = 0;
         else {
             msg(context,
                 ll_error,
@@ -295,7 +295,7 @@ cahute_open_libusb_link(
         goto fail;
     }
 
-    if (transport == CAHUTE_LINK_TRANSPORT_SERIAL_OVER_USB_BULK) {
+    if (!is_ums) {
         /* Calculators running 1.x OSes with Protocol 7.00 support may need a
          * push to enable communicating using Protocol 7.00, in the form of
          * a vendor-specific request documented in fxReverse. */
@@ -334,8 +334,7 @@ cahute_open_libusb_link(
     msg(context, ll_debug, "Bulk in endpoint address is: 0x%02X", bulk_in);
     msg(context, ll_debug, "Bulk out endpoint address is: 0x%02X", bulk_out);
 
-    switch (transport) {
-    case CAHUTE_LINK_TRANSPORT_UMS:
+    if (is_ums)
         return cahute_open_ums_link_from_interface(
             open_params,
             &cahute_libusb_ums_link_interface,
@@ -343,14 +342,12 @@ cahute_open_libusb_link(
             sizeof(cookie)
         );
 
-    default:
-        return cahute_open_serial_over_usb_bulk_link_from_interface(
-            open_params,
-            &cahute_libusb_serial_over_usb_bulk_link_interface,
-            &cookie,
-            sizeof(cookie)
-        );
-    }
+    return cahute_open_serial_over_usb_bulk_link_from_interface(
+        open_params,
+        &cahute_libusb_serial_over_usb_bulk_link_interface,
+        &cookie,
+        sizeof(cookie)
+    );
 
 fail:
     if (config_descriptor)

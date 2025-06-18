@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -27,11 +27,6 @@
  * ************************************************************************* */
 
 #include "internals.h"
-#define TIMEOUT_PACKET_CONTENTS 2000 /* Timeout for the rest of the packet. */
-
-#define PACKET_TYPE_ACK   6  /* 0x06 */
-#define PACKET_TYPE_FRAME 11 /* 0x0B */
-#define PACKET_TYPE_CHECK 22 /* 0x16 */
 
 /* Recognized packet headers for alignment. */
 CAHUTE_LOCAL_DATA(char const *)
@@ -58,7 +53,7 @@ alignment_sequence_count = sizeof(alignment_sequences) / sizeof(char const *);
  * @param timeout Timeout before the first byte.
  * @return Cahute error.
  */
-CAHUTE_LOCAL(int)
+CAHUTE_EXTERN(int)
 cahute_seven_ohp_receive(cahute_link *link, int align, unsigned long timeout) {
     struct cahute_seven_ohp_state *state = &link->protocol_state.seven_ohp;
     cahute_u8 buf[50], *state_data = link->data_buffer;
@@ -493,98 +488,4 @@ sequence_found:
     }
 
     return CAHUTE_OK;
-}
-
-/**
- * Send a basic Protocol 7.00 Screenstreaming packet.
- *
- * @param link Link on which to send the packet.
- * @param type Type of the packet to send.
- * @param subtype Subtype of the packet to send, 5 bytes long.
- * @return Cahute error, or 0 if no error has occurred.
- */
-CAHUTE_LOCAL(int)
-cahute_seven_ohp_send_basic(
-    cahute_link *link,
-    int type,
-    cahute_u8 const *subtype
-) {
-    cahute_u8 buf[8];
-
-    buf[0] = type;
-    memcpy(&buf[1], subtype, 5);
-    cahute_set_ascii_hex(&buf[6], cahute_checksub(&buf[1], 5));
-
-    msg(link->context, ll_debug, "Sending the following packet:");
-    mem(link->context, ll_debug, buf, 8);
-
-    return cahute_send_on_link_transport(link, buf, 8);
-}
-
-/**
- * Receive a frame through screenstreaming.
- *
- * @param link Link for which to receive screens.
- * @param frame Function to call back.
- * @param timeout Timeout to apply.
- * @return Cahute error.
- */
-CAHUTE_EXTERN(int)
-cahute_seven_ohp_receive_screen(
-    cahute_link *link,
-    cahute_frame *frame,
-    unsigned long timeout
-) {
-    struct cahute_seven_ohp_state *state = &link->protocol_state.seven_ohp;
-    int err;
-
-    while (1) {
-        err = cahute_seven_ohp_receive(link, 1, timeout);
-        switch (err) {
-        case CAHUTE_OK:
-            /* Continue. */
-            break;
-
-        case CAHUTE_ERROR_CORRUPT:
-            /* In case of checksum error, we just continue receiving
-             * packets. */
-            msg(link->context, ll_warn, "Missed a frame due to corruption.");
-            continue;
-
-        default:
-            return err;
-        }
-
-        switch (state->last_packet_type) {
-        case PACKET_TYPE_FRAME:
-            frame->cahute_frame_width = state->picture_width;
-            frame->cahute_frame_height = state->picture_height;
-            frame->cahute_frame_format = state->picture_format;
-            frame->cahute_frame_data = link->data_buffer;
-
-            return CAHUTE_OK;
-
-        case PACKET_TYPE_CHECK:
-            err = cahute_seven_ohp_send_basic(
-                link,
-                PACKET_TYPE_ACK,
-                (cahute_u8 *)"02001"
-            );
-            if (err)
-                return err;
-
-            break;
-
-        default:
-            msg(link->context,
-                ll_error,
-                "Unexpected packet of type %d (0x%02X), exiting.",
-                state->last_packet_type,
-                state->last_packet_type);
-            return CAHUTE_ERROR_UNKNOWN;
-        }
-    }
-
-    /* We shouldn't have arrived here. */
-    return CAHUTE_ERROR_UNKNOWN;
 }
