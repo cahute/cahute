@@ -9,6 +9,7 @@ collaboration efficiently.
 
     project/governance
     project/versioning
-    project/community
     project/contribution-style
     project/coding-style
+    project/code-of-conduct
+    project/community
