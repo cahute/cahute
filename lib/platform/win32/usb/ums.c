@@ -27,11 +27,7 @@
  * ************************************************************************* */
 
 #include "internals.h"
-#if HAVE_DDK_NTDDSCSI_H
-# include <ddk/ntddscsi.h>
-#else
-# include <ntddscsi.h>
-#endif
+#include <ntddscsi.h>
 
 CAHUTE_DECLARE_TYPE(cahute_win32_ums_link_cookie)
 

@@ -242,10 +242,9 @@ endif()
 check_type_size("void*" "SIZEOF_UINTPTR_T")
 
 check_include_file("linux/serial.h" "HAVE_LINUX_SERIAL_H")
-if(WIN32)
-    try_compile("HAVE_DDK_NTDDSCSI_H"
-        SOURCE_FROM_FILE "main.c"
-        "${CMAKE_CURRENT_SOURCE_DIR}/misc/ntddscsi_example.c")
+if(WIN32 AND WATCOM)
+    # The DDK is not included by default with OpenWatcom; we want to add it.
+    include_directories("$ENV{WATCOM}/h/nt/ddk")
 endif()
 
 add_compile_definitions(

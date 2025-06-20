@@ -40,6 +40,11 @@
 #include <windows.h>
 #include <usbioctl.h>
 
+/* OpenWatcom may not have the definition for this error. */
+#ifndef ERROR_NO_SUCH_DEVICE
+# define ERROR_NO_SUCH_DEVICE 433
+#endif
+
 CAHUTE_DECLARE_TYPE(cahute_win32_cfgmgr32)
 CAHUTE_DECLARE_TYPE(cahute_win32_winusb)
 
