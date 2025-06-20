@@ -445,7 +445,7 @@ match_win32_usb_device(dev_cookie *cookie, cahute_win32_device const *device) {
             goto fail;
         }
 
-        if (ret_size != size) {
+        if (ret_size != size && ret_size + 1 != size) {
             msg(cookie->context,
                 ll_error,
                 "Unexpected descriptor size (obtained: %lu, expected: %lu)",
@@ -515,10 +515,24 @@ match_win32_usb_device(dev_cookie *cookie, cahute_win32_device const *device) {
         }
 
         desc = (void *)req->Data;
-        if ((size != ret_size) || (desc->wTotalLength != total_length)) {
+        if (size != ret_size && ret_size + 1 != size) {
             msg(cookie->context,
                 ll_error,
-                "Unexpected configuration descriptor size on full request");
+                "Unexpected configuration descriptor size on full request"
+                "(obtained: %lu, expected: %lu)",
+                ret_size,
+                size);
+            free(req);
+            goto fail;
+        }
+
+        if (desc->wTotalLength != total_length) {
+            msg(cookie->context,
+                ll_error,
+                "Unexpected total length change (obtained: %lu, previously "
+                "obtained: %lu)",
+                desc->wTotalLength,
+                total_length);
             free(req);
             goto fail;
         }
