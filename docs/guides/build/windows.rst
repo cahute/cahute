@@ -446,6 +446,57 @@ one of the following command depending on the architecture you're targetting::
     `MinGW build image for Cahute`_, which is exploited in the project's
     continuous integration pipelines as described in ``.gitlab-ci.yml``.
 
+.. _build-guide-windows-ow-win32:
+
+Building Cahute for Windows 2000 and above, using |ow| Open Watcom on Archlinux
+-------------------------------------------------------------------------------
+
+.. warning::
+
+    Both Windows XP and above as a target and this build method are not
+    officially supported yet.
+
+    See :ref:`feature-topic-system-windows` for more information.
+
+Building Cahute for 32-bit Windows and above from Archlinux_ using OpenWatcom_
+is possible.
+
+Downloading the Cahute source
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. include:: _download_source.rst
+
+Installing the dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You need to first install the required dependencies from the AUR, by using
+your favourite AUR helper, e.g. with paru_::
+
+    paru -S cmake python python-toml openwatcom-v2
+
+You must then define the ``WATCOM`` environment variable, by executing, or
+adding the following lines to your rc file (e.g. ``~/.bashrc`` or ``~/.zshrc``)
+then either resourcing it or starting up a new shell::
+
+    export WATCOM=/opt/watcom
+    export PATH="$WATCOM/binl:$PATH"
+
+Building the project
+~~~~~~~~~~~~~~~~~~~~
+
+In the parent directory to the source, you can now create the ``build``
+directory aside it, by running the following command:
+
+.. parsed-literal::
+
+    cmake -S cahute-|version| -B build -G "Watcom WMake" \\
+        -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_SYSTEM_PROCESSOR=x86 \\
+        -DCAHUTE_SDL=OFF
+
+You can now build the project using the following command::
+
+    cmake --build build
+
 .. _build-guide-windows-ow-win16:
 
 Building Cahute for Windows 1.x and above, using |ow| Open Watcom on Archlinux
