@@ -40,7 +40,7 @@ Installing the dependencies
 
 Cahute depends on the following build-only dependencies:
 
-* cmake_ >= 3.16;
+* cmake_ >= 3.21;
 * Python_ >= 3.8;
 * `toml module for Python <python-toml_>`_, either installed through pip
   or as a native package such as ``python-toml`` or ``python3-toml``;

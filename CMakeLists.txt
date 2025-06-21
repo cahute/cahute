@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 project(
     cahute
     VERSION 0.6
@@ -30,8 +30,31 @@ set(CAHUTE_CLI ON CACHE BOOL
 set(CAHUTE_CLI_EXPERIMENTAL OFF CACHE BOOL
     "Enable experimental command-line utilities?")
 
+set(CAHUTE_CLI_LIBRARY_TYPE "shared" CACHE STRING
+    "If both Cahute library types are enabled, on which should the CLI depend?")
+set_property(CACHE CAHUTE_CLI_LIBRARY_TYPE PROPERTY STRINGS "shared" "static")
+
+if(WIN32)
+    set(_DEFAULT_CLI_RUNTIME_DEPS ON)
+else()
+    set(_DEFAULT_CLI_RUNTIME_DEPS OFF)
+endif()
+
+set(CAHUTE_CLI_RUNTIME_DEPS ${_DEFAULT_CLI_RUNTIME_DEPS} CACHE BOOL
+    "Enable installation of runtime dependencies with command-line utilities?")
+
 set(CAHUTE_GIT ON CACHE BOOL
     "Include git-related information if available?")
+
+if(WIN32)
+    set(_DEFAULT_LIBRARY_TYPE "shared")
+else()
+    set(_DEFAULT_LIBRARY_TYPE "static")
+endif()
+
+set(CAHUTE_LIBRARY_TYPE ${_DEFAULT_LIBRARY_TYPE} CACHE BOOL
+    "Build Cahute library as shared, static, or both?")
+set_property(CACHE CAHUTE_LIBRARY_TYPE PROPERTY STRINGS "shared" "static" "both")
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Android|Darwin|Haiku|iOS|Linux|NetBSD|OpenBSD|SunOS")
     set(_DEFAULT_LIBUSB ON)
@@ -101,30 +124,6 @@ mark_as_advanced(
     CAHUTE_CLI_XFER9860)
 
 # ---
-# Packaging options.
-# ---
-
-set(CPACK_PACKAGE_VENDOR "Cahute project")
-set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
-set(CPACK_PACKAGE_DESCRIPTION "${PROJECT_DESCRIPTION}")
-set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_VERSION}")
-set(CPACK_PACKAGE_ICON "misc/cahute.bmp")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
-set(CPACK_VERBATIM_VARIABLES true)
-
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}")
-set(CPACK_SOURCE_GENERATOR "TGZ")
-set(
-    CPACK_SOURCE_IGNORE_FILES
-    "\\.git" "/build/" ".*~$" "\\.envrc" "\\.pre-commit-config\\.yaml"
-    "\\.tool-versions" "\\.clang-format" "__pycache__" "\\.gitlab-ci.yml"
-    "_CPack" "/docs/"
-)
-
-include(CPack)
-
-# ---
 # Common definitions.
 # ---
 # Cahute is developed against ANSI C / ISO C90, we want to enforce this as
@@ -158,6 +157,27 @@ else()
     )
 endif()
 
+# BUILD_STATIC represents whether we are building the library as static.
+# BUILD_SHARED represents whether we are building the library as shared.
+# CLI_CAHUTE_DEP represents the name of the target used by the CLI utilities.
+if(CAHUTE_LIBRARY_TYPE STREQUAL "static")
+    set(BUILD_STATIC ON)
+    set(BUILD_SHARED OFF)
+    set(CLI_CAHUTE_DEP "cahute-static")
+elseif(CAHUTE_LIBRARY_TYPE STREQUAL "shared")
+    set(BUILD_STATIC OFF)
+    set(BUILD_SHARED ON)
+    set(CLI_CAHUTE_DEP "cahute-shared")
+else()
+    set(BUILD_STATIC ON)
+    set(BUILD_SHARED ON)
+    if(CAHUTE_CLI_LIBRARY_TYPE STREQUAL "shared")
+        set(CLI_CAHUTE_DEP "cahute-shared")
+    else()
+        set(CLI_CAHUTE_DEP "cahute-static")
+    endif()
+endif()
+
 # LIB_INCLUDE_DIRS represents the directories to include in order to compile
 # the library.
 set(LIB_INCLUDE_DIRS
@@ -172,152 +192,7 @@ set(LIB_INCLUDE_DIRS
 string(TOUPPER ${CAHUTE_DEFAULT_LOGLEVEL} CAHUTE_DEFAULT_LOGLEVEL_UPPER)
 set(LIB_COMPILE_DEFS "-DCAHUTE_DEFAULT_LOGLEVEL=CAHUTE_LOGLEVEL_${CAHUTE_DEFAULT_LOGLEVEL_UPPER}")
 
-# CLI_INCLUDE_DIRS represent the directories to include in order to compile
-# any command-line utility.
-set(CLI_INCLUDE_DIRS
-    "${CMAKE_CURRENT_BINARY_DIR}/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/common"
-    "${CMAKE_CURRENT_BINARY_DIR}/common"
-)
-
-# CLI_LIBRARIES represent the libraries against which to link for any
-# command-line utility.
-set(CLI_LIBRARIES
-    cahute
-)
-
-# PKGCONFIG_DEPS represent the additional dependencies to place in the
-# pkgconf / pkg-config configuration file when installing the library.
-set(PKGCONFIG_DEPS "")
-
-# PKGCONFIG_LIBS represent the additional includes to place in the
-# pkgconf / pkg-config configuration file when installing the library.
-set(PKGCONFIG_LIBS "")
-
-# USE_LIBUSB represents whether to include and use libusb.
-# It is disabled on Win32 because we manage some drivers libusb does not,
-# that are more important in our case (CESG502, mostly).
-if(CAHUTE_LIBUSB AND NOT WIN32)
-    set(USE_LIBUSB ON)
-else()
-    set(USE_LIBUSB OFF)
-endif()
-
-include(GNUInstallDirs)
-include(CheckTypeSize)
-
-if(USE_LIBUSB)
-    find_package(PkgConfig REQUIRED)
-endif()
-
-find_package(Python3 REQUIRED)
-
-if(WIN32 OR MINGW)
-    set(SDL2_NO_MWINDOWS 1)
-endif()
-
-if(CAHUTE_CLI_P7SCREEN)
-    find_package(SDL2 REQUIRED)
-endif()
-
-if(USE_LIBUSB)
-    pkg_check_modules(libusb REQUIRED libusb-1.0 IMPORTED_TARGET)
-
-    list(APPEND LIB_INCLUDE_DIRS
-        "${libusb_INCLUDE_DIRS}"
-    )
-    list(APPEND CLI_LIBRARIES
-        PkgConfig::libusb
-    )
-    list(APPEND PKGCONFIG_DEPS
-        "libusb-1.0"
-    )
-endif()
-
-check_type_size("ssize_t" "SIZEOF_SIZE_T")
-if(SIZEOF_SIZE_T STREQUAL "")
-    check_type_size("size_t" "SIZEOF_SIZE_T" BUILTIN_TYPES_ONLY)
-endif()
-check_type_size("void*" "SIZEOF_UINTPTR_T")
-
-check_include_file("linux/serial.h" "HAVE_LINUX_SERIAL_H")
-if(WIN32 AND WATCOM)
-    # The DDK is not included by default with OpenWatcom; we want to add it.
-    include_directories("$ENV{WATCOM}/h/nt/ddk")
-endif()
-
-add_compile_definitions(
-    SIZEOF_SIZE_T=${SIZEOF_SIZE_T}
-    SIZEOF_UINTPTR_T=${SIZEOF_UINTPTR_T}
-    HAVE_LINUX_SERIAL_H=${HAVE_LINUX_SERIAL_H}
-    HAVE_DDK_NTDDSCSI_H=${HAVE_DDK_NTDDSCSI_H}
-)
-
-# ---
-# "cahute-headers" target.
-# ---
-
-FILE(GLOB_RECURSE CAHUTE_HEADERS
-    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "*.h")
-
-add_custom_target(
-    cahute-config-header
-    COMMAND ${CMAKE_COMMAND}
-        -DCAHUTE_CONFIG_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
-        -DPROJECT_VERSION="${PROJECT_VERSION}"
-        -DPROJECT_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
-        -DPROJECT_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
-        -DPROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}"
-        -P misc/CahuteConfig.cmake
-    DEPENDS include/cahute/config.h.in
-    BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-)
-
-add_custom_target(cahute-headers
-    SOURCES
-        include/cahute/cdefs.h
-        "${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
-        include/cahute/context.h
-)
-
-install(
-    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" "${CMAKE_CURRENT_BINARY_DIR}/include/"
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/cahute-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
-    FILES_MATCHING PATTERN "*.h"
-)
-
-# ---
-# "cahute" (static library) target.
-# ---
-
-add_custom_target(
-    cahute-version-data-header
-    COMMAND ${CMAKE_COMMAND}
-        -DCAHUTE_GIT="${CAHUTE_GIT}"
-        -DCAHUTE_GIT_CACHE_PATH="${CMAKE_CURRENT_BINARY_DIR}/git-hash.txt"
-        -DCAHUTE_VERSION_DATA_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
-        -DPROJECT_VERSION="${PROJECT_VERSION}"
-        -DPROJECT_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
-        -DPROJECT_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
-        -DPROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}"
-        -DCAHUTE_REPORT_URL="${CAHUTE_REPORT_URL}"
-        -P misc/CahuteVersionData.cmake
-    DEPENDS common/version_data.h.in
-    BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-)
-
-add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
-    COMMAND "${Python3_EXECUTABLE}" ${CMAKE_SOURCE_DIR}/chars/process_chars.py
-        "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
-    DEPENDS chars/process_chars.py chars/chars.toml
-    VERBATIM
-)
-
+# LIB_SOURCES represents the names of the sources used to compile the library.
 set(LIB_SOURCES
     lib/file/checksum.c
     lib/file/close.c
@@ -446,7 +321,7 @@ set(LIB_SOURCES
     lib/picture.c
     lib/text.c
 )
-if(WIN32 OR MINGW)
+if(WIN32)
     list(APPEND LIB_COMPILE_DEFS
         CAHUTE_PLATFORM_WIN32=1)
     list(APPEND LIB_SOURCES
@@ -526,15 +401,208 @@ if(USE_LIBUSB)
         lib/platform/libusb/ums.c)
 endif()
 
-add_library(cahute STATIC ${LIB_SOURCES})
+# CLI_INCLUDE_DIRS represent the directories to include in order to compile
+# any command-line utility.
+set(CLI_INCLUDE_DIRS
+    "${CMAKE_CURRENT_BINARY_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/common"
+    "${CMAKE_CURRENT_BINARY_DIR}/common"
+)
 
-add_dependencies(cahute cahute-headers cahute-version-data-header)
+# CLI_LIBRARIES represent the libraries against which to link for any
+# command-line utility.
+set(CLI_LIBRARIES
+    ${CLI_CAHUTE_DEP}
+)
+
+# PKGCONFIG_DEPS represent the additional dependencies to place in the
+# pkgconf / pkg-config configuration file when installing the library.
+set(PKGCONFIG_DEPS "")
+
+# PKGCONFIG_LIBS represent the additional includes to place in the
+# pkgconf / pkg-config configuration file when installing the library.
+set(PKGCONFIG_LIBS "")
+
+# USE_LIBUSB represents whether to include and use libusb.
+# It is disabled on Win32 because we manage some drivers libusb does not,
+# that are more important in our case (CESG502, mostly).
+if(CAHUTE_LIBUSB AND NOT WIN32)
+    set(USE_LIBUSB ON)
+else()
+    set(USE_LIBUSB OFF)
+endif()
+
+if(CAHUTE_CLI_P7SCREEN)
+    set(USE_SDL ON)
+else()
+    set(USE_SDL OFF)
+endif()
+
+include(GNUInstallDirs)
+include(CheckTypeSize)
+
+if(USE_LIBUSB)
+    find_package(PkgConfig REQUIRED)
+endif()
+
+find_package(Python3 REQUIRED)
+
+# GET_RUNTIME_DEPENDENCIES uses system introspection for determining the
+# dependencies, which does not work well with cross-compiling.
+# We set the platform manually.
+if(WIN32)
+    set(SDL2_NO_MWINDOWS 1)
+    set(CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM "windows+pe")
+elseif(APPLE OR IOS)
+    set(CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM "macos+macho")
+elseif(LINUX)
+    set(CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM "linux+elf")
+endif()
+
+if(CAHUTE_CLI_RUNTIME_DEPS AND DEFINED CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM)
+    set(INSTALL_RUNTIME_DEPS ON)
+else()
+    set(INSTALL_RUNTIME_DEPS OFF)
+endif()
+
+if(USE_SDL)
+    find_package(SDL2 REQUIRED)
+endif()
+
+if(USE_LIBUSB)
+    pkg_check_modules(libusb REQUIRED libusb-1.0 IMPORTED_TARGET)
+
+    list(APPEND LIB_INCLUDE_DIRS
+        "${libusb_INCLUDE_DIRS}"
+    )
+    list(APPEND CLI_LIBRARIES
+        PkgConfig::libusb
+    )
+    list(APPEND PKGCONFIG_DEPS
+        "libusb-1.0"
+    )
+endif()
+
+check_type_size("ssize_t" "SIZEOF_SIZE_T")
+if(SIZEOF_SIZE_T STREQUAL "")
+    check_type_size("size_t" "SIZEOF_SIZE_T" BUILTIN_TYPES_ONLY)
+endif()
+check_type_size("void*" "SIZEOF_UINTPTR_T")
+
+check_include_file("linux/serial.h" "HAVE_LINUX_SERIAL_H")
+if(WIN32 AND WATCOM)
+    # The DDK is not included by default with OpenWatcom; we want to add it.
+    include_directories("$ENV{WATCOM}/h/nt/ddk")
+endif()
+
+add_compile_definitions(
+    SIZEOF_SIZE_T=${SIZEOF_SIZE_T}
+    SIZEOF_UINTPTR_T=${SIZEOF_UINTPTR_T}
+    HAVE_LINUX_SERIAL_H=${HAVE_LINUX_SERIAL_H}
+    HAVE_DDK_NTDDSCSI_H=${HAVE_DDK_NTDDSCSI_H}
+)
+
+# ---
+# "cahute-headers" target.
+# ---
+
+FILE(GLOB_RECURSE CAHUTE_HEADERS
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "*.h")
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
+    COMMAND ${CMAKE_COMMAND}
+        -DCAHUTE_CONFIG_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
+        -DPROJECT_VERSION="${PROJECT_VERSION}"
+        -DPROJECT_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
+        -DPROJECT_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
+        -DPROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}"
+        -P misc/CahuteConfig.cmake
+    DEPENDS include/cahute/config.h.in misc/CahuteConfig.cmake
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+add_custom_target(cahute-headers
+    SOURCES
+        "${CMAKE_CURRENT_BINARY_DIR}/include/cahute/config.h"
+)
+
+install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" "${CMAKE_CURRENT_BINARY_DIR}/include/"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/cahute-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+    COMPONENT CahuteDev
+    FILES_MATCHING PATTERN "*.h"
+)
+
+# ---
+# "cahute-static" and "cahute-shared" (library) targets.
+# ---
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
+    COMMAND ${CMAKE_COMMAND}
+        -DCAHUTE_GIT="${CAHUTE_GIT}"
+        -DCAHUTE_GIT_CACHE_PATH="${CMAKE_CURRENT_BINARY_DIR}/git-hash.txt"
+        -DCAHUTE_VERSION_DATA_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
+        -DPROJECT_VERSION="${PROJECT_VERSION}"
+        -DPROJECT_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
+        -DPROJECT_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
+        -DPROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}"
+        -DCAHUTE_REPORT_URL="${CAHUTE_REPORT_URL}"
+        -P misc/CahuteVersionData.cmake
+    DEPENDS common/version_data.h.in misc/CahuteVersionData.cmake
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+list(APPEND LIB_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h")
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
+    COMMAND "${Python3_EXECUTABLE}" ${CMAKE_SOURCE_DIR}/chars/process_chars.py
+        "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
+    DEPENDS chars/process_chars.py chars/chars.toml
+    VERBATIM
+)
+
+add_library(cahute OBJECT ${LIB_SOURCES})
+add_dependencies(cahute cahute-headers)
 target_include_directories(cahute PRIVATE
     ${LIB_INCLUDE_DIRS}
     "${CMAKE_SOURCE_DIR}/lib")
-target_compile_definitions(cahute PRIVATE ${LIB_COMPILE_DEFS})
+target_compile_definitions(cahute PRIVATE
+    ${LIB_COMPILE_DEFS})
+if(BUILD_SHARED)
+    set_property(TARGET cahute PROPERTY POSITION_INDEPENDENT_CODE ON)
+endif()
 
-install(TARGETS cahute ARCHIVE)
+if(BUILD_STATIC)
+    add_library(cahute-static STATIC $<TARGET_OBJECTS:cahute>)
+    set_target_properties(cahute-static PROPERTIES OUTPUT_NAME "cahute")
+    install(TARGETS cahute-static
+        ARCHIVE
+        COMPONENT CahuteDev)
+endif()
+
+if(BUILD_SHARED)
+    add_library(cahute-shared SHARED $<TARGET_OBJECTS:cahute>)
+    set_target_properties(cahute-shared PROPERTIES OUTPUT_NAME "cahute")
+    if(${CMAKE_SHARED_LIBRARY_SUFFIX} STREQUAL ".so")
+        if(PROJECT_VERSION_MAJOR EQUAL 0)
+            set_target_properties(cahute-shared PROPERTIES SUFFIX
+                ".so.${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+        else()
+            set_target_properties(cahute-shared PROPERTIES SUFFIX
+                ".so.${PROJECT_VERSION_MAJOR}")
+        endif()
+    elseif(${CMAKE_SHARED_LIBRARY_SUFFIX} STREQUAL ".dll")
+        set_target_properties(cahute-shared PROPERTIES PREFIX "")
+    endif()
+
+    install(TARGETS cahute-shared
+        RUNTIME
+        COMPONENT CahuteRuntime)
+endif()
 
 # ---
 # Additional configuration files.
@@ -546,6 +614,7 @@ if(CAHUTE_PKGCONF)
     install(
         FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/cahute.pc
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
+        COMPONENT CahuteDev
     )
 endif()
 
@@ -559,6 +628,7 @@ if(CAHUTE_UDEV)
     install(
         FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/60-casio-calculators.rules
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/udev/rules.d"
+        COMPONENT CahuteRuntime
     )
 endif()
 
@@ -577,7 +647,10 @@ if(CAHUTE_CLI_CAS)
     target_link_libraries(CaS PRIVATE ${CLI_LIBRARIES})
     target_include_directories(CaS PRIVATE ${CLI_INCLUDE_DIRS})
 
-    install(TARGETS CaS RUNTIME)
+    install(TARGETS CaS
+        RUNTIME_DEPENDENCY_SET cli
+        RUNTIME
+        COMPONENT CahuteCLI)
 endif()
 
 if(CAHUTE_CLI_P7)
@@ -590,7 +663,10 @@ if(CAHUTE_CLI_P7)
     target_link_libraries(p7 PRIVATE ${CLI_LIBRARIES})
     target_include_directories(p7 PRIVATE ${CLI_INCLUDE_DIRS})
 
-    install(TARGETS p7 RUNTIME)
+    install(TARGETS p7
+        RUNTIME_DEPENDENCY_SET cli
+        RUNTIME
+        COMPONENT CahuteCLI)
 endif()
 
 if(CAHUTE_CLI_P7OS)
@@ -613,7 +689,10 @@ if(CAHUTE_CLI_P7OS)
     target_link_libraries(p7os PRIVATE ${CLI_LIBRARIES})
     target_include_directories(p7os PRIVATE ${CLI_INCLUDE_DIRS})
 
-    install(TARGETS p7os RUNTIME)
+    install(TARGETS p7os
+        RUNTIME_DEPENDENCY_SET cli
+        RUNTIME
+        COMPONENT CahuteCLI)
 endif()
 
 if(CAHUTE_CLI_P7SCREEN)
@@ -632,7 +711,10 @@ if(CAHUTE_CLI_P7SCREEN)
         ${SDL2_INCLUDE_DIRS}
     )
 
-    install(TARGETS p7screen RUNTIME)
+    install(TARGETS p7screen
+        RUNTIME_DEPENDENCY_SET cli
+        RUNTIME
+        COMPONENT CahuteCLI)
 endif()
 
 if(CAHUTE_CLI_XFER9860)
@@ -645,5 +727,108 @@ if(CAHUTE_CLI_XFER9860)
     target_link_libraries(xfer9860 PRIVATE ${CLI_LIBRARIES})
     target_include_directories(xfer9860 PRIVATE ${CLI_INCLUDE_DIRS})
 
-    install(TARGETS xfer9860 RUNTIME)
+    install(TARGETS xfer9860
+        RUNTIME_DEPENDENCY_SET cli
+        RUNTIME
+        COMPONENT CahuteCLI)
 endif()
+
+# ---
+# Runtime dependencies.
+# ---
+
+if(INSTALL_RUNTIME_DEPS)
+    # CMake's GET_RUNTIME_DEPENDENCIES for Windows+PE lowercases the DLL name
+    # before looking for it in the provided directories. This works when
+    # building natively on Windows, since the filesystem is case-insensitive
+    # by default, but doesn't work if the actual DLL name is not lowercase
+    # when cross-compiling for Windows on a system with case-sensitive paths.
+    #
+    # This is the case for SDL, where the DLL name is "SDL2.dll" instead of
+    # "sdl2.dll"; so, instead of trying to make CMake behave correctly, we
+    # will simply copy it manually if need be.
+    #
+    # This is documented here in CMake's Gitlab repository:
+    # https://gitlab.kitware.com/cmake/cmake/-/issues/26359
+
+    install(RUNTIME_DEPENDENCY_SET cli
+        DIRECTORIES
+            ${CMAKE_SYSTEM_LIBRARY_PATH}
+        PRE_EXCLUDE_REGEXES
+            # Win32.
+            "^(advapi|kernel|shell)32\.dll$"
+            "^sdl2\.dll$"
+            "^(api|ext)-ms-"
+            # Linux.
+            "^ld-"
+            "^lib(c|cap)\.so"
+        COMPONENT CahuteCLI)
+
+    if(USE_SDL AND WIN32)
+        get_target_property(_SDL_DLL SDL2::SDL2 IMPORTED_LOCATION)
+        install(FILES "${_SDL_DLL}" TYPE BIN COMPONENT CahuteCLI)
+    endif()
+endif()
+
+# ---
+# Packaging options.
+# ---
+
+set(CPACK_PACKAGE_VENDOR "Cahute project")
+set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+set(CPACK_PACKAGE_CONTACT "Thomas Touhey <thomas@touhey.fr>")
+set(CPACK_PACKAGE_DESCRIPTION "${PROJECT_DESCRIPTION}")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_VERSION}")
+set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/misc/cahute.bmp")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
+set(CPACK_VERBATIM_VARIABLES true)
+
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}")
+set(CPACK_SOURCE_GENERATOR "TGZ")
+set(
+    CPACK_SOURCE_IGNORE_FILES
+    "\\.git" "/build/" ".*~$" "\\.envrc" "\\.pre-commit-config\\.yaml"
+    "\\.tool-versions" "\\.clang-format" "__pycache__" "\\.gitlab-ci.yml"
+    "_CPack" "/docs/"
+)
+
+if(WIN32)
+    set(CPACK_GENERATOR NSIS ZIP)
+endif()
+
+set(CPACK_DEB_COMPONENT_INSTALL ON)
+
+set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_SOURCE_DIR}/misc/cahute.ico")
+set(CPACK_NSIS_MUI_WELCOMEFINISHPAGE_BITMAP
+    "${CMAKE_CURRENT_SOURCE_DIR}/misc/welcomefinishpage.bmp")
+set(CPACK_NSIS_MUI_UNWELCOMEFINISHPAGE_BITMAP
+    "${CMAKE_CURRENT_SOURCE_DIR}/misc/welcomefinishpage.bmp")
+set(CPACK_NSIS_MODIFY_PATH ON)
+set(CPACK_NSIS_DISPLAY_NAME "Cahute")
+set(CPACK_NSIS_PACKAGE_NAME "Cahute")
+set(CPACK_NSIS_HELP_LINK "https://cahuteproject.org/guides/install/windows.html")
+set(CPACK_NSIS_URL_INFO_ABOUT "https://cahuteproject.org/")
+
+include(CPackComponent)
+
+cpack_add_install_type(FullInstall
+    DISPLAY_NAME "Full install, including the software development kit")
+cpack_add_install_type(DevInstall
+    DISPLAY_NAME "Development install, only including the software development kit")
+cpack_add_install_type(MinInstall
+    DISPLAY_NAME "Minimal install, only including the runtime components")
+
+cpack_add_component(CahuteRuntime
+    DISPLAY_NAME "Runtime dependencies"
+    INSTALL_TYPES FullInstall DevInstall MinInstall)
+cpack_add_component(CahuteDev
+    DISPLAY_NAME "Software development kit"
+    DEPENDS CahuteRuntime
+    INSTALL_TYPES FullInstall DevInstall)
+cpack_add_component(CahuteCLI
+    DISPLAY_NAME "Command-line utilities"
+    DEPENDS CahuteRuntime
+    INSTALL_TYPES FullInstall MinInstall)
+
+include(CPack)

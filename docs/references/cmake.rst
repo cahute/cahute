@@ -64,11 +64,34 @@ The following variables are specific to Cahute.
 
     This is disabled by default.
 
+.. _cmake-ref-setting-cahute-cli-library-type:
+
+``CAHUTE_CLI_LIBRARY_TYPE``
+    Which type of the Cahute library should the CLI utilities, if built, depend
+    on, among ``static`` and ``shared``.
+
+    This is only taken into account if :ref:`CAHUTE_LIBRARY_TYPE
+    <cmake-ref-setting-cahute-library-type>` is set to ``both``.
+    It is set to ``shared`` by default.
+
+.. _cmake-ref-setting-cahute-cli-runtime-deps:
+
+``CAHUTE_CLI_RUNTIME_DEPS``
+    Whether to install runtime dependencies (such as shared libraries)
+    with the command-line utilities.
+
+    This is enabled by default on Win32, and disabled by default on other
+    platforms.
+
+.. _cmake-ref-setting-cahute-default-loglevel:
+
 ``CAHUTE_DEFAULT_LOGLEVEL``
     Default logging level used when creating a context, among ``debug``
     ``info``, ``warning`` (*by default*), ``error``, ``fatal`` and ``none``.
 
     See :ref:`feature-topic-logging` for more information.
+
+.. _cmake-ref-setting-cahute-git:
 
 ``CAHUTE_GIT``
     Include git_\ -related information to the built targets, i.e. if the
@@ -83,6 +106,35 @@ The following variables are specific to Cahute.
 
     This is enabled by default.
 
+.. _cmake-ref-setting-cahute-library-type:
+
+``CAHUTE_LIBRARY_TYPE``
+    Type to build the Cahute library as, among the following possibilities:
+
+    ``static``
+        Only build the library as a static library (``.a`` or ``.lib``,
+        depending on the platform).
+
+    ``shared``
+        Only build the library as a shared library (``.so`` or ``.dll``,
+        depending on the platform).
+
+    ``both``
+        Build the library as both a static and a shared library.
+
+    This is set to ``shared`` on :ref:`feature-topic-system-win32`, and
+    to ``static`` on other platforms.
+
+.. _cmake-ref-setting-cahute-static:
+
+``CAHUTE_STATIC``
+    Build the Cahute library as a static library.
+
+    This is disabled by default on Win32, and enabled by default on other
+    platforms.
+
+.. _cmake-ref-setting-cahute-libusb:
+
 ``CAHUTE_LIBUSB``
     Enable the use of libusb_.
 
@@ -94,14 +146,20 @@ The following variables are specific to Cahute.
     This is enabled by default on `platforms libusb support
     <libusb features_>`_.
 
+.. _cmake-ref-setting-cahute-pkgconf:
+
 ``CAHUTE_PKGCONF``
     Enable installing pkgconf_ / `pkg-config`_ files.
 
     This is supported by default.
 
+.. _cmake-ref-setting-cahute-report-url:
+
 ``CAHUTE_REPORT_URL``
     URL to the bug reporting guide included within the library and
     command-line utilities.
+
+.. _cmake-ref-setting-cahute-sdl:
 
 ``CAHUTE_SDL``
     Enable the use of SDL_.
@@ -109,10 +167,14 @@ The following variables are specific to Cahute.
     This is enabled by default on `platforms SDL2 support
     <SDL2 platforms_>`_.
 
+.. _cmake-ref-setting-cahute-udev:
+
 ``CAHUTE_UDEV``
     Enable building and installing the udev rule.
 
     This is enabled by default when building for Linux.
+
+.. _cmake-ref-setting-cahute-udev-group:
 
 ``CAHUTE_UDEV_GROUP``
     Name of the group to which the udev rule gives permission to calculators
