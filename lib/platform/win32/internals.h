@@ -135,6 +135,21 @@ typedef DWORD(WINAPI cahute_cfgmgr32_get_device_id_list_func)(
     ULONG
 );
 
+/* CM_Get_Device_ID_Size() function type. */
+typedef DWORD(WINAPI cahute_cfgmgr32_get_device_id_size_func)(
+    PULONG,
+    DWORD,
+    ULONG
+);
+
+/* CM_Get_Device_IDA() function type. */
+typedef DWORD(WINAPI cahute_cfgmgr32_get_device_id_func)(
+    DWORD,
+    PSTR,
+    ULONG,
+    ULONG
+);
+
 /* CM_Locate_DevNodeA() function type. */
 typedef DWORD(WINAPI
                   cahute_cfgmgr32_locate_devnode_func)(DWORD *, CHAR *, ULONG);
@@ -170,6 +185,8 @@ struct cahute_win32_cfgmgr32 {
     cahute_cfgmgr32_get_device_interface_list_func *get_device_interface_list;
     cahute_cfgmgr32_get_device_id_list_size_func *get_device_id_list_size;
     cahute_cfgmgr32_get_device_id_list_func *get_device_id_list;
+    cahute_cfgmgr32_get_device_id_size_func *get_device_id_size;
+    cahute_cfgmgr32_get_device_id_func *get_device_id;
     cahute_cfgmgr32_locate_devnode_func *locate_devnode;
     cahute_cfgmgr32_open_devnode_key_func *open_devnode_key;
     cahute_cfgmgr32_get_devnode_registry_property_func
@@ -291,12 +308,14 @@ CAHUTE_DECLARE_TYPE(cahute_win32_device)
  *           relations of which to enumerate devices. Can be NULL.
  * @property device_class Device class to match. Can be NULL.
  * @property interface_class Interface class to match. Can be NULL.
+ * @property path Device or device interface path to find. Can be NULL.
  */
 struct cahute_win32_device_filter {
     char const *related_to_device_id;
     char const *in_removal_relations_of_device_id;
     GUID const *device_class;
     GUID const *interface_class;
+    char const *path;
 };
 
 /**
@@ -323,7 +342,7 @@ typedef int(cahute_enumerate_win32_device_func)(void *, cahute_win32_device cons
 CAHUTE_EXTERN(int)
 cahute_enumerate_win32_devices(
     cahute_context *context,
-    cahute_win32_device_filter *filter,
+    cahute_win32_device_filter const *filter,
     cahute_enumerate_win32_device_func *func,
     void *cookie
 );

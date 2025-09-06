@@ -32,20 +32,22 @@
  * Cookie for detection in the context of simple USB link opening.
  *
  * @property context Context in which the USB detection is run.
- * @property found_bus Bus of the found USB device; -1 if no device was found.
- * @property found_address Address relative to the bus of the found USB device;
- *           -1 if no device was found.
+ * @property found_name Path or name of the USB device, allocated dynamically;
+ *           NULL if no device was found.
  * @property found_type Type of the found address, -1 if not found.
  * @property multiple Flag that, if set to 1, signifies that multiple devices have
  *           already been found.
+ * @property found_name_small_buf Small buffer for the found device.
+ *           If the size of the found device is smaller than this size, the small
+ *           buffer is used instead of having to allocate one.
  */
 struct simple_usb_detection_cookie {
     cahute_context *context;
-    int found_bus;
-    int found_address;
+    char *found_name;
     int found_type;
     int multiple;
     int filter;
+    char found_name_small_buf[20];
 };
 
 /**
@@ -78,6 +80,8 @@ cahute_find_simple_usb_device(
     struct simple_usb_detection_cookie *cookie,
     cahute_usb_detection_entry const *entry
 ) {
+    size_t sz;
+
     if (cookie->filter)
         switch (entry->cahute_usb_detection_entry_type) {
         case CAHUTE_USB_DETECTION_ENTRY_TYPE_SERIAL:
@@ -91,7 +95,7 @@ cahute_find_simple_usb_device(
             break;
         }
 
-    if (cookie->found_bus >= 0) {
+    if (cookie->found_name) {
         /* A device was already found, which means there are at least two
          * connected devices! */
         if (!cookie->multiple) {
@@ -99,25 +103,31 @@ cahute_find_simple_usb_device(
             msg(cookie->context, ll_error, "Multiple devices were found:");
             msg(cookie->context,
                 ll_error,
-                "- %03d:%03d: %s",
-                cookie->found_bus,
-                cookie->found_address,
+                "- %s: %s",
+                cookie->found_name,
                 get_usb_detection_type_name(cookie->found_type));
         }
 
         msg(cookie->context,
             ll_error,
-            "- %03d:%03d: %s",
-            entry->cahute_usb_detection_entry_bus,
-            entry->cahute_usb_detection_entry_address,
+            "- %s: %s",
+            entry->cahute_usb_detection_entry_name,
             get_usb_detection_type_name(entry->cahute_usb_detection_entry_type)
         );
 
         return 0;
     }
 
-    cookie->found_bus = entry->cahute_usb_detection_entry_bus;
-    cookie->found_address = entry->cahute_usb_detection_entry_address;
+    sz = strlen(entry->cahute_usb_detection_entry_name);
+    if (sz + 1 <= sizeof(cookie->found_name_small_buf))
+        cookie->found_name = cookie->found_name_small_buf;
+    else {
+        cookie->found_name = malloc(sz + 1);
+        if (!cookie->found_name)
+            return CAHUTE_ERROR_ALLOC;
+    }
+
+    memcpy(cookie->found_name, entry->cahute_usb_detection_entry_name, sz + 1);
     cookie->found_type = entry->cahute_usb_detection_entry_type;
     return 0;
 
@@ -125,9 +135,8 @@ filtered_out:
     msg(cookie->context, ll_debug, "Device was filtered out:");
     msg(cookie->context,
         ll_debug,
-        "  %03d:%03d: %s",
-        entry->cahute_usb_detection_entry_bus,
-        entry->cahute_usb_detection_entry_address,
+        "  %s: %s",
+        entry->cahute_usb_detection_entry_name,
         get_usb_detection_type_name(entry->cahute_usb_detection_entry_type));
     return 0;
 }
@@ -189,8 +198,7 @@ cahute_open_simple_usb_link(
         }
 
         cookie.context = context;
-        cookie.found_bus = -1;
-        cookie.found_address = -1;
+        cookie.found_name = NULL;
         cookie.found_type = -1;
         cookie.multiple = 0;
 
@@ -200,21 +208,23 @@ cahute_open_simple_usb_link(
             &cookie
         );
         if (err)
-            return err;
+            goto fail;
 
+        err = CAHUTE_ERROR_TOO_MANY;
         if (cookie.multiple)
-            return CAHUTE_ERROR_TOO_MANY;
+            goto fail;
 
-        if (cookie.found_bus < 0)
+        if (!cookie.found_name)
             continue;
 
-        return cahute_open_usb_link(
-            context,
-            linkp,
-            flags,
-            cookie.found_bus,
-            cookie.found_address
-        );
+        err = cahute_open_usb_link(context, linkp, flags, cookie.found_name);
+
+fail:
+        if (cookie.found_name
+            && cookie.found_name != cookie.found_name_small_buf)
+            free(cookie.found_name);
+
+        return err;
     }
 
     return CAHUTE_ERROR_NOT_FOUND;

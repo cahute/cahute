@@ -22,11 +22,7 @@ int my_callback(void *cookie, cahute_usb_detection_entry const *entry) {
     }
 
     printf("New entry data:\n");
-    printf(
-        "- Address: %03d:%03d\n",
-        entry->cahute_usb_detection_entry_bus,
-        entry->cahute_usb_detection_entry_address
-    );
+    printf("- Name or path: %s\n", entry->cahute_usb_detection_entry_name);
     printf("- Type: %s\n", type_name);
 
     return 0;

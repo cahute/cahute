@@ -277,9 +277,7 @@ fail:
  * @param context Context in which the link is opened.
  * @param linkp Pointer to the link to set with the opened link.
  * @param flags Flags to open the link and underlying transport with.
- * @param bus USB bus number of the device to open.
- * @param address USB address number of the device to open, relative to the
- *        bus number.
+ * @param name Name or path of the device to open.
  * @return Error, or CAHUTE_OK if no error has occurred.
  */
 CAHUTE_EXTERN(int)
@@ -287,8 +285,7 @@ cahute_open_usb_link(
     cahute_context *context,
     cahute_link **linkp,
     unsigned long flags,
-    int bus,
-    int address
+    char const *name
 ) {
     cahute_usb_link_open_params params;
     unsigned long unsupported_flags, init_flags = 0;
@@ -380,14 +377,9 @@ cahute_open_usb_link(
     params.init_flags = init_flags;
 
 #if CAHUTE_PLATFORM_LIBUSB
-    return cahute_open_libusb_link(context, &params, bus, address);
+    return cahute_open_libusb_link(context, &params, name);
 #elif CAHUTE_PLATFORM_WIN32
-    return cahute_open_win32_usb_device_from_address(
-        context,
-        &params,
-        bus,
-        address
-    );
+    return cahute_open_win32_usb_device(context, &params, name);
 #else
     (void)params;
     CAHUTE_RETURN_IMPL(

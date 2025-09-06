@@ -17,10 +17,10 @@ An example output for this program is the following:
 .. code-block:: text
 
     New entry data:
-    - Address: 003:042
+    - Name or path: 003:042
     - Type: Serial calculator (fx-9860G, Classpad 300 / 330 (+) or compatible)
     New entry data:
-    - Address: 003:043
+    - Name or path: 003:043
     - Type: UMS calculator (fx-CG, fx-CP400+, fx-GIII)
 
 .. note::

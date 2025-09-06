@@ -41,7 +41,7 @@
 CAHUTE_EXTERN(int)
 cahute_enumerate_win32_devices(
     cahute_context *context,
-    cahute_win32_device_filter *filter,
+    cahute_win32_device_filter const *filter,
     cahute_enumerate_win32_device_func *func,
     void *cookie
 ) {
@@ -124,6 +124,9 @@ cahute_enumerate_win32_devices(
         /* No need to filter on the device class below. */
         device_class = NULL;
     }
+
+    if (filter && filter->path)
+        msg(context, ll_debug, "  Looking for path: %s", filter->path);
 
     /* Get dynamic access to the Cfgmgr32 library. */
     err = cahute_get_win32_cfgmgr32(context, &cfgmgr32);
@@ -352,6 +355,12 @@ cahute_enumerate_win32_devices(
                 ll_debug,
                 "One or more of the properties could not be obtained, "
                 "ignoring the device.");
+            continue;
+        }
+
+        /* Optionally check the device ID. */
+        if (filter && filter->path && strcmp(filter->path, device_id)) {
+            msg(context, ll_debug, "Skipped: incorrect device path.");
             continue;
         }
 

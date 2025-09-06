@@ -108,6 +108,24 @@ load_cfgmgr32_lib(
 
     err = cahute_get_win32_library_function(
         context,
+        (FARPROC *)&lib->get_device_id_size,
+        dll,
+        "CM_Get_Device_ID_Size"
+    );
+    if (err)
+        goto fail;
+
+    err = cahute_get_win32_library_function(
+        context,
+        (FARPROC *)&lib->get_device_id,
+        dll,
+        "CM_Get_Device_IDA"
+    );
+    if (err)
+        goto fail;
+
+    err = cahute_get_win32_library_function(
+        context,
         (FARPROC *)&lib->locate_devnode,
         dll,
         "CM_Locate_DevNodeA"

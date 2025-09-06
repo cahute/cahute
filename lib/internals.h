@@ -138,13 +138,12 @@ CAHUTE_EXTERN(cahute_u32) cahute_htole32(cahute_u32 cahute__x);
  * Context definition.
  * --- */
 
-#define CAHUTE_CONTEXT_POINTER_LIBUSB_CONTEXT   0
-#define CAHUTE_CONTEXT_POINTER_AMIGAOS_TIMER    1
-#define CAHUTE_CONTEXT_POINTER_WIN32_CFGMGR32   2
-#define CAHUTE_CONTEXT_POINTER_WIN32_WINUSB     3
-#define CAHUTE_CONTEXT_POINTER_WIN32_HUB_REF_ID 4
+#define CAHUTE_CONTEXT_POINTER_LIBUSB_CONTEXT 0
+#define CAHUTE_CONTEXT_POINTER_AMIGAOS_TIMER  1
+#define CAHUTE_CONTEXT_POINTER_WIN32_CFGMGR32 2
+#define CAHUTE_CONTEXT_POINTER_WIN32_WINUSB   3
 
-#define CAHUTE_CONTEXT_POINTER_COUNT 5 /* Update with the maximum value + 1. */
+#define CAHUTE_CONTEXT_POINTER_COUNT 4 /* Update with the maximum value + 1. */
 
 typedef void(cahute_context_destroy_func)(cahute_context *, void *);
 typedef int(cahute_context_init_func)(cahute_context *, void **, cahute_context_destroy_func **);
@@ -559,11 +558,10 @@ cahute_win32_detect_usb(
 );
 
 CAHUTE_EXTERN(int)
-cahute_open_win32_usb_device_from_address(
+cahute_open_win32_usb_device(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
-    int bus,
-    int address
+    char const *name
 );
 
 CAHUTE_EXTERN(int)
@@ -618,8 +616,7 @@ CAHUTE_EXTERN(int)
 cahute_open_libusb_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
-    int bus,
-    int address
+    char const *path
 );
 #endif
 

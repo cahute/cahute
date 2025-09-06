@@ -30,43 +30,7 @@
 #define PLATFORM_WIN32_USB_INTERNALS_H 1
 #include "../internals.h"
 
-CAHUTE_DECLARE_TYPE(cahute_win32_usb_device_filter_addr)
-CAHUTE_DECLARE_TYPE(cahute_win32_usb_device_filter)
 CAHUTE_DECLARE_TYPE(cahute_win32_usb_device)
-
-#define CAHUTE_WIN32_USB_FILTER_NONE 0
-#define CAHUTE_WIN32_USB_FILTER_ADDR 1 /* Bus number, address. */
-
-/**
- * Bus/address data for a USB device filter.
- *
- * @property bus Bus number.
- * @property address Address on the bus.
- */
-struct cahute_win32_usb_device_filter_addr {
-    int bus;
-    int address;
-};
-
-/**
- * Data for a USB device filter.
- *
- * @property addr Data for the ADDR filter.
- */
-union cahute_win32_usb_device_filter_data {
-    cahute_win32_usb_device_filter_addr addr;
-};
-
-/**
- * USB device filter for enumeration.
- *
- * @property type Filter type, among ``CAHUTE_WIN32_USB_FILTER_*`` constants.
- * @property data Data for the filter.
- */
-struct cahute_win32_usb_device_filter {
-    int type;
-    union cahute_win32_usb_device_filter_data data;
-};
 
 #define CAHUTE_WIN32_USB_DRIVER_UNKNOWN 0
 #define CAHUTE_WIN32_USB_DRIVER_VOLMGR  1
@@ -81,15 +45,11 @@ struct cahute_win32_usb_device_filter {
  *           constants.
  * @property entry_type USB detection entry type, among
  *           ``CAHUTE_USB_DETECTION_ENTRY_TYPE_*`` constants.
- * @property bus Bus number for the device.
- * @property addr Address on the bus for the device.
  * @property device_id Device identifier, for interactions with Cfgmgr32.
  */
 struct cahute_win32_usb_device {
     int driver;
     int entry_type;
-    int bus;
-    int addr;
     char const *device_id;
 };
 
@@ -98,7 +58,7 @@ typedef int(cahute_enumerate_win32_usb_device_func)(void *, cahute_win32_usb_dev
 CAHUTE_EXTERN(int)
 cahute_enumerate_win32_usb_devices(
     cahute_context *context,
-    cahute_win32_usb_device_filter const *filter,
+    char const *device_path,
     cahute_enumerate_win32_usb_device_func *func,
     void *cookie
 );

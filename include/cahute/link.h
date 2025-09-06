@@ -150,8 +150,7 @@ CAHUTE_WUR CAHUTE_EXTERN(int) cahute_open_usb_link(
     cahute_context CAHUTE_NNPTR(cahute__context),
     cahute_link **cahute__linkp,
     unsigned long cahute__flags,
-    int cahute__bus,
-    int cahute__address
+    char const *cahute__name
 ) CAHUTE_NONNULL((1));
 
 CAHUTE_WUR CAHUTE_EXTERN(int) cahute_open_simple_usb_link(

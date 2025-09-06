@@ -22,6 +22,21 @@ Links are opened using one of the following functions:
     The internal behaviour of these methods is documented in
     :ref:`internals-topic-link-open`.
 
+.. _feature-topic-links-usb-device-names:
+
+USB device names
+----------------
+
+On detection or opening a link to a USB device, the name or path depends on the
+platform:
+
+* On platforms using libusb, including :ref:`feature-topic-system-linux` and
+  :ref:`feature-topic-system-macos`, it represents the bus and address
+  numbers in decimal separated by ``:``, e.g. ``001:014``.
+* On :ref:`feature-topic-system-win32`, it represents the device path,
+  such as ``USB\VID_07CF&PID_6101\6&1ff8b909&0&9`` or
+  ``USB\VID_07CF&PID_6102\0000uJPLBWa1``.
+
 .. _feature-topic-links-generic:
 
 Generic links

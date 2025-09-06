@@ -47,21 +47,62 @@ cahute_libusb_ums_link_interface = {
 };
 
 /**
+ * Extract bus and device addresses from a given path.
+ *
+ * The expected format is "%u:%u", where the number on the left is the
+ * bus number the number on the right is the address number.
+ * Leading zeroes are allowed, and do not change the interpretation of
+ * the numbers (decimal).
+ *
+ * As an example, "004:010" leads to a bus number of 4, and an address of 10.
+ *
+ * @param path Device path.
+ * @param busp Bus pointer.
+ * @param addrp Address pointer.
+ * @return Error, or CAHUTE_OK if no error has occurred.
+ */
+CAHUTE_LOCAL(int)
+cahute_parse_libusb_device_path(char const *path, int *busp, int *addrp) {
+    int bus = 0, addr = 0;
+
+    if (*path < '0' || *path > '9')
+        return CAHUTE_ERROR_NOT_FOUND;
+
+    do {
+        bus = bus * 10 + *path++ - '0';
+    } while (*path >= '0' && *path <= '9');
+
+    if (*path++ != ':')
+        return CAHUTE_ERROR_NOT_FOUND;
+
+    if (*path < '0' || *path > '9')
+        return CAHUTE_ERROR_NOT_FOUND;
+
+    do {
+        addr = addr * 10 + *path++ - '0';
+    } while (*path >= '0' && *path <= '9');
+
+    if (*path)
+        return CAHUTE_ERROR_NOT_FOUND;
+
+    *busp = bus;
+    *addrp = addr;
+    return CAHUTE_OK;
+}
+
+/**
  * Open a USB link using libusb.
  *
  * @param context Context in which the link is opened.
  * @param open_params Parameters to pass to the underlying open function.
- * @param bus USB bus number of the device to open.
- * @param address USB address number of the device to open, relative to the
- *        bus number.
+ * @param path Path to the USB device to open.
  * @return Error, or CAHUTE_OK if no error has occurred.
  */
 CAHUTE_EXTERN(int)
 cahute_open_libusb_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
-    int bus,
-    int address
+    char const *path
 ) {
     libusb_context *lu_context;
     libusb_device **device_list = NULL;
@@ -70,8 +111,12 @@ cahute_open_libusb_link(
     cahute_libusb_link_cookie cookie;
     cahute_ssize device_count;
     int i, libusberr, bulk_in = -1, bulk_out = -1;
-    int is_ums = 0;
+    int bus, address, is_ums = 0;
     int err = CAHUTE_ERROR_UNKNOWN;
+
+    err = cahute_parse_libusb_device_path(path, &bus, &address);
+    if (err)
+        goto fail;
 
     err = cahute_get_libusb_context(context, &lu_context);
     if (err)

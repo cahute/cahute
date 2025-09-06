@@ -45,8 +45,7 @@ struct cahute_serial_detection_entry {
 #define CAHUTE_USB_DETECTION_ENTRY_TYPE_SCSI   2
 
 struct cahute_usb_detection_entry {
-    int cahute_usb_detection_entry_bus;
-    int cahute_usb_detection_entry_address;
+    char const *cahute_usb_detection_entry_name;
     int cahute_usb_detection_entry_type;
 };
 

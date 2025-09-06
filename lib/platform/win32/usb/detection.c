@@ -54,10 +54,8 @@ CAHUTE_LOCAL(int)
 match_device(detect_cookie *cookie, cahute_win32_usb_device const *device) {
     cahute_usb_detection_entry entry;
 
-    entry.cahute_usb_detection_entry_bus = device->bus;
-    entry.cahute_usb_detection_entry_address = device->addr;
+    entry.cahute_usb_detection_entry_name = device->device_id;
     entry.cahute_usb_detection_entry_type = device->entry_type;
-
     return (*cookie->func)(cookie->cookie, &entry);
 }
 
@@ -79,17 +77,14 @@ cahute_win32_detect_usb(
     void *cookie
 ) {
     detect_cookie internal_cookie;
-    cahute_win32_usb_device_filter filter;
 
     internal_cookie.context = context;
     internal_cookie.func = func;
     internal_cookie.cookie = cookie;
 
-    filter.type = CAHUTE_WIN32_USB_FILTER_NONE;
-
     return cahute_enumerate_win32_usb_devices(
         context,
-        &filter,
+        NULL,
         (cahute_enumerate_win32_usb_device_func *)&match_device,
         &internal_cookie
     );

@@ -387,7 +387,7 @@ Link management related function declarations
     :return: The error, or 0 if the operation was successful.
 
 .. c:function:: int cahute_open_usb_link(cahute_context *context, \
-    cahute_link **linkp, unsigned long flags, int bus, int address)
+    cahute_link **linkp, unsigned long flags, char const *name)
 
     Open a link with a USB device.
 
@@ -493,11 +493,11 @@ Link management related function declarations
         :ref:`header-ref-cahute-link-transport` accessible on the created link.
 
     :param context: Context in which to open the link.
-    :param linkp: The pointer to set the opened link to.
-    :param flags: The flags to set to the USB link.
-    :param bus: The bus number of the USB calculator to open a link with.
-    :param address: The device number of the calculator to open a link with.
-    :return: The error, or 0 if the operation was successful.
+    :param linkp: Pointer to set the opened link to.
+    :param flags: Flags to set to the USB link.
+    :param name: Name or path of the USB device to open.
+        See :ref:`feature-topic-links-usb-device-names` for more information.
+    :return: Error, or 0 if the operation was successful.
 
 .. c:function:: int cahute_open_simple_usb_link(cahute_context *context, \
     cahute_link **linkp, unsigned long flags)

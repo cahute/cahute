@@ -174,6 +174,7 @@ match_win32_disk_drive(
     filter.in_removal_relations_of_device_id = device->device_id;
     filter.device_class = &cahute_guid_devclass_volume;
     filter.interface_class = NULL;
+    filter.path = NULL;
 
     return cahute_enumerate_win32_devices(
         cookie->context,
@@ -241,6 +242,7 @@ match_device(open_cookie *cookie, cahute_win32_usb_device const *device) {
         filter.in_removal_relations_of_device_id = NULL;
         filter.device_class = &cahute_guid_devclass_diskdrive;
         filter.interface_class = NULL;
+        filter.path = NULL;
 
         err = cahute_enumerate_win32_devices(
             cookie->context,
@@ -291,11 +293,7 @@ match_device(open_cookie *cookie, cahute_win32_usb_device const *device) {
         return err;
     }
 
-    msg(cookie->context,
-        ll_error,
-        "For USB device at %03d:%03d:",
-        device->bus,
-        device->addr);
+    msg(cookie->context, ll_error, "For USB device at %s:", device->device_id);
     CAHUTE_RETURN_IMPL(cookie->context, "  Unsupported USB driver / type.");
 }
 
@@ -304,31 +302,24 @@ match_device(open_cookie *cookie, cahute_win32_usb_device const *device) {
  *
  * @param context
  * @param open_params
- * @param bus
- * @param address
+ * @param path
  * @return
  */
 CAHUTE_EXTERN(int)
-cahute_open_win32_usb_device_from_address(
+cahute_open_win32_usb_device(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
-    int bus,
-    int address
+    char const *path
 ) {
-    cahute_win32_usb_device_filter filter;
     open_cookie cookie;
     int err;
 
     cookie.context = context;
     cookie.open_params = open_params;
 
-    filter.type = CAHUTE_WIN32_USB_FILTER_ADDR;
-    filter.data.addr.bus = bus;
-    filter.data.addr.address = address;
-
     err = cahute_enumerate_win32_usb_devices(
         context,
-        &filter,
+        path,
         (cahute_enumerate_win32_usb_device_func *)&match_device,
         &cookie
     );

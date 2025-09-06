@@ -46,6 +46,7 @@ cahute_libusb_detect_usb(
     cahute_usb_detection_entry entry;
     cahute_ssize device_count;
     int id, err;
+    char buf[20];
 
     err = cahute_get_libusb_context(context, &lu_context);
     if (err)
@@ -98,10 +99,13 @@ cahute_libusb_detect_usb(
         else
             continue;
 
-        entry.cahute_usb_detection_entry_bus =
-            libusb_get_bus_number(device_list[id]);
-        entry.cahute_usb_detection_entry_address =
-            libusb_get_device_address(device_list[id]);
+        sprintf(
+            buf,
+            "%03d:%03d",
+            libusb_get_bus_number(device_list[id]),
+            libusb_get_device_address(device_list[id])
+        );
+        entry.cahute_usb_detection_entry_name = buf;
 
         if (func(cookie, &entry)) {
             err = CAHUTE_ERROR_INT;

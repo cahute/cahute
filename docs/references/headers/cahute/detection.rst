@@ -20,13 +20,11 @@ Type definitions
     Available USB device that can be opened using
     :c:func:`cahute_open_usb_link`.
 
-    .. c:member:: int cahute_usb_detection_entry_bus
+    .. c:member:: char const *cahute_usb_detection_entry_name
 
-        USB bus number of the entry.
+        Name or path to the USB device.
 
-    .. c:member:: int cahute_usb_detection_entry_address
-
-        USB address number of the entry.
+        See :ref:`feature-topic-links-usb-device-names` for more information.
 
     .. c:member:: int cahute_usb_detection_entry_type
 
