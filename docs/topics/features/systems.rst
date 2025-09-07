@@ -152,7 +152,7 @@ For now, Cahute is only built natively for this platform; see
 
 .. warning::
 
-    MS-DOS is not yet supported as an official target by Cahute.
+    FreeBSD is not yet supported as an official target by Cahute.
 
 FreeBSD_ is a BSD-derived system.
 
@@ -163,7 +163,7 @@ FreeBSD_ is a BSD-derived system.
 
 .. warning::
 
-    MS-DOS is not yet supported as an official target by Cahute.
+    NetBSD is not yet supported as an official target by Cahute.
 
 NetBSD_ is a BSD-derived system.
 
