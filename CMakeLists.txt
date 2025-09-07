@@ -126,6 +126,54 @@ mark_as_advanced(
 # ---
 # Common definitions.
 # ---
+# USE_LIBUSB represents whether to include and use libusb.
+# It is disabled on Win32 because we manage some drivers libusb does not,
+# that are more important in our case (CESG502, mostly).
+if(CAHUTE_LIBUSB AND NOT WIN32)
+    set(USE_LIBUSB ON)
+else()
+    set(USE_LIBUSB OFF)
+endif()
+
+if(CAHUTE_CLI_P7SCREEN)
+    set(USE_SDL ON)
+else()
+    set(USE_SDL OFF)
+endif()
+
+include(GNUInstallDirs)
+include(CheckTypeSize)
+
+if(USE_LIBUSB)
+    find_package(PkgConfig REQUIRED)
+
+    pkg_check_modules(libusb REQUIRED libusb-1.0 IMPORTED_TARGET)
+endif()
+
+find_package(Python3 REQUIRED)
+
+# GET_RUNTIME_DEPENDENCIES uses system introspection for determining the
+# dependencies, which does not work well with cross-compiling.
+# We set the platform manually.
+if(WIN32)
+    set(SDL2_NO_MWINDOWS 1)
+    set(CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM "windows+pe")
+elseif(APPLE OR IOS)
+    set(CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM "macos+macho")
+elseif(LINUX)
+    set(CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM "linux+elf")
+endif()
+
+if(CAHUTE_CLI_RUNTIME_DEPS AND DEFINED CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM)
+    set(INSTALL_RUNTIME_DEPS ON)
+else()
+    set(INSTALL_RUNTIME_DEPS OFF)
+endif()
+
+if(USE_SDL)
+    find_package(SDL2 REQUIRED)
+endif()
+
 # Cahute is developed against ANSI C / ISO C90, we want to enforce this as
 # much as possible to ensure that we stay compatible.
 set(CMAKE_C_STANDARD 90)
@@ -424,55 +472,7 @@ set(PKGCONFIG_DEPS "")
 # pkgconf / pkg-config configuration file when installing the library.
 set(PKGCONFIG_LIBS "")
 
-# USE_LIBUSB represents whether to include and use libusb.
-# It is disabled on Win32 because we manage some drivers libusb does not,
-# that are more important in our case (CESG502, mostly).
-if(CAHUTE_LIBUSB AND NOT WIN32)
-    set(USE_LIBUSB ON)
-else()
-    set(USE_LIBUSB OFF)
-endif()
-
-if(CAHUTE_CLI_P7SCREEN)
-    set(USE_SDL ON)
-else()
-    set(USE_SDL OFF)
-endif()
-
-include(GNUInstallDirs)
-include(CheckTypeSize)
-
 if(USE_LIBUSB)
-    find_package(PkgConfig REQUIRED)
-endif()
-
-find_package(Python3 REQUIRED)
-
-# GET_RUNTIME_DEPENDENCIES uses system introspection for determining the
-# dependencies, which does not work well with cross-compiling.
-# We set the platform manually.
-if(WIN32)
-    set(SDL2_NO_MWINDOWS 1)
-    set(CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM "windows+pe")
-elseif(APPLE OR IOS)
-    set(CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM "macos+macho")
-elseif(LINUX)
-    set(CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM "linux+elf")
-endif()
-
-if(CAHUTE_CLI_RUNTIME_DEPS AND DEFINED CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM)
-    set(INSTALL_RUNTIME_DEPS ON)
-else()
-    set(INSTALL_RUNTIME_DEPS OFF)
-endif()
-
-if(USE_SDL)
-    find_package(SDL2 REQUIRED)
-endif()
-
-if(USE_LIBUSB)
-    pkg_check_modules(libusb REQUIRED libusb-1.0 IMPORTED_TARGET)
-
     list(APPEND LIB_INCLUDE_DIRS
         "${libusb_INCLUDE_DIRS}"
     )
