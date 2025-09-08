@@ -52,7 +52,7 @@ else()
     set(_DEFAULT_LIBRARY_TYPE "static")
 endif()
 
-set(CAHUTE_LIBRARY_TYPE ${_DEFAULT_LIBRARY_TYPE} CACHE BOOL
+set(CAHUTE_LIBRARY_TYPE ${_DEFAULT_LIBRARY_TYPE} CACHE STRING
     "Build Cahute library as shared, static, or both?")
 set_property(CACHE CAHUTE_LIBRARY_TYPE PROPERTY STRINGS "shared" "static" "both")
 
@@ -597,6 +597,7 @@ if(BUILD_SHARED)
         endif()
     elseif(${CMAKE_SHARED_LIBRARY_SUFFIX} STREQUAL ".dll")
         set_target_properties(cahute-shared PROPERTIES PREFIX "")
+        set_target_properties(cahute-shared PROPERTIES IMPORT_PREFIX "")
     endif()
 
     install(TARGETS cahute-shared
