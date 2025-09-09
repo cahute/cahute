@@ -1,0 +1,9 @@
+includedir=@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@/cahute-@PROJECT_VERSION_PUBLIC@
+libdir=@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@
+
+Name: cahute
+Description: Communication and file format handling tools for CASIO calculators (static version)
+Version: @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@
+Requires: @PKGCONFIG_DEPS@
+Libs: -L${libdir} -lcahute-static @PKGCONFIG_LIBS@
+Cflags: -I${includedir}

@@ -6,6 +6,18 @@ project(
     HOMEPAGE_URL "https://cahuteproject.org/"
     LANGUAGES C
 )
+set(PROJECT_CONTACT "Thomas Touhey <thomas@touhey.fr>")
+
+# PROJECT_VERSION_PUBLIC represents the version namespace in which Cahute will
+# be placed when installed:
+# * If we are in 0.x, the public version will be "0.x", e.g. "0.6".
+# * If we are in 1.0 or above, the public version will only be the major
+#   version, e.g. "1" for "1.4" or "3" for "3.0".
+if(PROJECT_VERSION_MAJOR EQUAL 0)
+    set(PROJECT_VERSION_PUBLIC ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+else()
+    set(PROJECT_VERSION_PUBLIC ${PROJECT_VERSION_MAJOR})
+endif()
 
 # ---
 # Options.
@@ -34,13 +46,7 @@ set(CAHUTE_CLI_LIBRARY_TYPE "shared" CACHE STRING
     "If both Cahute library types are enabled, on which should the CLI depend?")
 set_property(CACHE CAHUTE_CLI_LIBRARY_TYPE PROPERTY STRINGS "shared" "static")
 
-if(WIN32)
-    set(_DEFAULT_CLI_RUNTIME_DEPS ON)
-else()
-    set(_DEFAULT_CLI_RUNTIME_DEPS OFF)
-endif()
-
-set(CAHUTE_CLI_RUNTIME_DEPS ${_DEFAULT_CLI_RUNTIME_DEPS} CACHE BOOL
+set(CAHUTE_CLI_RUNTIME_DEPS OFF CACHE BOOL
     "Enable installation of runtime dependencies with command-line utilities?")
 
 set(CAHUTE_GIT ON CACHE BOOL
@@ -531,8 +537,8 @@ add_custom_target(cahute-headers
 
 install(
     DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" "${CMAKE_CURRENT_BINARY_DIR}/include/"
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/cahute-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
-    COMPONENT CahuteDev
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/cahute-${PROJECT_VERSION_PUBLIC}"
+    COMPONENT lib_dev
     FILES_MATCHING PATTERN "*.h"
 )
 
@@ -578,46 +584,54 @@ endif()
 
 if(BUILD_STATIC)
     add_library(cahute-static STATIC $<TARGET_OBJECTS:cahute>)
-    set_target_properties(cahute-static PROPERTIES OUTPUT_NAME "cahute")
+    set_target_properties(cahute-static PROPERTIES OUTPUT_NAME "cahute-static")
+
+    if(CAHUTE_PKGCONF)
+        configure_file(misc/cahute-static.pc.in misc/cahute-static.pc ESCAPE_QUOTES @ONLY)
+
+        install(
+            FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/cahute-static.pc
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
+            COMPONENT lib_dev
+            RENAME "cahute-${PROJECT_VERSION_PUBLIC}-static.pc"
+        )
+    endif()
+
     install(TARGETS cahute-static
         ARCHIVE
-        COMPONENT CahuteDev)
+            COMPONENT lib_dev)
 endif()
 
 if(BUILD_SHARED)
     add_library(cahute-shared SHARED $<TARGET_OBJECTS:cahute>)
     set_target_properties(cahute-shared PROPERTIES OUTPUT_NAME "cahute")
-    if(${CMAKE_SHARED_LIBRARY_SUFFIX} STREQUAL ".so")
-        if(PROJECT_VERSION_MAJOR EQUAL 0)
-            set_target_properties(cahute-shared PROPERTIES SUFFIX
-                ".so.${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
-        else()
-            set_target_properties(cahute-shared PROPERTIES SUFFIX
-                ".so.${PROJECT_VERSION_MAJOR}")
-        endif()
-    elseif(${CMAKE_SHARED_LIBRARY_SUFFIX} STREQUAL ".dll")
-        set_target_properties(cahute-shared PROPERTIES PREFIX "")
-        set_target_properties(cahute-shared PROPERTIES IMPORT_PREFIX "")
+    set_target_properties(cahute-shared PROPERTIES SOVERSION
+        "${PROJECT_VERSION_PUBLIC}")
+
+    if(CAHUTE_PKGCONF)
+        configure_file(misc/cahute-shared.pc.in misc/cahute-shared.pc ESCAPE_QUOTES @ONLY)
+
+        install(
+            FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/cahute-shared.pc
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
+            COMPONENT lib_dev
+            RENAME "cahute-${PROJECT_VERSION_PUBLIC}.pc"
+        )
     endif()
 
     install(TARGETS cahute-shared
         RUNTIME
-        COMPONENT CahuteRuntime)
+            COMPONENT lib_runtime
+        LIBRARY
+            COMPONENT lib_runtime
+            NAMELINK_COMPONENT lib_dev
+        ARCHIVE
+            COMPONENT lib_dev)
 endif()
 
 # ---
 # Additional configuration files.
 # ---
-
-if(CAHUTE_PKGCONF)
-    configure_file(misc/cahute.pc.in misc/cahute.pc ESCAPE_QUOTES @ONLY)
-
-    install(
-        FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/cahute.pc
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
-        COMPONENT CahuteDev
-    )
-endif()
 
 if(CAHUTE_UDEV)
     configure_file(
@@ -629,7 +643,7 @@ if(CAHUTE_UDEV)
     install(
         FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/60-casio-calculators.rules
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/udev/rules.d"
-        COMPONENT CahuteRuntime
+        COMPONENT udev
     )
 endif()
 
@@ -651,7 +665,7 @@ if(CAHUTE_CLI_CAS)
     install(TARGETS CaS
         RUNTIME_DEPENDENCY_SET cli
         RUNTIME
-        COMPONENT CahuteCLI)
+            COMPONENT cli_cas)
 endif()
 
 if(CAHUTE_CLI_P7)
@@ -667,7 +681,7 @@ if(CAHUTE_CLI_P7)
     install(TARGETS p7
         RUNTIME_DEPENDENCY_SET cli
         RUNTIME
-        COMPONENT CahuteCLI)
+            COMPONENT cli_p7)
 endif()
 
 if(CAHUTE_CLI_P7OS)
@@ -693,7 +707,7 @@ if(CAHUTE_CLI_P7OS)
     install(TARGETS p7os
         RUNTIME_DEPENDENCY_SET cli
         RUNTIME
-        COMPONENT CahuteCLI)
+            COMPONENT cli_p7os)
 endif()
 
 if(CAHUTE_CLI_P7SCREEN)
@@ -715,7 +729,7 @@ if(CAHUTE_CLI_P7SCREEN)
     install(TARGETS p7screen
         RUNTIME_DEPENDENCY_SET cli
         RUNTIME
-        COMPONENT CahuteCLI)
+            COMPONENT cli_p7screen)
 endif()
 
 if(CAHUTE_CLI_XFER9860)
@@ -731,7 +745,7 @@ if(CAHUTE_CLI_XFER9860)
     install(TARGETS xfer9860
         RUNTIME_DEPENDENCY_SET cli
         RUNTIME
-        COMPONENT CahuteCLI)
+            COMPONENT cli_xfer9860)
 endif()
 
 # ---
@@ -763,11 +777,13 @@ if(INSTALL_RUNTIME_DEPS)
             # Linux.
             "^ld-"
             "^lib(c|cap)\.so"
-        COMPONENT CahuteCLI)
+        COMPONENT lib_runtime)
 
     if(USE_SDL AND WIN32)
         get_target_property(_SDL_DLL SDL2::SDL2 IMPORTED_LOCATION)
-        install(FILES "${_SDL_DLL}" TYPE BIN COMPONENT CahuteCLI)
+        install(FILES "${_SDL_DLL}"
+            TYPE BIN
+            COMPONENT lib_runtime)
     endif()
 endif()
 
@@ -775,12 +791,18 @@ endif()
 # Packaging options.
 # ---
 
+include(CPackComponent)
+
 set(CPACK_PACKAGE_VENDOR "Cahute project")
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
-set(CPACK_PACKAGE_CONTACT "Thomas Touhey <thomas@touhey.fr>")
-set(CPACK_PACKAGE_DESCRIPTION "${PROJECT_DESCRIPTION}")
+set(CPACK_PACKAGE_CONTACT "${PROJECT_CONTACT}")
+# DESCRIPTION_SUMMARY is automatically placed at the top of Debian packages'
+# descriptions, and there is no way to disable it, which is annoying,
+# especially for packages related to command-line utilities.
+# For simplicy, we set it to blank, so it doesn't come and parasite our
+# components' descriptions.
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_VERSION}")
 set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/misc/cahute.bmp")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
 set(CPACK_VERBATIM_VARIABLES true)
@@ -794,11 +816,157 @@ set(
     "_CPack" "/docs/"
 )
 
+# By default, CPACK_PACKAGING_INSTALL_PREFIX may differ from
+# CMAKE_INSTALL_PREFIX (e.g. "/usr" versus "/usr/local"), which may cause
+# the pkgconf files to not reference the correct paths.
+# The following set instruction fixes this problem.
+set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+set(CPACK_COMPONENTS_GROUPING "IGNORE")
+
 if(WIN32)
     set(CPACK_GENERATOR NSIS ZIP)
 endif()
 
+cpack_add_install_type(full
+    DISPLAY_NAME "Full install, including the software development kit")
+cpack_add_install_type(dev
+    DISPLAY_NAME "Development install, only including the software development kit")
+cpack_add_install_type(min
+    DISPLAY_NAME "Minimal install, only including the runtime components")
+
+set(COMP_UDEV_DEP "")
+if(CAHUTE_UDEV)
+    set(COMP_UDEV_DEP "udev")
+    cpack_add_component(udev
+        DISPLAY_NAME "libcahute device access"
+        DESCRIPTION "\
+udev rules for interacting with CASIO calculators.
+        "
+        INSTALL_TYPES full dev min)
+endif()
+cpack_add_component(lib_runtime
+    DISPLAY_NAME "libcahute runtime files"
+    DESCRIPTION "\
+Library for interacting with CASIO calculators and related data.
+
+This package contains what you need to run programs that use this library.
+    "
+    DEPENDS ${COMP_UDEV_DEP}
+    INSTALL_TYPES full dev min)
+cpack_add_component(lib_dev
+    DISPLAY_NAME "libcahute development files"
+    DESCRIPTION "\
+Library for interacting with CASIO calculators and related data.
+
+This package contains what you need for compiling sources that use this
+library in your own code.
+    "
+    REQUIRED
+    DEPENDS lib_runtime
+    INSTALL_TYPES full dev)
+
+cpack_add_component_group(cli
+    DISPLAY_NAME "Cahute command-line utilities"
+    DESCRIPTION "\
+Command-line utilities for interacting with CASIO calculators and related data.
+    ")
+
+cpack_add_component(cli_cas
+    DISPLAY_NAME "CaS command-line utility"
+    DESCRIPTION "\
+Command-line utility for transferring to and from CASIO calculators' main
+memory.
+    "
+    GROUP cli
+    DEPENDS lib_runtime
+    INSTALL_TYPES full min)
+cpack_add_component(cli_p7
+    DISPLAY_NAME "p7 command-line utility"
+    DESCRIPTION "\
+Command-line utility for transferring to and from CASIO calculators' storage
+memory.
+    "
+    GROUP cli
+    DEPENDS lib_runtime
+    INSTALL_TYPES full min)
+cpack_add_component(cli_p7os
+    DISPLAY_NAME "p7os command-line utility"
+    DESCRIPTION "\
+Command-line utility for interacting with CASIO calculators' system.
+    "
+    GROUP cli
+    DEPENDS lib_runtime
+    INSTALL_TYPES full min)
+cpack_add_component(cli_p7screen
+    DISPLAY_NAME "p7screen command-line utility"
+    DESCRIPTION "\
+Command-line utility for projecting CASIO calculators' screen onto a computer.
+    "
+    GROUP cli
+    DEPENDS lib_runtime
+    INSTALL_TYPES full min)
+cpack_add_component(cli_xfer9860
+    DISPLAY_NAME "xfer9860 command-line utility"
+    DESCRIPTION "\
+Command-line utility for transferring to and from CASIO calculators' storage
+memory.
+    "
+    GROUP cli
+    DEPENDS lib_runtime
+    INSTALL_TYPES full min)
+
 set(CPACK_DEB_COMPONENT_INSTALL ON)
+set(CPACK_DEBIAN_PACKAGE_SOURCE "cahute")
+set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
+
+set(CPACK_DEBIAN_UDEV_PACKAGE_NAME "libcahute-udev")
+# Section inspired by bilibop-udev and hdmi2usb-udev.
+set(CPACK_DEBIAN_UDEV_PACKAGE_SECTION "admin")
+set(CPACK_DEBIAN_UDEV_PACKAGE_CONTROL_EXTRA
+    "${CMAKE_CURRENT_SOURCE_DIR}/debian/postinst")
+
+set(DEB_LIB_RUNTIME_DEPS "")
+if(CAHUTE_UDEV)
+    list(APPEND DEB_LIB_RUNTIME_DEPS
+        "libcahute-udev (>=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})")
+endif()
+
+if(USE_LIBUSB)
+    list(APPEND DEB_LIB_RUNTIME_DEPS "libusb-1.0-0 (>=1.0.23)")
+endif()
+
+set(CPACK_DEBIAN_LIB_RUNTIME_PACKAGE_NAME
+    "libcahute-${PROJECT_VERSION_PUBLIC}")
+set(CPACK_DEBIAN_LIB_RUNTIME_PACKAGE_DEPENDS ${DEB_LIB_RUNTIME_DEPS})
+set(CPACK_DEBIAN_LIB_RUNTIME_PACKAGE_SECTION libs)
+
+set(DEB_RUNTIME_DEP "\
+${CPACK_DEBIAN_LIB_RUNTIME_PACKAGE_NAME} \
+(>=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})")
+
+set(CPACK_DEBIAN_LIB_DEV_PACKAGE_NAME libcahute-dev)
+set(CPACK_DEBIAN_LIB_DEV_PACKAGE_DEPENDS ${DEB_RUNTIME_DEP})
+set(CPACK_DEBIAN_LIB_DEV_PACKAGE_SECTION libdevel)
+
+set(CPACK_DEBIAN_CLI_CAS_PACKAGE_NAME cas)
+set(CPACK_DEBIAN_CLI_CAS_PACKAGE_DEPENDS ${DEB_RUNTIME_DEP})
+set(CPACK_DEBIAN_CLI_CAS_PACKAGE_SECTION comm)
+
+set(CPACK_DEBIAN_CLI_P7_PACKAGE_NAME p7)
+set(CPACK_DEBIAN_CLI_P7_PACKAGE_DEPENDS ${DEB_RUNTIME_DEP})
+set(CPACK_DEBIAN_CLI_P7_PACKAGE_SECTION comm)
+
+set(CPACK_DEBIAN_CLI_P7OS_PACKAGE_NAME p7os)
+set(CPACK_DEBIAN_CLI_P7OS_PACKAGE_DEPENDS ${DEB_RUNTIME_DEP})
+set(CPACK_DEBIAN_CLI_P7OS_PACKAGE_SECTION comm)
+
+set(CPACK_DEBIAN_CLI_P7SCREEN_PACKAGE_NAME p7screen)
+set(CPACK_DEBIAN_CLI_P7SCREEN_PACKAGE_DEPENDS ${DEB_RUNTIME_DEP} "libsdl2-2.0-0")
+set(CPACK_DEBIAN_CLI_P7SCREEN_PACKAGE_SECTION comm)
+
+set(CPACK_DEBIAN_CLI_XFER9860_PACKAGE_NAME xfer9860)
+set(CPACK_DEBIAN_CLI_XFER9860_PACKAGE_DEPENDS ${DEB_RUNTIME_DEP})
+set(CPACK_DEBIAN_CLI_XFER9860_PACKAGE_SECTION comm)
 
 set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_SOURCE_DIR}/misc/cahute.ico")
 set(CPACK_NSIS_MUI_WELCOMEFINISHPAGE_BITMAP
@@ -810,26 +978,5 @@ set(CPACK_NSIS_DISPLAY_NAME "Cahute")
 set(CPACK_NSIS_PACKAGE_NAME "Cahute")
 set(CPACK_NSIS_HELP_LINK "https://cahuteproject.org/guides/install/windows.html")
 set(CPACK_NSIS_URL_INFO_ABOUT "https://cahuteproject.org/")
-
-include(CPackComponent)
-
-cpack_add_install_type(FullInstall
-    DISPLAY_NAME "Full install, including the software development kit")
-cpack_add_install_type(DevInstall
-    DISPLAY_NAME "Development install, only including the software development kit")
-cpack_add_install_type(MinInstall
-    DISPLAY_NAME "Minimal install, only including the runtime components")
-
-cpack_add_component(CahuteRuntime
-    DISPLAY_NAME "Runtime dependencies"
-    INSTALL_TYPES FullInstall DevInstall MinInstall)
-cpack_add_component(CahuteDev
-    DISPLAY_NAME "Software development kit"
-    DEPENDS CahuteRuntime
-    INSTALL_TYPES FullInstall DevInstall)
-cpack_add_component(CahuteCLI
-    DISPLAY_NAME "Command-line utilities"
-    DEPENDS CahuteRuntime
-    INSTALL_TYPES FullInstall MinInstall)
 
 include(CPack)

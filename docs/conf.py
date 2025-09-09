@@ -17,6 +17,13 @@ version = "0.6"
 copyright = "2024-2025, Thomas Touhey"
 author = "Thomas Touhey"
 
+major, minor, *_ = version.split(".")
+major, minor = int(major), int(minor)
+if major == 0:
+    public_version = f"{major}.{minor}"
+else:
+    public_version = f"{major}"
+
 extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
@@ -27,6 +34,11 @@ extensions = [
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 primary_domain = "c"
+rst_epilog = rf"""
+.. |shared_pkg| replace:: ``cahute-{public_version}``
+.. |static_pkg| replace:: ``cahute-{public_version}-static``
+.. |public_version| replace:: {public_version}
+"""
 
 html_theme = "furo"
 html_theme_options = {

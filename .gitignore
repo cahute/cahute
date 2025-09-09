@@ -758,23 +758,29 @@ FodyWeavers.xsd
 /.envrc
 
 # Additional generated files by tooling.
+/.gitlab-ci-local
+/*.sh
+/*.tar.*
 /CMakeSettings*
 /CPack*
 /_CPack*
 /build*
-/*.sh
-/*.tar.*
-/.gitlab-ci-local
+/git-hash.txt
+/giteapc-config.make
+/install_manifest_*
 /vgcore.*
 /vcpkg_*
 /vcpkg-*
 
 # Generated targets.
-/lib/chars.c
-/misc/cahute.pc
 /cli/fxremote-update.exe.bin.c
+/common/version_data.h
 /include/cahute/config.h
-/giteapc-config.make
+/lib/chars.c
+/misc/60-casio-calculators.rules
+/misc/cahute.pc
+/misc/cahute-static.pc
+
 /libcahute*
 /p7*
 /p7screen*

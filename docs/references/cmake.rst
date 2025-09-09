@@ -80,8 +80,7 @@ The following variables are specific to Cahute.
     Whether to install runtime dependencies (such as shared libraries)
     with the command-line utilities.
 
-    This is enabled by default on Win32, and disabled by default on other
-    platforms.
+    This is disabled by default on all platforms.
 
 .. _cmake-ref-setting-cahute-default-loglevel:
 
