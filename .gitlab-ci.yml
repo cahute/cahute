@@ -2,6 +2,7 @@ stages:
   - lint
   - build
   - package
+  - lint packages
   - publish
 
 pre-commit:
@@ -24,6 +25,7 @@ build (x86_64-pc-linux-gnu):
           - "common/**/*"
           - "include/**/*"
           - "lib/**/*"
+          - "CMakeLists.txt"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahute/docker-images/x86_64-pc-linux-gnu:latest
     script:
@@ -31,6 +33,9 @@ build (x86_64-pc-linux-gnu):
             cmake -B build-x86_64-pc-linux-gnu -S .
             -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
         - cmake --build build-x86_64-pc-linux-gnu
+    artifacts:
+        paths:
+            - build-x86_64-pc-linux-gnu
 
 build (arm-pc-linux-gnueabihf):
     stage: build
@@ -44,6 +49,7 @@ build (arm-pc-linux-gnueabihf):
           - "common/**/*"
           - "include/**/*"
           - "lib/**/*"
+          - "CMakeLists.txt"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahute/docker-images/arm-pc-linux-gnueabihf:latest
     script:
@@ -64,6 +70,7 @@ build (arm-pc-linux-musleabihf):
           - "common/**/*"
           - "include/**/*"
           - "lib/**/*"
+          - "CMakeLists.txt"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahute/docker-images/arm-pc-linux-musleabihf:latest
     script:
@@ -84,6 +91,7 @@ build (i686-w64-mingw32-msvcrt):
           - "common/**/*"
           - "include/**/*"
           - "lib/**/*"
+          - "CMakeLists.txt"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahute/docker-images/i686-w64-mingw32-msvcrt:latest
     script:
@@ -104,6 +112,7 @@ build (i686-w64-mingw32-ucrt):
           - "common/**/*"
           - "include/**/*"
           - "lib/**/*"
+          - "CMakeLists.txt"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahute/docker-images/i686-w64-mingw32-ucrt:latest
     script:
@@ -124,6 +133,7 @@ build (x86_64-w64-mingw32-msvcrt):
           - "common/**/*"
           - "include/**/*"
           - "lib/**/*"
+          - "CMakeLists.txt"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahute/docker-images/x86_64-w64-mingw32-msvcrt:latest
     script:
@@ -144,6 +154,7 @@ build (x86_64-w64-mingw32-ucrt):
           - "common/**/*"
           - "include/**/*"
           - "lib/**/*"
+          - "CMakeLists.txt"
           - ".gitlab-ci.yml"
     image: registry.gitlab.com/cahute/docker-images/x86_64-w64-mingw32-ucrt:latest
     script:
@@ -164,6 +175,7 @@ build (m68k-amigaos):
           - "common/**/*"
           - "include/**/*"
           - "lib/**/*"
+          - "CMakeLists.txt"
           - ".gitlab-ci.yml"
     image: amigadev/crosstools:m68k-amigaos
     before_script:
@@ -216,6 +228,38 @@ package source:
     artifacts:
         paths:
             - cahute-*.tar.gz
+
+package for debian (x86_64-pc-linux-gnu):
+    stage: package
+    rules:
+        - if: $CI_COMMIT_BRANCH == "develop"
+        - if: $CI_COMMIT_TAG
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          changes:
+          - ".gitlab-ci.yml"
+          - "CMakeLists.txt"
+    image: registry.gitlab.com/cahute/docker-images/x86_64-pc-linux-gnu:latest
+    script:
+        - cd build-* && cpack -G DEB
+    dependencies:
+        - build (x86_64-pc-linux-gnu)
+    artifacts:
+        paths:
+            - build-*/*.deb
+
+# TODO: Enable Debian package linting on the CI; see #110 for more info.
+.lint debian packages (x86_64-pc-linux-gnu):
+    stage: lint packages
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          changes:
+          - ".gitlab-ci.yml"
+          - "CMakeLists.txt"
+    image: registry.gitlab.com/cahute/docker-images/lintian:latest
+    script:
+        - lintian build-*/*.deb
+    dependencies:
+        - package for debian (x86_64-pc-linux-gnu)
 
 .publish docs:
     stage: publish
