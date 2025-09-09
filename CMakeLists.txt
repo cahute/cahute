@@ -852,6 +852,7 @@ Library for interacting with CASIO calculators and related data.
 
 This package contains what you need to run programs that use this library.
     "
+    REQUIRED
     DEPENDS ${COMP_UDEV_DEP}
     INSTALL_TYPES full dev min)
 cpack_add_component(lib_dev
@@ -862,7 +863,6 @@ Library for interacting with CASIO calculators and related data.
 This package contains what you need for compiling sources that use this
 library in your own code.
     "
-    REQUIRED
     DEPENDS lib_runtime
     INSTALL_TYPES full dev)
 
