@@ -32,6 +32,8 @@ build (x86_64-pc-linux-gnu):
         - >
             cmake -B build-x86_64-pc-linux-gnu -S .
             -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
+            -DCAHUTE_LIBRARY_TYPE=both -DCMAKE_INSTALL_PREFIX=/usr
+            -DCAHUTE_APPSTREAM=ON
         - cmake --build build-x86_64-pc-linux-gnu
     artifacts:
         paths:
@@ -56,6 +58,7 @@ build (arm-pc-linux-gnueabihf):
         - >
             cmake -B build-arm-pc-linux-gnueabihf -S .
             -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
+            -DCAHUTE_LIBRARY_TYPE=both -DCMAKE_INSTALL_PREFIX=/usr
         - cmake --build build-arm-pc-linux-gnueabihf
 
 build (arm-pc-linux-musleabihf):
@@ -77,6 +80,7 @@ build (arm-pc-linux-musleabihf):
         - >
             cmake -B build-arm-pc-linux-musleabihf -S .
             -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
+            -DCAHUTE_LIBRARY_TYPE=both -DCMAKE_INSTALL_PREFIX=/usr
         - cmake --build build-arm-pc-linux-musleabihf
 
 build (i686-w64-mingw32-msvcrt):

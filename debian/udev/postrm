@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+# We may be on an APT-based distribution without udev.
+# In this case, we do not want to crash if this is the case.
+if command -v udevadm 1>/dev/null && [ -S /run/udev/control ]; then
+    udevadm control --reload-rules
+fi

@@ -50,6 +50,13 @@ Cahute-specific general settings
 
 The following variables are specific to Cahute.
 
+.. _cmake-ref-setting-cahute-appstream:
+
+``CAHUTE_APPSTREAM``
+    Include AppStream declarations.
+
+    This is disabled by default.
+
 .. _cmake-ref-setting-cahute-cli:
 
 ``CAHUTE_CLI``

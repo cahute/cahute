@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component>
+    <id>org.cahuteproject.metainfo.xml</id>
+    <metadata_license>MIT</metadata_license>
+    <name>Cahute</name>
+    <summary>Communicate with CASIO calculators</summary>
+    <developer id="org.cahuteproject">
+        <name>Cahute contributors</name>
+    </developer>
+    <description>
+        <p>
+            Cahute provides facilities to communicate with CASIO calculators
+            over serial and USB links.
+        </p>
+    </description>
+    <provides>
+        <modalias>usb:v07CFp6101d*</modalias>
+        <modalias>usb:v07CFp6102d*</modalias>
+        <modalias>usb:v07CFp6103d*</modalias>
+    </provides>
+</component>

@@ -25,16 +25,8 @@ endif()
 
 include(CMakeDependentOption)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(_DEFAULT_LOGLEVEL "debug")
-else()
-    set(_DEFAULT_LOGLEVEL "warning")
-endif()
-
-set(CAHUTE_DEFAULT_LOGLEVEL "${_DEFAULT_LOGLEVEL}" CACHE STRING
-    "Default logging level used when creating a context?")
-set_property(CACHE CAHUTE_DEFAULT_LOGLEVEL PROPERTY STRINGS
-    "debug" "info" "warning" "error" "fatal" "none")
+set(CAHUTE_APPSTREAM OFF CACHE BOOL
+    "Include AppStream metadata?")
 
 set(CAHUTE_CLI ON CACHE BOOL
     "Enable command-line utilities?")
@@ -48,6 +40,17 @@ set_property(CACHE CAHUTE_CLI_LIBRARY_TYPE PROPERTY STRINGS "shared" "static")
 
 set(CAHUTE_CLI_RUNTIME_DEPS OFF CACHE BOOL
     "Enable installation of runtime dependencies with command-line utilities?")
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(_DEFAULT_LOGLEVEL "debug")
+else()
+    set(_DEFAULT_LOGLEVEL "warning")
+endif()
+
+set(CAHUTE_DEFAULT_LOGLEVEL "${_DEFAULT_LOGLEVEL}" CACHE STRING
+    "Default logging level used when creating a context?")
+set_property(CACHE CAHUTE_DEFAULT_LOGLEVEL PROPERTY STRINGS
+    "debug" "info" "warning" "error" "fatal" "none")
 
 set(CAHUTE_GIT ON CACHE BOOL
     "Include git-related information if available?")
@@ -230,6 +233,14 @@ else()
     else()
         set(CLI_CAHUTE_DEP "cahute-static")
     endif()
+endif()
+
+# CLI_PIE represents whether we should build the command-line utilities with
+# -fPIE (or equivalent).
+if(LINUX OR WIN32)
+    set(CLI_PIE ON)
+else()
+    set(CLI_PIE OFF)
 endif()
 
 # LIB_INCLUDE_DIRS represents the directories to include in order to compile
@@ -621,6 +632,8 @@ if(BUILD_SHARED)
     endif()
 
     install(TARGETS cahute-shared
+        PERMISSIONS
+            OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
         RUNTIME
             COMPONENT lib_runtime
         LIBRARY
@@ -646,6 +659,13 @@ if(CAHUTE_UDEV)
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/udev/rules.d"
         COMPONENT udev
     )
+    if(CAHUTE_APPSTREAM)
+        install(
+            FILES ${CMAKE_CURRENT_SOURCE_DIR}/misc/org.cahuteproject.metainfo.xml
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
+            COMPONENT udev
+        )
+    endif()
 endif()
 
 # ---
@@ -660,6 +680,7 @@ if(CAHUTE_CLI_CAS)
         cli/common.c
         cli/options.c
     )
+    set_property(TARGET CaS PROPERTY POSITION_INDEPENDENT_CODE ${CLI_PIE})
     target_link_libraries(CaS PRIVATE ${CLI_LIBRARIES})
     target_include_directories(CaS PRIVATE ${CLI_INCLUDE_DIRS})
 
@@ -676,6 +697,7 @@ if(CAHUTE_CLI_P7)
         cli/common.c
         cli/options.c
     )
+    set_property(TARGET p7 PROPERTY POSITION_INDEPENDENT_CODE ${CLI_PIE})
     target_link_libraries(p7 PRIVATE ${CLI_LIBRARIES})
     target_include_directories(p7 PRIVATE ${CLI_INCLUDE_DIRS})
 
@@ -702,6 +724,7 @@ if(CAHUTE_CLI_P7OS)
         cli/options.c
         "${CMAKE_CURRENT_BINARY_DIR}/cli/fxremote-update.exe.bin.c"
     )
+    set_property(TARGET p7os PROPERTY POSITION_INDEPENDENT_CODE ${CLI_PIE})
     target_link_libraries(p7os PRIVATE ${CLI_LIBRARIES})
     target_include_directories(p7os PRIVATE ${CLI_INCLUDE_DIRS})
 
@@ -718,6 +741,7 @@ if(CAHUTE_CLI_P7SCREEN)
         cli/common.c
         cli/options.c
     )
+    set_property(TARGET p7screen PROPERTY POSITION_INDEPENDENT_CODE ${CLI_PIE})
     target_link_libraries(p7screen PRIVATE
         ${CLI_LIBRARIES}
         ${SDL2_LIBRARIES}
@@ -740,6 +764,7 @@ if(CAHUTE_CLI_XFER9860)
         cli/common.c
         cli/options.c
     )
+    set_property(TARGET xfer9860 PROPERTY POSITION_INDEPENDENT_CODE ${CLI_PIE})
     target_link_libraries(xfer9860 PRIVATE ${CLI_LIBRARIES})
     target_include_directories(xfer9860 PRIVATE ${CLI_INCLUDE_DIRS})
 
@@ -806,6 +831,7 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/misc/cahute.bmp")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
+set(CPACK_STRIP_FILES YES)
 set(CPACK_VERBATIM_VARIABLES true)
 
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}")
@@ -840,78 +866,55 @@ if(CAHUTE_UDEV)
     set(COMP_UDEV_DEP "udev")
     cpack_add_component(udev
         DISPLAY_NAME "libcahute device access"
-        DESCRIPTION "\
-udev rules for interacting with CASIO calculators.
-        "
+        DESCRIPTION "udev rules for interacting with CASIO calculators.\n\nThis package provides udev rules for CASIO calculators over USB."
         INSTALL_TYPES full dev min)
 endif()
 cpack_add_component(lib_runtime
     DISPLAY_NAME "libcahute runtime files"
-    DESCRIPTION "\
-Library for interacting with CASIO calculators and related data.
-
-This package contains what you need to run programs that use this library.
-    "
+    DESCRIPTION "Library for interacting with CASIO calculators and related data.\n\nThis package contains what you need to run programs that use this library."
     REQUIRED
     DEPENDS ${COMP_UDEV_DEP}
     INSTALL_TYPES full dev min)
 cpack_add_component(lib_dev
     DISPLAY_NAME "libcahute development files"
-    DESCRIPTION "\
-Library for interacting with CASIO calculators and related data.
-
-This package contains what you need for compiling sources that use this
-library in your own code.
-    "
+    DESCRIPTION "Library for interacting with CASIO calculators and related data.\n\nThis package contains what you need for compiling sources that use this library in your own code."
     DEPENDS lib_runtime
     INSTALL_TYPES full dev)
 
 cpack_add_component_group(cli
     DISPLAY_NAME "Cahute command-line utilities"
-    DESCRIPTION "\
-Command-line utilities for interacting with CASIO calculators and related data.
-    ")
+    DESCRIPTION "Command-line utilities for interacting with CASIO calculators and related data.")
 
 cpack_add_component(cli_cas
     DISPLAY_NAME "CaS command-line utility"
-    DESCRIPTION "\
-Command-line utility for transferring to and from CASIO calculators' main
-memory.
-    "
+    DESCRIPTION "Command-line utility for transferring to and from CASIO calculators' main
+memory."
     GROUP cli
     DEPENDS lib_runtime
     INSTALL_TYPES full min)
 cpack_add_component(cli_p7
     DISPLAY_NAME "p7 command-line utility"
-    DESCRIPTION "\
-Command-line utility for transferring to and from CASIO calculators' storage
-memory.
-    "
+    DESCRIPTION "Command-line utility for transferring to and from CASIO calculators' storage
+memory."
     GROUP cli
     DEPENDS lib_runtime
     INSTALL_TYPES full min)
 cpack_add_component(cli_p7os
     DISPLAY_NAME "p7os command-line utility"
-    DESCRIPTION "\
-Command-line utility for interacting with CASIO calculators' system.
-    "
+    DESCRIPTION "Command-line utility for interacting with CASIO calculators' system."
     GROUP cli
     DEPENDS lib_runtime
     INSTALL_TYPES full min)
 cpack_add_component(cli_p7screen
     DISPLAY_NAME "p7screen command-line utility"
-    DESCRIPTION "\
-Command-line utility for projecting CASIO calculators' screen onto a computer.
-    "
+    DESCRIPTION "Command-line utility for projecting CASIO calculators' screen onto a computer."
     GROUP cli
     DEPENDS lib_runtime
     INSTALL_TYPES full min)
 cpack_add_component(cli_xfer9860
     DISPLAY_NAME "xfer9860 command-line utility"
-    DESCRIPTION "\
-Command-line utility for transferring to and from CASIO calculators' storage
-memory.
-    "
+    DESCRIPTION "Command-line utility for transferring to and from CASIO calculators' storage
+memory."
     GROUP cli
     DEPENDS lib_runtime
     INSTALL_TYPES full min)
@@ -919,14 +922,26 @@ memory.
 set(CPACK_DEB_COMPONENT_INSTALL ON)
 set(CPACK_DEBIAN_PACKAGE_SOURCE "cahute")
 set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION ON)
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
+set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS OFF)
+set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS_POLICY ">=")
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "i386" OR ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "i686")
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "i386")
+else()
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+endif()
 
 set(CPACK_DEBIAN_UDEV_PACKAGE_NAME "libcahute-udev")
 # Section inspired by bilibop-udev and hdmi2usb-udev.
 set(CPACK_DEBIAN_UDEV_PACKAGE_SECTION "admin")
+set(CPACK_DEBIAN_UDEV_PACKAGE_ARCHITECTURE all)
 set(CPACK_DEBIAN_UDEV_PACKAGE_CONTROL_EXTRA
-    "${CMAKE_CURRENT_SOURCE_DIR}/debian/postinst")
+    "${CMAKE_CURRENT_SOURCE_DIR}/debian/udev/postinst;${CMAKE_CURRENT_SOURCE_DIR}/debian/udev/postrm")
 
-set(DEB_LIB_RUNTIME_DEPS "")
+set(DEB_LIB_RUNTIME_DEPS "libc6 (>=2.31)")
 if(CAHUTE_UDEV)
     list(APPEND DEB_LIB_RUNTIME_DEPS
         "libcahute-udev (>=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})")
@@ -936,12 +951,19 @@ if(USE_LIBUSB)
     list(APPEND DEB_LIB_RUNTIME_DEPS "libusb-1.0-0 (>=1.0.23)")
 endif()
 
+list(JOIN DEB_LIB_RUNTIME_DEPS ", " DEB_LIB_RUNTIME_DEPS_JOINED)
+
+configure_file(debian/runtime/shlibs.in debian/runtime/shlibs ESCAPE_QUOTES @ONLY)
+
 set(CPACK_DEBIAN_LIB_RUNTIME_PACKAGE_NAME
-    "libcahute-${PROJECT_VERSION_PUBLIC}")
-set(CPACK_DEBIAN_LIB_RUNTIME_PACKAGE_DEPENDS ${DEB_LIB_RUNTIME_DEPS})
+    "libcahute${PROJECT_VERSION_PUBLIC}")
+set(CPACK_DEBIAN_LIB_RUNTIME_PACKAGE_DEPENDS "${DEB_LIB_RUNTIME_DEPS_JOINED}")
 set(CPACK_DEBIAN_LIB_RUNTIME_PACKAGE_SECTION libs)
+set(CPACK_DEBIAN_LIB_RUNTIME_PACKAGE_CONTROL_EXTRA
+    "${CMAKE_CURRENT_SOURCE_DIR}/debian/runtime/triggers;${CMAKE_CURRENT_BINARY_DIR}/debian/runtime/shlibs")
 
 set(DEB_RUNTIME_DEP "\
+libc6 (>=2.31), \
 ${CPACK_DEBIAN_LIB_RUNTIME_PACKAGE_NAME} \
 (>=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})")
 
@@ -962,12 +984,24 @@ set(CPACK_DEBIAN_CLI_P7OS_PACKAGE_DEPENDS ${DEB_RUNTIME_DEP})
 set(CPACK_DEBIAN_CLI_P7OS_PACKAGE_SECTION comm)
 
 set(CPACK_DEBIAN_CLI_P7SCREEN_PACKAGE_NAME p7screen)
-set(CPACK_DEBIAN_CLI_P7SCREEN_PACKAGE_DEPENDS ${DEB_RUNTIME_DEP} "libsdl2-2.0-0")
+set(CPACK_DEBIAN_CLI_P7SCREEN_PACKAGE_DEPENDS "${DEB_RUNTIME_DEP}, libsdl2-2.0-0")
 set(CPACK_DEBIAN_CLI_P7SCREEN_PACKAGE_SECTION comm)
 
 set(CPACK_DEBIAN_CLI_XFER9860_PACKAGE_NAME xfer9860)
 set(CPACK_DEBIAN_CLI_XFER9860_PACKAGE_DEPENDS ${DEB_RUNTIME_DEP})
 set(CPACK_DEBIAN_CLI_XFER9860_PACKAGE_SECTION comm)
+
+# Add copyright and changelog files for the Debian packages.
+get_cmake_property(CPACK_COMPONENTS_ALL COMPONENTS)
+foreach(COMP IN LISTS CPACK_COMPONENTS_ALL)
+    string(TOUPPER "CPACK_DEBIAN_${COMP}_PACKAGE_NAME" COMP_PACKAGE_VAR)
+    install(
+        FILES ${CMAKE_CURRENT_SOURCE_DIR}/debian/copyright
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/${${COMP_PACKAGE_VAR}}"
+        COMPONENT ${COMP}
+        RENAME copyright
+    )
+endforeach()
 
 set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_SOURCE_DIR}/misc/cahute.ico")
 set(CPACK_NSIS_MUI_WELCOMEFINISHPAGE_BITMAP

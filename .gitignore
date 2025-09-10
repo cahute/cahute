@@ -758,7 +758,7 @@ FodyWeavers.xsd
 /.envrc
 
 # Additional generated files by tooling.
-/.gitlab-ci-local
+/.gitlab-ci-local*
 /*.sh
 /*.tar.*
 /CMakeSettings*
@@ -775,6 +775,7 @@ FodyWeavers.xsd
 # Generated targets.
 /cli/fxremote-update.exe.bin.c
 /common/version_data.h
+/debian/runtime/shlibs
 /include/cahute/config.h
 /lib/chars.c
 /misc/60-casio-calculators.rules
