@@ -39,7 +39,7 @@ by running the following command:
 
 .. parsed-literal::
 
-    giteapc install cake/cahute@\ |version|
+    giteapc install cahute/cahute@\ |version|
 
 .. note::
 
@@ -52,7 +52,7 @@ by running the following command:
 
     .. parsed-literal::
 
-        giteapc install cake/cahute@\ |version|\ :debug
+        giteapc install cahute/cahute@\ |version|\ :debug
 
 .. warning::
 
