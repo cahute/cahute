@@ -28,14 +28,6 @@
 
 #include "internals.h"
 #include <stdarg.h>
-#if CAHUTE_PLATFORM_WIN32
-/* We want to avoid '\r' as a prefix on such platforms, since they are
- * considered newlines. */
-# define LOG_PREFIX ""
-#else
-/* On other platforms, they may remove garbage at the beginning of the line. */
-# define LOG_PREFIX "\r"
-#endif
 
 CAHUTE_LOCAL_DATA(char const *)
 hexadecimal_alphabet = "0123456789ABCDEF";
@@ -64,6 +56,7 @@ cahute_log_to_file(
     char const *func,
     char const *message
 ) {
+    cahute_context *context = (void *)cookie;
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
     char timebuf[100];
@@ -107,12 +100,25 @@ cahute_log_to_file(
     sprintf(levelbuf, "%s %s", source, level_name);
 
     if (!func)
-        fprintf(stderr, LOG_PREFIX "[%s %14s] ", timebuf, levelbuf);
+        fprintf(
+            stderr,
+            "%s[%s %14s] ",
+            context->log_prefix,
+            timebuf,
+            levelbuf
+        );
     else {
         if (!strncmp(func, "cahute_", 7))
             func = &func[7];
 
-        fprintf(stderr, LOG_PREFIX "[%s %14s] %s: ", timebuf, levelbuf, func);
+        fprintf(
+            stderr,
+            "%s[%s %14s] %s: ",
+            context->log_prefix,
+            timebuf,
+            levelbuf,
+            func
+        );
     }
 
     fprintf(stderr, "%s\n", message);
@@ -172,7 +178,7 @@ cahute_set_log_func(
  */
 CAHUTE_EXTERN(void) cahute_reset_log_func(cahute_context *context) {
     context->log_callback = &cahute_log_to_file;
-    context->log_callback_cookie = NULL;
+    context->log_callback_cookie = (void *)context;
 }
 
 /**

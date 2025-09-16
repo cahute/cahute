@@ -45,6 +45,12 @@ CAHUTE_EXTERN(int) cahute_create_context(cahute_context **contextp) {
 
     cahute_reset_log_func(context);
     context->log_level = CAHUTE_DEFAULT_LOGLEVEL;
+    context->log_prefix = "";
+
+#if CAHUTE_PLATFORM_POSIX
+    if (cahute_posix_is_stderr_tty())
+        context->log_prefix = "\r";
+#endif
 
     for (i = 0; i < CAHUTE_CONTEXT_POINTER_COUNT; i++)
         context->pointers[i].flags = 0;

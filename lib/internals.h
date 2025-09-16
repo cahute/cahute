@@ -156,9 +156,22 @@ struct cahute_context_pointer {
     unsigned long flags;
 };
 
+/**
+ * Internal structure of a context.
+ *
+ * @property log_callback Current logging callback for a context.
+ * @property log_callback_cookie Cookie to pass to the current logging
+ *           callback.
+ * @property log_prefix Prefix to prepend to messages in the default logging
+ *           callback.
+ * @property log_level Current logging level, as one of the
+ *           ``CAHUTE_LOGLEVEL_*`` constants.
+ * @property pointers Context pointers.
+ */
 struct cahute_context {
     cahute_log_func *log_callback;
     void *log_callback_cookie;
+    char const *log_prefix;
     int log_level;
     struct cahute_context_pointer pointers[CAHUTE_CONTEXT_POINTER_COUNT];
 };
@@ -496,6 +509,8 @@ cahute_linux_detect_serial(
 
 #if CAHUTE_PLATFORM_POSIX
 CAHUTE_EXTERN(size_t) cahute_get_posix_path_max(cahute_context *context);
+
+CAHUTE_EXTERN(int) cahute_posix_is_stderr_tty(void);
 
 CAHUTE_EXTERN(int)
 cahute_posix_detect_serial(

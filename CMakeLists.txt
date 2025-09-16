@@ -440,6 +440,7 @@ elseif(UNIX)
         lib/platform/posix/path.c
         lib/platform/posix/serial.c
         lib/platform/posix/serial_detection.c
+        lib/platform/posix/stderr_tty.c
         lib/platform/posix/stdout.c)
 endif()
 
