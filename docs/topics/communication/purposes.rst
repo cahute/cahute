@@ -1,14 +1,14 @@
-Rationales behind the communication protocols
-=============================================
+Purposes for the communication protocols
+========================================
 
 In order to use the communication protocols that come with CASIO calculators,
 it is best to know what they're used for, and how the Cahute interface
-represents those rationales.
+represents those purposes.
 
-.. _protocol-topic-receive-protocol-rationale:
+.. _protocol-topic-receive-protocol:
 
-Data or screen reception rationale
-----------------------------------
+Data or screen reception
+------------------------
 
 All CASIO calculators have the possibility to transmit data directly:
 
@@ -24,14 +24,14 @@ As a host device, we can receive such data by:
   as a receiver.
 * On USB or serial links, using either the CASIOLINK protocol with CAS100
   or Protocol 7.00 as a passive side, even though this only one usage of many
-  for the control rationale; see
-  :ref:`protocol-topic-control-protocol-rationale`.
+  for the control purpose; see
+  :ref:`protocol-topic-control-protocol`.
 
-In this rationale, the calculator initiates the connection, so the host
+In this purpose, the calculator initiates the connection, so the host
 actually does not need to know much about the protocol beforehand, only
 the transport and related parameters.
 
-In order to open the link for such a rationale:
+In order to open the link for such a purpose:
 
 * On serial links, you must use :c:func:`cahute_open_serial_link` with
   :c:macro:`CAHUTE_SERIAL_RECEIVER`, and can either use automatic protocol
@@ -86,21 +86,21 @@ In order to open the link for such a rationale:
     ``cahute_receive_screen``, but the first does not exist, and maybe we
     don't want to keep the same "callback" logic for the second?
 
-.. _protocol-topic-transmit-protocol-rationale:
+.. _protocol-topic-transmit-protocol:
 
-Data or screen sending rationale
---------------------------------
+Data or screen sending
+----------------------
 
 All CASIO calculators excluding the fx-CG have a "Receive mode", in which
-they can receive data from another party using the rationale above.
+they can receive data from another party using the purpose above.
 
 .. note::
 
     Except calculators only supporting the CASIOLINK protocol with CAS40
     data formats, all "receive modes" are actually passive modes in the
-    control rationale; see :ref:`protocol-topic-control-protocol-rationale`.
+    control purpose; see :ref:`protocol-topic-control-protocol`.
 
-In order to open the link for such a rationale:
+In order to open the link for such a purpose:
 
 * On serial links, you must use :c:func:`cahute_open_serial_link` with the
   protocol and data format to use:
@@ -131,22 +131,22 @@ In order to open the link for such a rationale:
     ``cahute_send_screen``, but both do not exist as is for now.
     Also, in this case, should "storage file" be a type of data you can send?
 
-.. _protocol-topic-control-protocol-rationale:
+.. _protocol-topic-control-protocol:
 
-Device control rationale
-------------------------
+Device control
+--------------
 
 Starting from the CASIOLINK protocol with CAS50 data formats, calculators
-allow for a control-oriented rationale, with more commands available than
+allow for a control-oriented purpose, with more commands available than
 just "send".
 
-The link is opened the same way as for the transmit protocol rationale;
-see :ref:`protocol-topic-transmit-protocol-rationale`. However, the functions
+The link is opened the same way as for the transmit protocol purpose;
+see :ref:`protocol-topic-transmit-protocol`. However, the functions
 to use are more diverse and depend on the protocol and data format.
 
 .. note::
 
     Getting data from the calculator differs in logic from the
-    :ref:`protocol-topic-receive-protocol-rationale`, since we no longer
+    :ref:`protocol-topic-receive-protocol`, since we no longer
     "receive" data that the device has chosen for us, but actively
     "request" data we chose.

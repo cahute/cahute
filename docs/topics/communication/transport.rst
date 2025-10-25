@@ -1,7 +1,7 @@
 .. _protocol-topic-transport:
 
-Transports and protocols
-========================
+Communication transports and protocols
+======================================
 
 All communication protocols used by CASIO calculators are present over
 mediums and transport protocols, that presents a stream-like interface as
@@ -50,10 +50,23 @@ The following communication protocols can be found over serial transport:
 * :ref:`protocol-topic-seven`;
 * :ref:`protocol-topic-seven-ohp`.
 
+.. _protocol-topic-transport-usb:
+
+USB transports
+--------------
+
+The following transports can be presented when the device presents itself as
+a USB device.
+
+Note that some calculators, depending on the mode selected when a USB cable
+is plugged, can choose to pick a different transport. See
+:ref:`protocol-topic-usb-detection` to see how this choice affects the
+presented USB device descriptor.
+
 .. _protocol-topic-transport-serial-over-usb-bulk:
 
 Serial transport over USB bulk
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The unveiling of the Classpad 300 and fx-9860G, in 2003 and 2005 respectively,
 introduced `Mini-B`_ USB ports on the calculator directly for
@@ -86,7 +99,7 @@ USB bulks:
 .. _protocol-topic-transport-serial-over-usb-bulk-enable-control-flow:
 
 Device enabling control flow
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some older fx-9860G derivatives, such as the fx-9860G Slim running OS 1.x,
 require a special USB control flow to be executed before they can send or
@@ -130,7 +143,7 @@ command-line utilities.
 .. _protocol-topic-transport-serial-over-usb-bulk-data-transfer:
 
 Data transfer
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 In order to transfer data from the host to the device, or from the device to
 the host, USB bulk transfers are used.
@@ -176,7 +189,7 @@ the host, USB bulk transfers are used.
 .. _protocol-topic-transport-ums:
 
 USB Mass Storage (UMS) transport
---------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Starting from the fx-CG20 (Prizm) and fx-CP400+E, which came out in
 2011 and 2016 respectively, calculators started supporting a "USB Key" mode,
@@ -196,7 +209,7 @@ The following communication protocols can be found over UMS:
 .. _protocol-topic-ums-custom-commands:
 
 Custom SCSI commands
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 .. todo::
 

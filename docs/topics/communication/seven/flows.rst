@@ -335,7 +335,7 @@ emitted by the calculator after the roleswap is
 Requesting device information
 -----------------------------
 
-While in the "requesting transfer" rationale, the flow to get the device
+While in the "requesting transfer" purpose, the flow to get the device
 information using command :ref:`protocol-topic-seven-command-01` is different
 from the usual solution applied for this case:
 

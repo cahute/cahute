@@ -28,8 +28,8 @@ See :ref:`protocol-topic-cas50-packet-format` for more information.
 Send or receive data
 --------------------
 
-For the :ref:`protocol-topic-receive-protocol-rationale` or
-:ref:`protocol-topic-transmit-protocol-rationale`, the flow is the following:
+For the :ref:`protocol-topic-receive-protocol` or
+:ref:`protocol-topic-transmit-protocol`, the flow is the following:
 
 .. mermaid::
 

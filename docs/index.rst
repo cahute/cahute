@@ -14,7 +14,7 @@ features\ [#mutant]_\ :
         fx-9860G compatible calculators, over USB and serial links!
     * - |feat-program|
       - Program backup
-      - With ``CaS``, extract programs from all CASIO calculators since 1991,
+      - With ``CaS``, extract programs from all CASIO calculators since 1992,
         over USB and serial links!
     * - |feat-text|
       - Text conversions
@@ -142,7 +142,7 @@ and provide useful background information and explanation.
     :caption: Discussion topics
     :maxdepth: 3
 
-    topics/communication-protocols
+    topics/communication
     topics/file-formats
     topics/data-formats
     topics/features

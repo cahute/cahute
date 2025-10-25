@@ -15,7 +15,7 @@ found in the wild:
       - ``bInterfaceClass``
       - ``bInterfaceSubclass``
       - ``bInterfaceProtocol``
-      - Description
+      - Models
     * - ``07cf``
       - ``6101``
       - ``CASIO COMPUTER CO., LTD.``
