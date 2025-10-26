@@ -69,6 +69,21 @@ cahute_convert_picture_from_frame(
     cahute_frame const *cahute__frame
 ) CAHUTE_NONNULL((1));
 
+CAHUTE_EXTERN(int)
+cahute_blit_picture(
+    cahute_context CAHUTE_NNPTR(cahute__context),
+    void *cahute__dest,
+    int cahute__dest_format,
+    int cahute__dest_width,
+    int cahute__dest_height,
+    void const *cahute__src,
+    int cahute__src_format,
+    int cahute__src_width,
+    int cahute__src_height,
+    int cahute__y,
+    int cahute__x
+) CAHUTE_NONNULL((1));
+
 CAHUTE_END_DECLS
 CAHUTE_END_NAMESPACE
 

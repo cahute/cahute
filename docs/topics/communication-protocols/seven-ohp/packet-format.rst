@@ -175,8 +175,8 @@ and are of the following format:
 
 .. warning::
 
-  In this table, the offset starts at 6 instead of 0.
-  The subheader itself is only 20 bytes long!
+    In this table, the offset starts at 6 instead of 0.
+    The subheader itself is only 20 bytes long!
 
 .. list-table::
     :header-rows: 1
@@ -221,6 +221,64 @@ and are of the following format:
 
 The frame formats are the same as for
 :ref:`protocol-topic-seven-ohp-packet-0B-typz1`.
+
+.. _protocol-topic-seven-ohp-packet-0B-typb1:
+
+``TYPB1`` frame format
+~~~~~~~~~~~~~~~~~~~~~~
+
+Such packets can also be sent by the fx-CP series on screenstreaming modes
+after :ref:`TYPZ2 frames <protocol-topic-seven-ohp-packet-0B-typz2>`.
+They do not actually constitute a frame, but a **partial frame** to blit
+onto the current frame at the provided coordinates.
+
+.. warning::
+
+    In this table, the offset starts at 6 instead of 0.
+    The subheader itself is only 24 bytes long!
+
+The packets with this type have the following format:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Offset
+      - Size
+      - Field name
+      - Description
+      - Values
+    * - 6 (0x06)
+      - 8 B
+      - Frame Length (*FL*)
+      - Length of the *F* field.
+      - 8-char :ref:`protocol-topic-seven-ascii-hex` value, e.g. ``00052800``.
+    * - 14 (0x0E)
+      - 4 B
+      - X coordinate (*X*)
+      - Horizontal coordinate at which to update the current image.
+      - 4-char :ref:`protocol-topic-seven-ascii-hex` value, e.g. ``0000``.
+    * - 18 (0x12)
+      - 4 B
+      - Y coordinate (*Y*)
+      - Vertical coordinate at which to update the current image.
+      - 4-char :ref:`protocol-topic-seven-ascii-hex` value, e.g. ``0000``.
+    * - 22 (0x16)
+      - 4 B
+      - Width (*W*)
+      - Horizontal size of the zone to update.
+      - 4-char :ref:`protocol-topic-seven-ascii-hex` value, e.g. ``0140``.
+    * - 26 (0x1A)
+      - 4 B
+      - Height (*H*)
+      - Vertical size of the zone to update.
+      - 4-char :ref:`protocol-topic-seven-ascii-hex` value, e.g. ``0210``.
+    * - 30 (0x1E)
+      - *FL* B
+      - Frame (*F*)
+      - Frame data.
+      -
+
+The frame format is the same as the previously received frame.
 
 .. _protocol-topic-seven-ohp-packet-16:
 

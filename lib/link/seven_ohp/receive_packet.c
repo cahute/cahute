@@ -34,6 +34,7 @@ alignment_sequences[] = {
     "\x0BTYP01",
     "\x0BTYPZ1",
     "\x0BTYPZ2",
+    "\x0BTYPB1",
     ("\x16"
      "CAL00")
 };
@@ -56,9 +57,12 @@ alignment_sequence_count = sizeof(alignment_sequences) / sizeof(char const *);
 CAHUTE_EXTERN(int)
 cahute_seven_ohp_receive(cahute_link *link, int align, unsigned long timeout) {
     struct cahute_seven_ohp_state *state = &link->protocol_state.seven_ohp;
-    cahute_u8 buf[50], *state_data = link->data_buffer;
+    cahute_u8 buf[50], *data_buf = state->picture_buf;
+    size_t data_capacity = state->picture_capacity;
+    size_t *data_sizep = &state->picture_size;
     size_t packet_size;
-    int err;
+    int err, is_blit = 0;
+    unsigned long blit_x = 0, blit_y = 0;
 
     if (align) {
         size_t to_complete = 6;
@@ -259,6 +263,95 @@ sequence_found:
                     "The following Frame Format was unknown:");
                 mem(link->context, ll_warn, &buf[packet_size - 4], 4);
             }
+        } else if (!memcmp(&buf[1], "TYPB1", 5)) {
+            /* The Frame Length (FL) field is 6 bytes long. */
+            err = cahute_receive_on_link_transport(
+                link,
+                &buf[6],
+                24,
+                TIMEOUT_PACKET_CONTENTS,
+                TIMEOUT_PACKET_CONTENTS
+            );
+            if (err == CAHUTE_ERROR_TIMEOUT_START)
+                return CAHUTE_ERROR_TIMEOUT;
+            if (err)
+                return err;
+
+            packet_size += 24;
+            if (!cahute_is_ascii_hex(buf[6]) || !cahute_is_ascii_hex(buf[7])
+                || !cahute_is_ascii_hex(buf[8]) || !cahute_is_ascii_hex(buf[9])
+                || !cahute_is_ascii_hex(buf[10])
+                || !cahute_is_ascii_hex(buf[11])
+                || !cahute_is_ascii_hex(buf[12])
+                || !cahute_is_ascii_hex(buf[13]))
+                return CAHUTE_ERROR_CORRUPT;
+
+            frame_length =
+                ((cahute_ascii_hex_to_nibble(buf[6]) << 28)
+                 | (cahute_ascii_hex_to_nibble(buf[7]) << 24)
+                 | (cahute_ascii_hex_to_nibble(buf[8]) << 20)
+                 | (cahute_ascii_hex_to_nibble(buf[9]) << 16)
+                 | (cahute_ascii_hex_to_nibble(buf[10]) << 12)
+                 | (cahute_ascii_hex_to_nibble(buf[11]) << 8)
+                 | (cahute_ascii_hex_to_nibble(buf[12]) << 4)
+                 | cahute_ascii_hex_to_nibble(buf[13]));
+
+            if (!cahute_is_ascii_hex(buf[14]) || !cahute_is_ascii_hex(buf[15])
+                || !cahute_is_ascii_hex(buf[16])
+                || !cahute_is_ascii_hex(buf[17])
+                || !cahute_is_ascii_hex(buf[18])
+                || !cahute_is_ascii_hex(buf[19])
+                || !cahute_is_ascii_hex(buf[20])
+                || !cahute_is_ascii_hex(buf[21])
+                || !cahute_is_ascii_hex(buf[22])
+                || !cahute_is_ascii_hex(buf[23])
+                || !cahute_is_ascii_hex(buf[24])
+                || !cahute_is_ascii_hex(buf[25])
+                || !cahute_is_ascii_hex(buf[26])
+                || !cahute_is_ascii_hex(buf[27])
+                || !cahute_is_ascii_hex(buf[28])
+                || !cahute_is_ascii_hex(buf[29])) {
+                /* The header is corrupted.
+                 * We however still want to skip the frame length and the
+                 * checksum in order to fall back on our feet on next
+                 * packet reception. */
+                err = cahute_receive_on_link_transport(
+                    link,
+                    NULL,
+                    frame_length + 2,
+                    TIMEOUT_PACKET_CONTENTS,
+                    TIMEOUT_PACKET_CONTENTS
+                );
+                if (err == CAHUTE_ERROR_TIMEOUT_START)
+                    return CAHUTE_ERROR_TIMEOUT;
+                if (err)
+                    return err;
+
+                return CAHUTE_ERROR_CORRUPT;
+            }
+
+            format = state->picture_format;
+            is_blit = 1;
+            blit_x =
+                ((cahute_ascii_hex_to_nibble(buf[14]) << 12)
+                 | (cahute_ascii_hex_to_nibble(buf[15]) << 8)
+                 | (cahute_ascii_hex_to_nibble(buf[16]) << 4)
+                 | cahute_ascii_hex_to_nibble(buf[17]));
+            blit_y =
+                ((cahute_ascii_hex_to_nibble(buf[18]) << 12)
+                 | (cahute_ascii_hex_to_nibble(buf[19]) << 8)
+                 | (cahute_ascii_hex_to_nibble(buf[20]) << 4)
+                 | cahute_ascii_hex_to_nibble(buf[21]));
+            width =
+                ((cahute_ascii_hex_to_nibble(buf[22]) << 12)
+                 | (cahute_ascii_hex_to_nibble(buf[23]) << 8)
+                 | (cahute_ascii_hex_to_nibble(buf[24]) << 4)
+                 | cahute_ascii_hex_to_nibble(buf[25]));
+            height =
+                ((cahute_ascii_hex_to_nibble(buf[26]) << 12)
+                 | (cahute_ascii_hex_to_nibble(buf[27]) << 8)
+                 | (cahute_ascii_hex_to_nibble(buf[28]) << 4)
+                 | cahute_ascii_hex_to_nibble(buf[29]));
         } else {
             msg(link->context, ll_error, "The following subtype was unknown:");
             mem(link->context, ll_error, &buf[1], 5);
@@ -266,6 +359,15 @@ sequence_found:
                 ll_error,
                 "The format and length could not be determined.");
             msg(link->context, ll_error, "This will likely break the link.");
+        }
+
+        /* If we are to blit the obtained data, we want to copy the received
+         * data to the link data buffer, then call a function later to
+         * blit the result. */
+        if (is_blit) {
+            data_buf = link->data_buffer;
+            data_capacity = link->data_buffer_capacity;
+            data_sizep = &link->data_buffer_size;
         }
 
         /* We now have the following data:
@@ -372,14 +474,14 @@ sequence_found:
             return CAHUTE_ERROR_UNKNOWN;
         }
 
-        if (frame_length > link->data_buffer_capacity) {
+        if (frame_length > data_capacity) {
             msg(link->context,
                 ll_warn,
                 "Frame length %" CAHUTE_PRIuSIZE
                 "o exceeded data buffer "
                 "capacity %" CAHUTE_PRIuSIZE "o.",
                 frame_length,
-                link->data_buffer_capacity);
+                data_capacity);
 
             /* We still want to skip the frame length and the
              * checksum in order to fall back on our feet on next
@@ -403,7 +505,7 @@ sequence_found:
          * buffer! */
         err = cahute_receive_on_link_transport(
             link,
-            state_data,
+            data_buf,
             frame_length,
             TIMEOUT_PACKET_CONTENTS,
             TIMEOUT_PACKET_CONTENTS
@@ -413,10 +515,50 @@ sequence_found:
         if (err)
             return err;
 
-        state->picture_width = width;
-        state->picture_height = height;
-        state->picture_format = format;
-        link->data_buffer_size = frame_length;
+        /* Store the frame length for checksum computation. */
+        *data_sizep = frame_length;
+
+        /* Apply the image.
+         * NOTE: We apply the image even if the checksum is incorrect, we just
+         * don't report it as complete. */
+        if (!is_blit) {
+            state->picture_width = width;
+            state->picture_height = height;
+            state->picture_format = format;
+        } else {
+            /* We want to copy the obtained image at (blit_x, blit_y) on the
+             * existing image. */
+            if (!state->picture_format) {
+                msg(link->context,
+                    ll_error,
+                    "Cannot blit on no previous image.");
+                return CAHUTE_ERROR_CORRUPT;
+            }
+
+            msg(link->context,
+                ll_info,
+                "Blitting %dx%d image to y=%d, x=%d.",
+                width,
+                height,
+                blit_y,
+                blit_x);
+
+            err = cahute_blit_picture(
+                link->context,
+                state->picture_buf,
+                state->picture_format,
+                state->picture_width,
+                state->picture_height,
+                data_buf,
+                format,
+                width,
+                height,
+                blit_y,
+                blit_x
+            );
+            if (err)
+                return err;
+        }
     } else {
         msg(link->context,
             ll_error,
@@ -469,9 +611,8 @@ sequence_found:
         unsigned int computed_checksum =
             cahute_checksub(&buf[1], packet_size - 1);
 
-        if (link->data_buffer_size) {
-            computed_checksum +=
-                cahute_checksub(state_data, link->data_buffer_size);
+        if (*data_sizep) {
+            computed_checksum += cahute_checksub(data_buf, *data_sizep);
             computed_checksum &= 255;
         }
 

@@ -202,13 +202,19 @@ struct cahute_seven_state {
  *           if not relevant.
  * @property picture_height Height of the last picture in pixels, -1
  *           if not relevant.
+ * @property picture_capacity Maximum capacity to the picture buffer.
+ * @property picture_size Picture size.
+ * @property picture_buf Picture buffer.
  */
 struct cahute_seven_ohp_state {
     int last_packet_type;
     int picture_format;
     int picture_width;
     int picture_height;
+    size_t picture_capacity;
+    size_t picture_size;
 
+    cahute_u8 *picture_buf;
     cahute_u8 last_packet_subtype[5];
 };
 

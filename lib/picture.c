@@ -276,3 +276,79 @@ cahute_convert_picture_from_frame(
         frame->cahute_frame_height
     );
 }
+
+/**
+ * Blit a source picture on a destination picture.
+ *
+ * @param context Context in which to run the function.
+ * @param vdest Destination picture data.
+ * @param dest_format Format of the destination picture.
+ * @param dest_width Width of the destination picture.
+ * @param dest_height Height of the destination picture.
+ * @param vsrc Source picture data.
+ * @param src_format Format of the source picture.
+ * @param src_width Width of the source picture.
+ * @param src_height Height of the source picture.
+ * @param y Y coordinate on the destination picture at which to blit the
+ *          source picture.
+ * @param x X coordinate on the destination picture at which to blit the
+ *          source picture.
+ * @return Error, or 0 if the operation was successful.
+ */
+CAHUTE_EXTERN(int)
+cahute_blit_picture(
+    cahute_context *context,
+    void *vdest,
+    int dest_format,
+    int dest_width,
+    int dest_height,
+    void const *vsrc,
+    int src_format,
+    int src_width,
+    int src_height,
+    int y,
+    int x
+) {
+    cahute_u8 *dest = vdest;
+    cahute_u8 const *src = vsrc;
+    int width = src_width, height = src_height;
+    int off_x = 0, off_y = 0;
+    int dy;
+
+    if (y < 0) {
+        height += y;
+        off_y -= y;
+        y = 0;
+    }
+    if (y + height > dest_height)
+        height = dest_height - y;
+
+    if (x < 0) {
+        width += x;
+        off_x -= x;
+        x = 0;
+    }
+    if (x + width > dest_width)
+        width = dest_width - x;
+
+    if (width <= 0 || height <= 0)
+        return CAHUTE_OK;
+
+    if (dest_format != CAHUTE_PICTURE_FORMAT_16BIT_R5G6B5
+        || src_format != CAHUTE_PICTURE_FORMAT_16BIT_R5G6B5) {
+        CAHUTE_RETURN_IMPL(
+            context,
+            "Only 16-bit R5G6B5 picture blit is supported."
+        );
+    }
+
+    for (dy = 0; dy < height; dy++) {
+        cahute_u8 *dest_line = &dest[((y + dy) * dest_width + x) * 2];
+        cahute_u8 const *src_line =
+            &src[((off_y + dy) * src_width + off_x) * 2];
+
+        memcpy(dest_line, src_line, width * 2);
+    }
+
+    return CAHUTE_OK;
+}

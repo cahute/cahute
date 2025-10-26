@@ -29,7 +29,28 @@
 #ifndef LINK_OPEN_INTERNALS_H
 #define LINK_OPEN_INTERNALS_H 1
 #include "../internals.h"
-#define DEFAULT_DATA_BUFFER_SIZE 524288 /* 512 KiB, max. for VRAM */
+
+/* The maximum data buffer size is thought for Protocol 7.00 Screenstreaming,
+ * where we could have up to 528x320 pixels in the R5G6B5 format (2Bpp),
+ * 2 times (one for the reference image, one for the received TYPB1 diff
+ * to apply), plus the maximum packet information + checksum size (32 bytes),
+ * and a bit more for safety.
+ *
+ * This is allocated no matter what, because we could arrive at Protocol 7.00
+ * Screenstreaming when set explicitely, or determined automatically after
+ * link allocation by finding a 0B packet.
+ *
+ * This number is therefore determined using the following formula:
+ *
+ *   2 * (528 * 320 * 2 + 64)
+ *
+ * This number also has the advantage to be aligned to 64 bytes at its
+ * half-position. */
+#define DEFAULT_DATA_BUFFER_SIZE 675968 /* ~660 KiB, ~.64 MiB */
+
+/* This represents the default buffer size to shave off the end of the
+ * data buffer when initializing the link for Protocol 7.00 Screenstreaming. */
+#define DEFAULT_PICTURE_BUFFER_SIZE 337984 /* ~330 KiB, ~.32 MiB */
 
 /* Protocol constant that may be short-lived at
  * ``cahute_init_link_protocol()``. */

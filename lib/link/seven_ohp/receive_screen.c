@@ -67,7 +67,7 @@ cahute_seven_ohp_receive_screen(
             frame->cahute_frame_width = state->picture_width;
             frame->cahute_frame_height = state->picture_height;
             frame->cahute_frame_format = state->picture_format;
-            frame->cahute_frame_data = link->data_buffer;
+            frame->cahute_frame_data = state->picture_buf;
 
             return CAHUTE_OK;
 

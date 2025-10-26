@@ -894,6 +894,22 @@ cahute_initialize_link_protocol(
     case CAHUTE_LINK_PROTOCOL_USB_SEVEN_OHP:
         seven_ohp_state = &link->protocol_state.seven_ohp;
 
+        if (link->data_buffer_capacity < DEFAULT_PICTURE_BUFFER_SIZE) {
+            msg(link->context,
+                ll_error,
+                "Expected at least %" CAHUTE_PRIuSIZE
+                " bytes in the data "
+                "buffer for Protocol 7.00 Screenstreaming.",
+                DEFAULT_PICTURE_BUFFER_SIZE);
+            return CAHUTE_ERROR_SIZE;
+        }
+
+        link->data_buffer_capacity -= DEFAULT_PICTURE_BUFFER_SIZE;
+        seven_ohp_state->picture_buf =
+            &link->data_buffer[link->data_buffer_capacity];
+        seven_ohp_state->picture_capacity = DEFAULT_PICTURE_BUFFER_SIZE;
+        seven_ohp_state->picture_size = 0;
+
         /* No need to guarantee a minimum data buffer size here;
          * all writes to the data buffer will check for its capacity! */
         seven_ohp_state->last_packet_type = -1;

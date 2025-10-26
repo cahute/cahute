@@ -90,3 +90,25 @@ Function declarations
     :param dest_format: Format to write picture data in on the destination.
     :param frame: Frame to get source picture data and metadata from.
     :return: Error, or 0 if the operation was successful.
+
+.. c:function:: int cahute_blit_picture( \
+    cahute_context *context, void *dest, int dest_format, int dest_width, \
+    int dest_height, void const *src, int src_format, int src_width, \
+    int src_height, int y, int x)
+
+    Blit a source picture onto a destination picture.
+
+    :param context: Context in which to run the function.
+    :param dest: Destination picture data.
+    :param dest_format: Format of the destination picture.
+    :param dest_width: Width of the destination picture.
+    :param dest_height: Height of the destination picture.
+    :param src: Source picture data.
+    :param src_format: Format of the source picture.
+    :param src_width: Width of the source picture.
+    :param src_height: Height of the source picture.
+    :param y: Y coordinate on the destination picture at which to blit the
+        source picture.
+    :param x: X coordinate on the destination picture at which to blit the
+        source picture.
+    :return: Error, or 0 if the operation was successful.
