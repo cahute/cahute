@@ -28,6 +28,11 @@
 
 #include "internals.h"
 
+/* The actual delay used by Screen Receiver is actually 200 microseconds, but
+ * the closest delay we can use in Cahute while staying compatible with all
+ * of our platforms is 1 millisecond. */
+#define UMSSTATUSDELAY 1
+
 /**
  * Receive on an UMS link.
  *
@@ -52,33 +57,49 @@ cahute_receive_on_ums_link(
     cahute_u8 payload[16];
     size_t avail;
     int err;
+    unsigned long start;
 
-    /* We use custom command C0 to poll status and get avail. bytes.
-     * See :ref:`ums-command-c0` for more information.
-     *
-     * Note that it may take time for the calculator to "recharge"
-     * the buffer, so we want to try several times in a row before
-     * declaring there is no data available yet. */
-    err = cahute_scsi_request_from_link_transport(
-        link,
-        (cahute_u8 *)"\xC0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
-        16,
-        status_buf,
-        16,
-        NULL
-    );
+    *receivedp = 0;
+
+    err = cahute_monotonic(context, &start);
     if (err)
         return err;
 
-    avail = (status_buf[6] << 8) | status_buf[7];
-    if (!avail) {
-        err = cahute_sleep(context, 10);
+    do {
+        unsigned long cur;
+
+        /* We use custom command C0 to poll status and get avail. bytes.
+         * See :ref:`ums-command-c0` for more information.
+         *
+         * Note that it may take time for the calculator to "recharge"
+         * the buffer, so we want to try several times in a row before
+         * declaring there is no data available yet. */
+        err = cahute_scsi_request_from_link_transport(
+            link,
+            (cahute_u8 *)"\xC0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+            16,
+            status_buf,
+            16,
+            NULL
+        );
         if (err)
             return err;
 
-        *receivedp = 0;
-        return CAHUTE_OK;
-    }
+        avail = (status_buf[6] << 8) | status_buf[7];
+        if (avail)
+            break;
+
+        err = cahute_monotonic(context, &cur);
+        if (err)
+            return err;
+
+        if (cur - start + UMSSTATUSDELAY >= timeout)
+            return CAHUTE_ERROR_TIMEOUT;
+
+        err = cahute_sleep(context, UMSSTATUSDELAY);
+        if (err)
+            return err;
+    } while (1);
 
     /* NOTE: The target size here should always at least have 4 MiB,
      * which means this condition should actually never evaluate
