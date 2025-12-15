@@ -176,7 +176,7 @@ The following variables are specific to Cahute.
 .. _cmake-ref-setting-cahute-udev:
 
 ``CAHUTE_UDEV``
-    Enable building and installing the udev rule.
+    Enable building and installing the udev rules.
 
     This is enabled by default when building for Linux.
 
@@ -186,18 +186,49 @@ The following variables are specific to Cahute.
     Name of the group to which the udev rule gives permission to calculators
     plugged in via USB.
 
-    It is recommended to set the same group here as for normal serial devices,
-    as defined by your distribution.
-
-    The `Linux Standard Base groups`_ defines ``uucp`` and the
-    `Archlinux user groups`_ use it for serial devices, other distributions
-    use other groups such as ``dialout``; see the following for more
-    information:
-
-    * `Debian system groups`_;
-    * `Void Linux default groups`_.
-
     This is set to ``uucp`` by default.
+
+    .. _cmake-ref-setting-cahute-udev-group-choose:
+
+    .. note::
+
+        It is recommended to set the same system group here as for other serial
+        devices, as defined by your distribution.
+
+        The `Linux Standard Base groups`_ defines ``uucp`` and the
+        `Archlinux user groups`_ use it for serial devices, other distributions
+        use other groups such as ``dialout``. See the following for more
+        information:
+
+        * `Debian system groups`_;
+        * `Void Linux default groups`_.
+
+    .. _cmake-ref-setting-cahute-udev-group-system:
+
+    .. warning::
+
+        Since `systemd v258`_ (released on September 17th, 2025), udev no
+        longer allows user groups to be used in udev rules:
+
+            systemd-udevd ignores ``OWNER=``/``GROUP=`` settings with a
+            non-system user/group specified in udev rules files, to avoid
+            device nodes being owned by a non-system user/group.
+            It is recommended to check udev rules files with ``udevadm verify``
+            and/or ``udevadm test`` commands if the specified user/group in
+            ``OWNER=``/``GROUP=`` are valid.
+
+        If building and installing the udev rules is enabled (i.e.
+        :ref:`CAHUTE_UDEV <cmake-ref-setting-cahute-udev>` is set to ``ON``),
+        this must be set to the name of a system group on the destination
+        system.
+
+        This policy is enforced in at least the following distributions:
+
+        * Debian Forky (14) and above, unreleased as of writing (planned for
+          2027);
+        * Ubuntu Resolute Raccoon (26.04) and above, unreleased as of writing
+          (planned for April 2026);
+        * Arch Linux and up-to-date derivatives, since September 2025.
 
 .. _cmake-ref-cli:
 
@@ -268,3 +299,5 @@ switches:
     https://wiki.debian.org/SystemGroups
 .. _Void Linux default groups:
     https://docs.voidlinux.org/config/users-and-groups.html#default-groups
+.. _systemd v258:
+    https://github.com/systemd/systemd/releases/tag/v258

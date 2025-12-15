@@ -85,6 +85,26 @@ directory aside it, and install from it, by running the following commands:
     cmake -B build -S cahute-|version| -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
     cmake --build build
 
+.. warning::
+
+    If you plan on installing the udev rules (*enabled by default*) to access
+    your calculator(s) by USB without needing root privileges every time:
+
+    * It is recommended you set the :ref:`CAHUTE_UDEV_GROUP
+      <cmake-ref-setting-cahute-udev-group>` setting to a value appropriate
+      for your distribution, e.g. ``-DCAHUTE_UDEV_GROUP=uucp`` or
+      ``-DCAHUTE_UDEV_GROUP=dialout``.
+
+      See :ref:`the related note
+      <cmake-ref-setting-cahute-udev-group-choose>` for more information;
+    * You **must not set** :ref:`CAHUTE_UDEV_GROUP
+      <cmake-ref-setting-cahute-udev-group>` **to the name of your (or any)
+      user group**, but to a system group, as recent versions of udev no longer
+      allow user groups to obtain access to devices.
+
+      See :ref:`the related warning
+      <cmake-ref-setting-cahute-udev-group-system>` for more information.
+
 .. note::
 
     While CMake uses ``-O3`` by default for the ``Release`` configuration,
