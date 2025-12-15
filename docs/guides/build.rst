@@ -11,5 +11,9 @@ different means.
 
     build/linux
     build/macos
+    build/freebsd
+    build/netbsd
     build/windows
+    build/msdos
+    build/os2
     build/amigaos

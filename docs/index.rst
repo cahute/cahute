@@ -49,14 +49,6 @@ Officially supported systems are the following:
 
     .. system-list::
 
-        * - |system-debian|
-          - :ref:`feature-topic-system-debian`
-          - :ref:`Install using GiteaPC <install-guide-linux-giteapc>`
-          - :ref:`Build natively <build-guide-linux-sh>`
-        * - |system-voidlinux|
-          - :ref:`feature-topic-system-void`
-          - :ref:`Install using GiteaPC <install-guide-linux-giteapc>`
-          - :ref:`Build natively <build-guide-linux-sh>`
         * - |system-win|
           - :ref:`feature-topic-system-windows`
           - :ref:`Build for Vista+ using Visual Studio
@@ -68,9 +60,25 @@ Officially supported systems are the following:
             <build-guide-windows-mingw>`
           - :ref:`Build for Win 1.x+ using OpenWatcom from Archlinux
             <build-guide-windows-ow-win16>`
+        * - |system-debian|
+          - :ref:`feature-topic-system-debian`
+          - :ref:`Install using GiteaPC <install-guide-linux-giteapc>`
+          - :ref:`Build natively <build-guide-linux-sh>`
+        * - |system-voidlinux|
+          - :ref:`feature-topic-system-void`
+          - :ref:`Install using GiteaPC <install-guide-linux-giteapc>`
+          - :ref:`Build natively <build-guide-linux-sh>`
         * - |system-amigaos|
           - :ref:`feature-topic-system-amigaos`
           - :ref:`Build from Linux <build-guide-amigaos-linux>`
+        * - |system-freebsd|
+          - :ref:`feature-topic-system-freebsd`
+        * - |system-netbsd|
+          - :ref:`feature-topic-system-netbsd`
+        * - |system-msdos|
+          - :ref:`feature-topic-system-msdos`
+        * - |system-os2|
+          - :ref:`feature-topic-system-os2`
 
 The project is being worked on `on Gitlab <Cahute on Gitlab_>`_.
 It is maintained by `Thomas Touhey`_. See :ref:`project-topic-forums` for the
@@ -175,9 +183,13 @@ basic understanding of key concepts.
 .. |feat-flash| image:: feat-flash.svg
 .. |system-arch| image:: guides/install/arch.svg
 .. |system-apple| image:: guides/install/apple.svg
+.. |system-freebsd| image:: guides/install/freebsd.png
+.. |system-netbsd| image:: guides/install/netbsd.png
 .. |system-win| image:: guides/install/win.png
 .. |system-debian| image:: guides/install/debian.svg
 .. |system-voidlinux| image:: guides/install/voidlinux.svg
+.. |system-msdos| image:: guides/install/msdos.svg
+.. |system-os2| image:: guides/install/os2.svg
 .. |system-amigaos| image:: guides/install/amigaos.png
 
 .. _Cahute on Gitlab: https://gitlab.com/cahute/cahute

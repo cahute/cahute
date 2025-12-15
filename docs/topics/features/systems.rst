@@ -73,7 +73,8 @@ See :ref:`build-guide-linux` for more information.
 |archlinux| Archlinux and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Archlinux_ is a Linux distribution based on the Pacman_ package manager.
+Archlinux_ is a Linux distribution based on the Pacman_ / libalpm_ package
+manager.
 Many distributions are based on it, with one of the more well-known ones being
 Manjaro_. It uses the `GNU C library`_.
 
@@ -139,7 +140,7 @@ The following is implemented in Cahute directly:
   ``cu.*`` and ``cuad.*`` devices, instead of ``ttyUSB*`` for Linux.
 
 Installation on macOS / OS X of Cahute is done via Homebrew_, which requires
-macOS Ventura (13) or higher; see :ref:`install-guide-macos` and `Homebrew macOS
+macOS Sonoma (14) or higher; see :ref:`install-guide-macos` and `Homebrew macOS
 requirements`_ for more information.
 
 For now, Cahute is only built natively for this platform; see
@@ -198,7 +199,7 @@ first introduced with `Windows 1.0`_ in 1985.
 It is supported by the following systems:
 
 * :ref:`MS-DOS <feature-topic-system-msdos>` based Windows systems, up to
-  `Windows 3.x`_;
+  and including `Windows 3.x`_;
 * Windows systems from the `Windows 9x`_ series, using :ref:`MS-DOS
   <feature-topic-system-msdos>` as a bootloader (see
   `What was the role of MS-DOS in Windows 95?`_ for more information),
@@ -214,8 +215,9 @@ See :ref:`internals-topic-win16` for more information.
 |win| Win32
 ~~~~~~~~~~~
 
-Win32 is the 32-bit Windows API, present on the x86_ (i686+) and x64_
-architectures, first introduced with `Windows NT 3.1`_ in 1993.
+Win32, sometimes also named "Win32s" or "Win32c", is the 32-bit Windows API,
+present on the x86_ (i686+) and x64_ architectures, first introduced with
+`Windows NT 3.1`_ in 1993.
 It is supported by the following systems:
 
 * `Windows NT`_ based Windows systems starting from `Windows NT 3.1`_
@@ -263,10 +265,12 @@ Possible drivers include the following:
     * - Name
       - Description
       - Compatibility
+      - Implementation status
     * - Generic volume driver
       - Driver by Microsoft_, automatically used when a device presents
         a **USB Mass Storage** interface descriptor.
       - Windows 2000 (NT 5.0)+
+      - :ref:`Implemented <internals-topic-win32-volmgr>`
     * - CESG502_
       - CASIO's official driver for :ref:`serial over USB bulk devices
         <protocol-topic-transport-serial-over-usb-bulk>`, matching USB
@@ -275,24 +279,29 @@ Possible drivers include the following:
         32-bit (x86_) drivers can be found `here <32-bit CESG502 driver_>`_,
         and 64-bit (x64_) drivers are installed with `FA-124`_;
       - Windows 2000 (NT 5.0)+
+      - :ref:`Implemented <internals-topic-win32-cesg>`
     * - WinUSB_
       - Generic USB device driver by Microsoft.
 
         Can be selected automatically if the calculator presents WCID_
         attributes.
       - Windows Vista (NT 6.0)+
+      - :ref:`Implemented <internals-topic-win32-winusb-bulk>`
     * - `libusbK.sys`_
       - Generic KMF-based USB device driver provided by libusbK_, a third-party
         library.
       - Windows XP (NT 5.1)+
+      - Not implemented
     * - `libusb0.sys`_
       - Generic USB device driver provided by `libusb-win32`_, a third-party
         library implementing the libusb_ 0.1 API.
       - Windows 2000 (NT 5.0)+
+      - Not implemented
     * - UsbDk_
       - Generic USB device driver provided by the eponym, third-party
         component.
       - Windows XP (NT 5.1)+
+      - Not implemented
 
 See `libusb-compatible kernel drivers`_ for more information on generic
 USB device drivers for Win32.
@@ -308,10 +317,21 @@ USB device drivers for Win32.
 
 `MS-DOS`_ is a system made by Microsoft_ in 1981.
 
+.. _feature-topic-system-os2:
+
+|os2| OS/2
+----------
+
+.. warning::
+
+    OS/2 is not yet supported as an official target by Cahute.
+
+`OS/2`_ is a system made by IBM_ and Microsoft_ between 1987 and 2001.
+
 .. _feature-topic-system-amigaos:
 
-|amigaos| AmigaOS
------------------
+|amigaos| AmigaOS and derivatives
+---------------------------------
 
 .. warning::
 
@@ -331,6 +351,35 @@ Cahute can be built for AmigaOS 3.1+ using the Native Development Kit (NDK),
 which can be found in the `Hyperion Entertainment Downloads`_. See
 :ref:`build-guide-amigaos` for more details.
 
+While AmigaOS doesn't natively support USB, it can through USB stacks such
+as |amigaos-poseidon| \ Poseidon_.
+
+.. _feature-topic-system-aros:
+
+|aros| AROS
+~~~~~~~~~~~
+
+.. warning::
+
+    AROS is not yet supported as an official target by Cahute.
+
+AROS_ is a derivative of AmigaOS.
+
+.. todo:: Write this!
+
+.. _feature-topic-system-morphos:
+
+|morphos| MorphOS
+~~~~~~~~~~~~~~~~~
+
+.. warning::
+
+    MorphOS is not yet supported as an official target by Cahute.
+
+MorphOS_ is a derivative of AmigaOS.
+
+.. todo:: Write this!
+
 .. |linux| image:: ../../guides/install/linux.svg
 .. |archlinux| image:: ../../guides/install/arch.svg
 .. |debian| image:: ../../guides/install/debian.svg
@@ -342,7 +391,11 @@ which can be found in the `Hyperion Entertainment Downloads`_. See
 .. |netbsd| image:: ../../guides/install/netbsd.png
 .. |apple| image:: ../../guides/install/apple.svg
 .. |msdos| image:: ../../guides/install/msdos.svg
+.. |os2| image:: ../../guides/install/os2.svg
 .. |amigaos| image:: ../../guides/install/amigaos.png
+.. |amigaos-poseidon| image:: ../internals/platforms/amigaos-poseidon.png
+.. |aros| image:: ../../guides/install/aros.png
+.. |morphos| image:: ../../guides/install/morphos.png
 
 .. _x86: https://fr.wikipedia.org/wiki/X86
 .. _x64: https://fr.wikipedia.org/wiki/X64
@@ -356,6 +409,7 @@ which can be found in the `Hyperion Entertainment Downloads`_. See
     https://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html
 .. _Archlinux: https://archlinux.org/
 .. _Pacman: https://wiki.archlinux.org/title/Pacman
+.. _libalpm: https://man.archlinux.org/man/libalpm.3
 .. _Manjaro: https://manjaro.org/
 .. _Archlinux User Repository: https://aur.archlinux.org/
 .. _cahute on AUR: https://aur.archlinux.org/packages/cahute
@@ -385,6 +439,9 @@ which can be found in the `Hyperion Entertainment Downloads`_. See
     https://docs.brew.sh/Installation#macos-requirements
 
 .. _MS-DOS: https://en.wikipedia.org/wiki/MS-DOS
+
+.. _`OS/2`: https://en.wikipedia.org/wiki/OS/2
+.. _IBM: https://www.ibm.com/
 
 .. _Microsoft Windows: http://windows.microsoft.com/
 .. _Microsoft: https://www.microsoft.com/
@@ -440,7 +497,12 @@ which can be found in the `Hyperion Entertainment Downloads`_. See
     https://www.amiga-news.de/en/news/AN-2024-04-00029-EN.html
 .. _CASIO software for AmigaOS:
     https://aminet.net/search?query=casio
+.. _Poseidon: https://aminet.net/package/driver/other/PoseidonMain
 .. _Amicas: https://aminet.net/package/comm/misc/amicas
 .. _ACas: https://aminet.net/package/comm/misc/ACas
 .. _Hyperion Entertainment Downloads:
     https://www.hyperion-entertainment.com/index.php/downloads
+
+.. _AROS: http://www.aros.org/
+
+.. _MorphOS: https://morphos-team.net/
