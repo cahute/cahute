@@ -28,57 +28,9 @@ features\ [#mutant]_\ :
       - ROM flashing
       - With ``p7os``, flash fx-9860G and compatible calculators!
 
-Officially supported systems are the following:
+Installing or building Cahute is officially supported on the following systems:
 
-.. system-list::
-
-    * - |system-arch|
-      - :ref:`feature-topic-system-arch`
-      - :ref:`Install from the AUR <install-guide-linux-aur>`
-      - :ref:`Install using GiteaPC <install-guide-linux-giteapc>`
-      - :ref:`Build natively <build-guide-linux-sh>`
-    * - |system-apple|
-      - :ref:`feature-topic-system-macos`
-      - :ref:`Install using Homebrew <install-guide-macos-homebrew>`
-      - :ref:`Build natively <build-guide-macos-sh>`
-
-.. note::
-
-    Support and distribution of other platforms is in progress or is awaiting
-    volunteers:
-
-    .. system-list::
-
-        * - |system-win|
-          - :ref:`feature-topic-system-windows`
-          - :ref:`Build for Vista+ using Visual Studio
-            <build-guide-windows-vs>`
-          - :ref:`Build for XP using Visual Studio <build-guide-windows-vs-xp>`
-          - :ref:`Build for XP+ using Visual Studio and MinGW-w64
-            <build-guide-windows-vs-mingw>`
-          - :ref:`Build using MinGW-w64 from Archlinux
-            <build-guide-windows-mingw>`
-          - :ref:`Build for Win 1.x+ using OpenWatcom from Archlinux
-            <build-guide-windows-ow-win16>`
-        * - |system-debian|
-          - :ref:`feature-topic-system-debian`
-          - :ref:`Install using GiteaPC <install-guide-linux-giteapc>`
-          - :ref:`Build natively <build-guide-linux-sh>`
-        * - |system-voidlinux|
-          - :ref:`feature-topic-system-void`
-          - :ref:`Install using GiteaPC <install-guide-linux-giteapc>`
-          - :ref:`Build natively <build-guide-linux-sh>`
-        * - |system-amigaos|
-          - :ref:`feature-topic-system-amigaos`
-          - :ref:`Build from Linux <build-guide-amigaos-linux>`
-        * - |system-freebsd|
-          - :ref:`feature-topic-system-freebsd`
-        * - |system-netbsd|
-          - :ref:`feature-topic-system-netbsd`
-        * - |system-msdos|
-          - :ref:`feature-topic-system-msdos`
-        * - |system-os2|
-          - :ref:`feature-topic-system-os2`
+.. include:: guides/_system_guides.rst
 
 The project is being worked on `on Gitlab <Cahute on Gitlab_>`_.
 It is maintained by `Thomas Touhey`_. See :ref:`project-topic-forums` for the
@@ -89,38 +41,6 @@ version 2.1 as distributed by the CEA, CNRS and Inria on
 `cecill.info <CeCILL_>`_.
 
 This documentation is organized using `Diátaxis`_' structure.
-
-Acknowledgements
-----------------
-
-There have been many projects over the years about reversing and
-reimplementing CASIO's shenannigans for using their calculators from
-alternative OSes, or simply for fun or out of curiosity. Cahute couldn't
-have been made without their research, implementations and in some cases,
-documentation. This page is a little tribute to these works.
-
-* Thanks to Tom Wheeley and Tom Lynn for their work on CaS and Caspro_
-  and the `Casio Graphical Calculator Encyclopaedia`_.
-* Thanks to the (now defunct) Graph100.com wiki, `saved here
-  <Graph100.com Wiki_>`_ for historical purposes.
-* Thanks to the team behind Casetta_ for their documentation on legacy
-  protocols and file formats, which helped me navigate the subtleties more
-  easily.
-* Thanks to `Simon Lothar`_ and Andreas Bertheussen for their work on
-  Protocol 7.00 and derivatives through fxReverse_ and xfer9860, and to
-  Teamfx_ for `their additions <Teamfx additions_>`_.
-* Thanks to the Cemetech community for their `Prizm Wiki`_, especially
-  gbl08ma, BrandonWilson and amazonka.
-* Thanks to Nessotrin_ for their work on UsbConnector_, which prompted me
-  to work on a better version in the first place.
-* Thanks to Massena_ for their work on the Cahute cover image, on the top of
-  every page.
-
-There are obviously plenty more people working on other connected aspects
-(hardware, low-level system stuff), administering or moderating forums and
-websites, maintaining communication with CASIO and other partners.
-Quoting you all would take a substantial time, and I'd likely miss quite a lot
-of you, but thank you all for your efforts!
 
 How-to guides
 -------------
@@ -172,6 +92,38 @@ basic understanding of key concepts.
     references/headers
     references/cmake
 
+Acknowledgements
+----------------
+
+There have been many projects over the years about reversing and
+reimplementing CASIO's shenannigans for using their calculators from
+alternative OSes, or simply for fun or out of curiosity. Cahute couldn't
+have been made without their research, implementations and in some cases,
+documentation. This page is a little tribute to these works.
+
+* Thanks to Tom Wheeley and Tom Lynn for their work on CaS and Caspro_
+  and the `Casio Graphical Calculator Encyclopaedia`_.
+* Thanks to the (now defunct) Graph100.com wiki, `saved here
+  <Graph100.com Wiki_>`_ for historical purposes.
+* Thanks to the team behind Casetta_ for their documentation on legacy
+  protocols and file formats, which helped me navigate the subtleties more
+  easily.
+* Thanks to `Simon Lothar`_ and Andreas Bertheussen for their work on
+  Protocol 7.00 and derivatives through fxReverse_ and xfer9860, and to
+  Teamfx_ for `their additions <Teamfx additions_>`_.
+* Thanks to the Cemetech community for their `Prizm Wiki`_, especially
+  gbl08ma, BrandonWilson and amazonka.
+* Thanks to Nessotrin_ for their work on UsbConnector_, which prompted me
+  to work on a better version in the first place.
+* Thanks to Massena_ for their work on the Cahute cover image, on the top of
+  every page.
+
+There are obviously plenty more people working on other connected aspects
+(hardware, low-level system stuff), administering or moderating forums and
+websites, maintaining communication with CASIO and other partners.
+Quoting you all would take a substantial time, and I'd likely miss quite a lot
+of you, but thank you all for your efforts!
+
 .. [#mutant] Icons used here are from the `Mutant Standard`_,
   licensed under `CC BY-NC-SA 4.0 International`_.
   Copyright © 2017 - 2024 \ `Caius Nocturne`_.
@@ -181,16 +133,6 @@ basic understanding of key concepts.
 .. |feat-text| image:: feat-text.svg
 .. |feat-ohp| image:: feat-ohp.svg
 .. |feat-flash| image:: feat-flash.svg
-.. |system-arch| image:: guides/install/arch.svg
-.. |system-apple| image:: guides/install/apple.svg
-.. |system-freebsd| image:: guides/install/freebsd.png
-.. |system-netbsd| image:: guides/install/netbsd.png
-.. |system-win| image:: guides/install/win.png
-.. |system-debian| image:: guides/install/debian.svg
-.. |system-voidlinux| image:: guides/install/voidlinux.svg
-.. |system-msdos| image:: guides/install/msdos.svg
-.. |system-os2| image:: guides/install/os2.svg
-.. |system-amigaos| image:: guides/install/amigaos.png
 
 .. _Cahute on Gitlab: https://gitlab.com/cahute/cahute
 .. _Thomas Touhey: https://thomas.touhey.fr/

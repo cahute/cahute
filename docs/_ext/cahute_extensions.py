@@ -1,5 +1,5 @@
 # *****************************************************************************
-# Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
+# Copyright (C) 2024-2026 Thomas Touhey <thomas@touhey.fr>
 #
 # This software is governed by the CeCILL 2.1 license under French law and
 # abiding by the rules of distribution of free software. You can use, modify
@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING
 
 import docutils.nodes as nodes
 from docutils.parsers.rst import Directive
@@ -74,12 +74,22 @@ class system(nodes.General, nodes.Element):
     pass
 
 
-class system_icon(nodes.General, nodes.Element):
+class system_name(nodes.General, nodes.Element):
     pass
 
 
-class system_detail(nodes.General, nodes.Element):
+class system_install_guides(nodes.General, nodes.Element):
     pass
+
+
+class system_build_guides(nodes.General, nodes.Element):
+    pass
+
+
+class system_guides_title(nodes.General, nodes.TextElement):
+    def __init__(self, rawsource: str = "", *children) -> None:
+        nodes.General.__init__(self)
+        nodes.TextElement.__init__(self, rawsource, "", *children)
 
 
 class MyHTMLTranslator(HTMLTranslator):
@@ -111,12 +121,8 @@ class MyHTMLTranslator(HTMLTranslator):
         self.context.append(is_title)
 
         if is_title:
-            self.body.append(
-                self.starttag(node, "div", "", CLASS="title-container")
-            )
-            self.body.append(
-                self.starttag(node, "div", "", CLASS="title-contrast")
-            )
+            self.body.append(self.starttag(node, "div", "", CLASS="title-container"))
+            self.body.append(self.starttag(node, "div", "", CLASS="title-contrast"))
             self.body.append(self.starttag(node, "hr", ""))
             self.body.append("</hr></div>")
 
@@ -143,9 +149,7 @@ class MyHTMLTranslator(HTMLTranslator):
             node.walkabout(self)
 
         self.body.append("</div>")
-        self.body.append(
-            self.starttag(node, "div", "", CLASS="feature-detail")
-        )
+        self.body.append(self.starttag(node, "div", "", CLASS="feature-detail"))
         self.body.append(self.starttag(node, "div", "", CLASS="feature-title"))
 
         for node in title:
@@ -169,19 +173,34 @@ class MyHTMLTranslator(HTMLTranslator):
         self.body.append("</div>")
 
     def visit_system(self, node):
-        self.body.append(self.starttag(node, "div", "", CLASS="system"))
-
-        icon, detail = node
-        for node in icon:
-            node.walkabout(self)
-        for node in detail:
-            node.walkabout(self)
-
-        self.body.append("</div>")
-        raise nodes.SkipChildren()
+        pass
 
     def depart_system(self, node):
         pass
+
+    def visit_system_name(self, node):
+        self.body.append(self.starttag(node, "div", "", CLASS="system-name"))
+
+    def depart_system_name(self, node):
+        self.body.append("</div>")
+
+    def visit_system_install_guides(self, node):
+        self.body.append(self.starttag(node, "div", "", CLASS="system-install-guides"))
+
+    def depart_system_install_guides(self, node):
+        self.body.append("</div>")
+
+    def visit_system_build_guides(self, node):
+        self.body.append(self.starttag(node, "div", "", CLASS="system-build-guides"))
+
+    def depart_system_build_guides(self, node):
+        self.body.append("</div>")
+
+    def visit_system_guides_title(self, node):
+        self.body.append(self.starttag(node, "p", "", CLASS="system-guides-title"))
+
+    def depart_system_guides_title(self, node):
+        self.body.append("</p>")
 
 
 def ascii_hex(
@@ -194,7 +213,7 @@ def ascii_hex(
     :param size: Size of the expected ASCII-HEX.
     """
     if default is not None and (default < 0 or default >= 2**size):
-        raise ValueError(f"default must be between 0 and {2 ** size - 1}")
+        raise ValueError(f"default must be between 0 and {2**size - 1}")
 
     def func(argument: str | None) -> int:
         """Convert the argument into a short hexadecimal number."""
@@ -332,9 +351,7 @@ class SevenCommandDirective(Directive):
             header += "EX DS   OW DT FS       "
             header += " ".join(f"SD{i}" for i in range(1, 7))
             content += f" 1 {data_size:04X} {ow:02X} {dt:02X} {fs:08X} "
-            content += " ".join(
-                f" {len(x):02X}" for x in (d1, d2, d3, d4, d5, d6)
-            )
+            content += " ".join(f" {len(x):02X}" for x in (d1, d2, d3, d4, d5, d6))
 
             for i, x in enumerate((d1, d2, d3, d4, d5, d6)):
                 if not x:
@@ -345,7 +362,7 @@ class SevenCommandDirective(Directive):
                 if len(x) == 1:
                     x = " " + x
 
-                header += f" D{i + 1}" + " " * ((len(x) - 2))
+                header += f" D{i + 1}" + " " * (len(x) - 2)
                 content += f" {x}"
         else:
             header += "EX "
@@ -369,9 +386,7 @@ class SevenCommandDirective(Directive):
             container += self.get_table()
 
         if self.content:
-            self.state.nested_parse(
-                self.content, self.content_offset, container
-            )
+            self.state.nested_parse(self.content, self.content_offset, container)
 
         paragraph_node = nodes.paragraph()
         container += paragraph_node
@@ -427,9 +442,7 @@ class TwoLevelListDirective(SphinxDirective):
         list_node = node[0]
         elements = []
         for item_index, item_node in enumerate(list_node):
-            if len(item_node) != 1 or not isinstance(
-                item_node[0], nodes.bullet_list
-            ):
+            if len(item_node) != 1 or not isinstance(item_node[0], nodes.bullet_list):
                 error = self.reporter.error(
                     f'Error parsing content block for the "{self.name}" '
                     + "directive: two-level bullet list expected, but row "
@@ -440,15 +453,11 @@ class TwoLevelListDirective(SphinxDirective):
                 )
                 raise SystemMessagePropagation(error)
 
-            elements.append(
-                tuple(list(subelement) for subelement in item_node[0])
-            )
+            elements.append(tuple(list(subelement) for subelement in item_node[0]))
 
         return elements
 
-    def get_result(
-        self, elements: tuple[list[nodes.Node], ...], /
-    ) -> nodes.Element:
+    def get_result(self, elements: tuple[list[nodes.Node], ...], /) -> nodes.Element:
         """Get the result.
 
         :param elements: Elements to compute the result from.
@@ -491,40 +500,114 @@ class FeatureListDirective(TwoLevelListDirective):
         return container
 
 
-class SystemListDirective(TwoLevelListDirective):
-    """Directive for listing supported systems."""
+class SystemGuidesDirective(TwoLevelListDirective):
+    """Directive for listing supported systems and their related guides."""
 
     def get_result(
-        self, elements: tuple[list[nodes.Node], ...], /
+        self,
+        elements: tuple[list[nodes.Node], ...],
+        /,
     ) -> nodes.Element:
         """Get the result.
+
+        The resulting structure here must be the following::
+
+            <system_list>
+                <system>
+                    <system_name>
+                        ... icon...
+                        ... name...
+                    </system_name>
+                    <system_install_guides>
+                        ... install guide intro "Install Cahute..."...
+                        ... install guide list...
+                    </system_install_guides>
+                    <system_build_guides>
+                        ... build guide intro "Build Cahute..."...
+                        ... build guide list...
+                    </system_build_guides>
+                </system>
+            </system_list>
 
         :param elements: Elements to compute the result from.
         :return: Obtained result.
         """
         container = system_list()
-        for icon_element, detail, *links in elements:
-            sys = system("")
-            detail = system_detail("", *detail)
-
-            sys += [
-                system_icon(
+        for icon_element, name_element, *guides in elements:
+            if (
+                len(guides) < 1
+                or len(guides[0]) < 1
+                or not isinstance(
+                    (install_guides_element := guides[0][0]),
+                    nodes.bullet_list,
+                )
+            ):
+                install_guides_element = nodes.paragraph(
                     "",
-                    *(
-                        icon
-                        for icon_paragraph in icon_element
-                        for icon in icon_paragraph
+                    "",
+                    nodes.emphasis(
+                        "",
+                        nodes.Text(
+                            "No installation guide available for this system.",
+                        ),
+                    ),
+                )
+
+            if (
+                len(guides) < 2
+                or len(guides[1]) < 1
+                or not isinstance(
+                    (build_guides_element := guides[1][0]),
+                    nodes.bullet_list,
+                )
+            ):
+                build_guides_element = nodes.paragraph(
+                    "",
+                    "",
+                    nodes.emphasis(
+                        "",
+                        nodes.Text(
+                            "No build guide available for this system.",
+                        ),
+                    ),
+                )
+
+            sys = system(
+                "",
+                system_name(
+                    "",
+                    nodes.paragraph(
+                        "",
+                        "",
+                        *(
+                            icon
+                            for icon_paragraph in icon_element
+                            for icon in icon_paragraph
+                        ),
+                        *(
+                            name
+                            for name_paragraph in name_element
+                            for name in name_paragraph
+                        ),
                     ),
                 ),
-                detail,
-            ]
-            if links:
-                link_list = nodes.bullet_list("")
-                link_list += [
-                    nodes.list_item("", *link)
-                    for link in links
-                ]
-                detail += [link_list]
+                system_install_guides(
+                    "",
+                    system_guides_title(
+                        "",
+                        nodes.Text("Install Cahute…"),
+                    ),
+                    install_guides_element,
+                ),
+                system_build_guides(
+                    "",
+                    system_guides_title(
+                        "",
+                        nodes.Text("Build Cahute from source…"),
+                    ),
+                    build_guides_element,
+                ),
+            )
 
             container.append(sys)
 
@@ -539,7 +622,7 @@ def add_redirects(app: Sphinx, exc: Exception | None) -> None:
     redirects: list[tuple[str, str]] = [
         (
             "/" + key.removeprefix("/"),
-            value.removesuffix("/") + "/"[:key.endswith("/")],
+            value.removesuffix("/") + "/"[: key.endswith("/")],
         )
         for key, value in app.config.redirects.items()
     ]
@@ -563,7 +646,7 @@ def setup(app: Sphinx, /) -> None:
     app.set_translator("html", MyHTMLTranslator)
     app.add_directive("seven-command", SevenCommandDirective)
     app.add_directive("feature-list", FeatureListDirective)
-    app.add_directive("system-list", SystemListDirective)
+    app.add_directive("system-guides", SystemGuidesDirective)
     app.connect("build-finished", add_redirects)
     app.add_config_value("redirects", {}, "env")
     return {"parallel_read_safe": True}

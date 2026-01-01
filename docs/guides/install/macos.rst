@@ -4,14 +4,16 @@
 =========================================
 
 In order to install Cahute's library and command-line utilities on
-macOS / OS X, the following methods are available.
+:ref:`macOS / OS X <feature-topic-system-macos>`, the following methods
+are available.
 
 .. _install-guide-macos-homebrew:
 
-|homebrew| Installing Cahute on macOS / OS X, using Homebrew
-------------------------------------------------------------
+|homebrew| Installing Cahute on macOS / OS X for local use and development, using Homebrew
+------------------------------------------------------------------------------------------
 
-Cahute and its command-line utilities can be installed using Homebrew_.
+Cahute and its command-line utilities can be installed for local use and
+development, using Homebrew_.
 
 Once Homebrew is installed, **disconnect all calculators from your computer**
 and install the `cahute formula <cahute homebrew formula_>`_ with the

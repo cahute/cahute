@@ -82,7 +82,7 @@ html_use_index = False
 html_copy_source = False
 html_show_sourcelink = False
 html_domain_indices = False
-html_css_files = ["custom2.css"]
+html_css_files = ["custom3.css"]
 
 intersphinx_mapping = {}
 

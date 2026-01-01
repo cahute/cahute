@@ -78,47 +78,59 @@ manager.
 Many distributions are based on it, with one of the more well-known ones being
 Manjaro_. It uses the `GNU C library`_.
 
-Cahute does not provide a package repository for Archlinux_ and derivatives;
-it however is available on the `Archlinux User Repository`_ as the
-`cahute <cahute on AUR_>`_ package; see :ref:`install-guide-linux-aur` for
-instructions on how to install it.
+The following guides apply to Archlinux and derivatives:
+
+* :ref:`install-guide-linux-aur`
+* :ref:`install-guide-linux-aur-mingw`
+* :ref:`install-guide-linux-giteapc`
+* :ref:`install-guide-linux-giteapc-gint`
+* :ref:`build-guide-linux`
 
 .. _feature-topic-system-debian:
 
 |debian| Debian and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. warning::
-
-    Debian is not yet supported as an official target by Cahute.
-    See `#8 <https://gitlab.com/cahute/cahute/-/issues/8>`_
-    for more information.
-
 Debian_ is a Linux distribution based on APT_ (*Advanced Package Tool*).
 Many distributions are based on it, with some of the more well-known ones
 being Ubuntu_ and `Linux Mint`_. It uses the `GNU C library`_.
 
-Cahute does not yet provide a package repository for Debian and derivatives,
-nor endorses any external package repository; one must build Cahute to use
-it on such systems for now.
+The following guides apply to Debian and derivatives:
+
+* :ref:`install-guide-linux-deb`
+* :ref:`install-guide-linux-giteapc`
+* :ref:`install-guide-linux-giteapc-gint`
+* :ref:`build-guide-linux`
+
+.. _feature-topic-system-redhat:
+
+|redhat| RHEL and derivatives
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+RHEL_ (*Red Hat Enterprise Linux*) is a Linux distribution made by `Red Hat`_
+and based on RPM_. Some distributions are based on it, including CentOS_.
+
+The following guides apply to RHEL and derivatives:
+
+* :ref:`install-guide-linux-redhat`
+* :ref:`install-guide-linux-giteapc`
+* :ref:`install-guide-linux-giteapc-gint`
+* :ref:`build-guide-linux`
 
 .. _feature-topic-system-void:
 
 |void| Void Linux
 ~~~~~~~~~~~~~~~~~
 
-.. warning::
-
-    Void Linux is not yet supported as an official target by Cahute.
-    See `#72 <https://gitlab.com/cahute/cahute/-/issues/72>`_
-    for more information.
-
 `Void Linux`_ is a Linux distribution based on XBPS_ (*X Binary Package
 System*). It uses the `musl libc`_.
 
-Cahute does not yet provide a package repository for Void Linux, nor
-endorses any external package repository; one must build Cahute to use
-it on such systems for now.
+The following guides apply to Void Linux:
+
+* :ref:`install-guide-linux-void`
+* :ref:`install-guide-linux-giteapc`
+* :ref:`install-guide-linux-giteapc-gint`
+* :ref:`build-guide-linux`
 
 .. _feature-topic-system-macos:
 
@@ -143,8 +155,10 @@ Installation on macOS / OS X of Cahute is done via Homebrew_, which requires
 macOS Sonoma (14) or higher; see :ref:`install-guide-macos` and `Homebrew macOS
 requirements`_ for more information.
 
-For now, Cahute is only built natively for this platform; see
-:ref:`build-guide-macos` for more information.
+The following guides apply to macOS / OS X:
+
+* :ref:`install-guide-macos-homebrew`
+* :ref:`build-guide-macos`
 
 .. _feature-topic-system-freebsd:
 
@@ -173,12 +187,6 @@ NetBSD_ is a BSD-derived system.
 |win| Microsoft Windows
 -----------------------
 
-.. warning::
-
-    Microsoft Windows in general is not yet supported as an official target
-    by Cahute. See `#10 <https://gitlab.com/cahute/cahute/-/issues/10>`_
-    for more information.
-
 `Microsoft Windows`_ is a family of operating systems made by Microsoft_
 since the 1980s, bearing multiple programmation interfaces, described in the
 following subsections.
@@ -187,12 +195,6 @@ following subsections.
 
 |win31| Win16
 ~~~~~~~~~~~~~
-
-.. warning::
-
-    Win16 is not yet supported as an official target by Cahute.
-    See `#102 <https://gitlab.com/cahute/cahute/-/issues/102>`_
-    for more information.
 
 Win16 is the 16-bit Windows API, only present on the x86_ architecture,
 first introduced with `Windows 1.0`_ in 1985.
@@ -209,6 +211,11 @@ It is supported by the following systems:
   (NT 5.0).
 
 See :ref:`internals-topic-win16` for more information.
+
+The following guides apply to Win16-based systems:
+
+* :ref:`install-guide-windows-old`
+* :ref:`build-guide-windows-ow-win16`
 
 .. _feature-topic-system-win32:
 
@@ -247,6 +254,16 @@ details.
 Cahute currently supports Win32 starting from `Windows 2000`_ (NT 5.0), for
 both the UCRT and MSVCRT runtimes. See :ref:`internals-topic-win32` for
 more information.
+
+The following guides apply to Win32-based systems:
+
+* :ref:`install-guide-windows-vcpkg`
+* :ref:`install-guide-windows-msi`
+* :ref:`build-guide-windows-vs`
+* :ref:`build-guide-windows-vs-xp`
+* :ref:`build-guide-windows-vs-mingw`
+* :ref:`build-guide-windows-mingw`
+* :ref:`build-guide-windows-ow-win32`
 
 .. _feature-topic-system-win32-drivers:
 
@@ -333,12 +350,6 @@ USB device drivers for Win32.
 |amigaos| AmigaOS and derivatives
 ---------------------------------
 
-.. warning::
-
-    AmigaOS is not yet supported as an official target by Cahute.
-    See `#26 <https://gitlab.com/cahute/cahute/-/issues/26>`_
-    for more information.
-
 AmigaOS_ is a system originally made by Commodore_ for the Amiga_ family of
 computers. Versions 3.2+ of the system were made by `Hyperion Entertainment`_,
 which `went bankrupt in March of 2024 <Hyperion Entertainment bankrupcy_>`_.
@@ -354,14 +365,15 @@ which can be found in the `Hyperion Entertainment Downloads`_. See
 While AmigaOS doesn't natively support USB, it can through USB stacks such
 as |amigaos-poseidon| \ Poseidon_.
 
+The following guides apply to AmigaOS and derivatives:
+
+* :ref:`install-guide-amigaos-aminet`
+* :ref:`build-guide-amigaos`
+
 .. _feature-topic-system-aros:
 
 |aros| AROS
 ~~~~~~~~~~~
-
-.. warning::
-
-    AROS is not yet supported as an official target by Cahute.
 
 AROS_ is a derivative of AmigaOS.
 
@@ -372,10 +384,6 @@ AROS_ is a derivative of AmigaOS.
 |morphos| MorphOS
 ~~~~~~~~~~~~~~~~~
 
-.. warning::
-
-    MorphOS is not yet supported as an official target by Cahute.
-
 MorphOS_ is a derivative of AmigaOS.
 
 .. todo:: Write this!
@@ -383,10 +391,10 @@ MorphOS_ is a derivative of AmigaOS.
 .. |linux| image:: ../../guides/install/linux.svg
 .. |archlinux| image:: ../../guides/install/arch.svg
 .. |debian| image:: ../../guides/install/debian.svg
+.. |redhat| image:: ../../guides/install/redhat.svg
 .. |void| image:: ../../guides/install/voidlinux.svg
 .. |win| image:: ../../guides/install/win.png
 .. |win31| image:: ../../guides/install/win31.svg
-.. |win95| image:: ../../guides/install/win95.svg
 .. |freebsd| image:: ../../guides/install/freebsd.png
 .. |netbsd| image:: ../../guides/install/netbsd.png
 .. |apple| image:: ../../guides/install/apple.svg
@@ -418,6 +426,12 @@ MorphOS_ is a derivative of AmigaOS.
 .. _APT: https://wiki.debian.org/PackageManagement
 .. _Ubuntu: https://ubuntu.com/
 .. _Linux Mint: https://www.linuxmint.com/
+
+.. _RHEL:
+    https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux
+.. _CentOS: https://www.centos.org/
+.. _Red Hat: https://www.redhat.com/
+.. _RPM: https://rpm.org/
 
 .. _Void Linux: https://voidlinux.org/
 .. _XBPS: https://docs.voidlinux.org/xbps/index.html

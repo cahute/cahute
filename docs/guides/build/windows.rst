@@ -24,8 +24,8 @@ The following building methods are available.
 
 .. _build-guide-windows-vs:
 
-Building Cahute for Windows Vista and above, using Visual Studio
-----------------------------------------------------------------
+Building Cahute for Microsoft Windows Vista and above, using Visual Studio
+--------------------------------------------------------------------------
 
 .. warning::
 
@@ -130,8 +130,8 @@ run the command-line utilities from here with the options you want to test.
 
 .. _build-guide-windows-vs-xp:
 
-Building Cahute for Windows XP, using Visual Studio
----------------------------------------------------
+Building Cahute for Microsoft Windows XP, using Visual Studio
+-------------------------------------------------------------
 
 .. warning::
 
@@ -264,8 +264,8 @@ run the command-line utilities from here with the options you want to test.
 
 .. _build-guide-windows-vs-mingw:
 
-Building Cahute for Windows 2000 and above, using Visual Studio and MinGW-w64
------------------------------------------------------------------------------
+Building Cahute for Microsoft Windows 2000 and above, using Visual Studio and MinGW-w64
+---------------------------------------------------------------------------------------
 
 .. warning::
 
@@ -390,8 +390,8 @@ run the command-line utilities from here with the options you want to test.
 
 .. _build-guide-windows-mingw:
 
-Building Cahute for Windows 2000 and above, using |mingw-w64| MinGW-w64 on Archlinux
-------------------------------------------------------------------------------------
+Building Cahute for Microsoft Windows 2000 and above, using |mingw-w64| MinGW-w64 on Archlinux
+----------------------------------------------------------------------------------------------
 
 .. warning::
 
@@ -448,8 +448,8 @@ one of the following command depending on the architecture you're targetting::
 
 .. _build-guide-windows-ow-win32:
 
-Building Cahute for Windows 2000 and above, using |ow| Open Watcom on Archlinux
--------------------------------------------------------------------------------
+Building Cahute for Microsoft Windows 2000 and above, using |ow| Open Watcom on Archlinux
+-----------------------------------------------------------------------------------------
 
 .. warning::
 
@@ -499,8 +499,8 @@ You can now build the project using the following command::
 
 .. _build-guide-windows-ow-win16:
 
-Building Cahute for Windows 1.x and above, using |ow| Open Watcom on Archlinux
-------------------------------------------------------------------------------
+Building Microsoft Cahute for Windows 1.x and above, using |ow| Open Watcom on Archlinux
+----------------------------------------------------------------------------------------
 
 .. warning::
 

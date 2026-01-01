@@ -3,17 +3,27 @@
 |linux| Installing Cahute on Linux distributions
 ================================================
 
-In order to install Cahute's library and command-line utilities on
-your Linux distribution, the following methods are available.
+In order to install Cahute's library and/or command-line utilities on
+your :ref:`Linux distribution <feature-topic-system-linux>`, the following
+methods are available.
 
 .. _install-guide-linux-aur:
 
-|archlinux| Installing Cahute on Archlinux and derivatives, using the AUR
--------------------------------------------------------------------------
+|archlinux| Installing Cahute on Archlinux and derivatives for local use and development, using the AUR
+-------------------------------------------------------------------------------------------------------
 
-Cahute and its command-line utilities are present on the
-`Archlinux User Repository`_, you can pop up your favourite pacman frontend
-and install the `cahute <cahute on AUR_>`_ package:
+The Cahute library and command-line utilities can be installed through
+the following packages on the `Archlinux User Repository`_:
+
+`cahute <cahute on AUR_>`_ (**recommended**)
+    Main package based on the latest release (|version| at time of writing).
+
+`cahute-git <cahute-git on AUR_>`_
+    Alternative package based on the latest development version, i.e.
+    latest commit on the ``develop`` branch of the Git repository.
+
+In order to install any of them, you can pop up your favourite pacman frontend
+and install the package:
 
 * Using paru_::
 
@@ -29,10 +39,89 @@ for access to serial and USB devices, by running the following command
 
     usermod -a -G uucp <your-username>
 
+.. _install-guide-linux-aur-mingw:
+
+|archlinux| Installing Cahute on Archlinux and derivatives for MinGW development, using the AUR
+-----------------------------------------------------------------------------------------------
+
+The Cahute library can be installed for MinGW development, i.e.
+cross-development for :ref:`Win32/Win64 <feature-topic-system-win32>`
+using the `MinGW-w64`_ project, through the following packages
+on the `Archlinux User Repository`_:
+
+`mingw-w64-cahute <mingw-w64-cahute on AUR_>`_ (**recommended**)
+    Main package based on the latest release (|version| at time of writing).
+
+`mingw-w64-cahute-git <mingw-w64-cahute-git on AUR_>`_
+    Alternative package based on the latest development version, i.e.
+    latest commit on the ``develop`` branch of the Git repository.
+
+In order to install any of them, you can pop up your favourite pacman frontend
+and install the package:
+
+* Using paru_::
+
+    paru -S mingw-w64-cahute
+
+* Using pikaur_::
+
+    pikaur -S mingw-w64-cahute
+
+.. _install-guide-linux-deb:
+
+|debian| Installing Cahute on Debian and derivatives for local use and development, using APT
+---------------------------------------------------------------------------------------------
+
+.. warning::
+
+    This method is not yet available; see `#8
+    <https://gitlab.com/cahute/cahute/-/issues/8>`_ for more
+    information.
+
+    In the mean time, you can use one of the following methods as an
+    alternative:
+
+    * :ref:`install-guide-linux-giteapc`
+    * :ref:`install-guide-linux-other`
+
+.. _install-guide-linux-redhat:
+
+|redhat| Installing Cahute on RHEL and derivatives for local use and development, using RPM
+-------------------------------------------------------------------------------------------
+
+.. warning::
+
+    This method is not yet available; see `#85
+    <https://gitlab.com/cahute/cahute/-/issues/85>`_ for more
+    information.
+
+    In the mean time, you can use one of the following methods as an
+    alternative:
+
+    * :ref:`install-guide-linux-giteapc`
+    * :ref:`install-guide-linux-other`
+
+.. _install-guide-linux-void:
+
+|void| Installing Cahute on Voidlinux and derivatives for local use and development, using XBPS
+-----------------------------------------------------------------------------------------------
+
+.. warning::
+
+    This method is not yet available; see `#72
+    <https://gitlab.com/cahute/cahute/-/issues/72>`_ for more
+    information.
+
+    In the mean time, you can use one of the following methods as an
+    alternative:
+
+    * :ref:`install-guide-linux-giteapc`
+    * :ref:`install-guide-linux-other`
+
 .. _install-guide-linux-giteapc:
 
-|lephe| Installing Cahute on any Linux distribution, using GiteaPC
-------------------------------------------------------------------
+|lephe| Installing Cahute on any Linux distribution for local use and development, using GiteaPC
+------------------------------------------------------------------------------------------------
 
 Cahute and its command-line utilities are installable through GiteaPC_,
 by running the following command:
@@ -82,8 +171,21 @@ by running the following command:
     Then restart the login session or host to ensure that the new group applies
     to your new session.
 
-Installing Cahute on other distributions
-----------------------------------------
+.. _install-guide-linux-giteapc-gint:
+
+|lephe| Installing Cahute on any Linux distribution for gint development, using GiteaPC
+---------------------------------------------------------------------------------------
+
+.. warning::
+
+    This method is not yet available; see `#113
+    <https://gitlab.com/cahute/cahute/-/issues/113>`_ for more
+    information.
+
+.. _install-guide-linux-other:
+
+|linux| Installing Cahute on other distributions
+------------------------------------------------
 
 .. note::
 
@@ -91,13 +193,19 @@ Installing Cahute on other distributions
     distribution. Please check with your distribution's package registry
     and/or wiki before proceeding!
 
-If no package exists for your distribution, or you are to package Cahute for
-your distribution, you can build the project yourself.
+If no package exists for your distribution and/or use case, or you are to
+package Cahute for your distribution, you can build the project yourself.
 
 See :ref:`build-guide-linux` for more information.
 
 .. _Archlinux User Repository: https://aur.archlinux.org/
+.. _MinGW-w64: https://www.mingw-w64.org/
 .. _cahute on AUR: https://aur.archlinux.org/packages/cahute
+.. _cahute-git on AUR: https://aur.archlinux.org/packages/cahute-git
+.. _mingw-w64-cahute on AUR:
+    https://aur.archlinux.org/packages/mingw-w64-cahute
+.. _mingw-w64-cahute-git on AUR:
+    https://aur.archlinux.org/packages/mingw-w64-cahute-git
 .. _p7 on AUR: https://aur.archlinux.org/packages/p7
 .. _p7screen on AUR: https://aur.archlinux.org/packages/p7screen
 .. _paru: https://github.com/morganamilo/paru
@@ -106,5 +214,8 @@ See :ref:`build-guide-linux` for more information.
 .. _udev: https://wiki.archlinux.org/title/Udev
 
 .. |linux| image:: linux.svg
+.. |debian| image:: debian.svg
+.. |redhat| image:: redhat.svg
 .. |archlinux| image:: arch.svg
+.. |void| image:: voidlinux.svg
 .. |lephe| image:: lephe.png
