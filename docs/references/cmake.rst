@@ -131,14 +131,6 @@ The following variables are specific to Cahute.
     This is set to ``shared`` on :ref:`feature-topic-system-win32`, and
     to ``static`` on other platforms.
 
-.. _cmake-ref-setting-cahute-static:
-
-``CAHUTE_STATIC``
-    Build the Cahute library as a static library.
-
-    This is disabled by default on Win32, and enabled by default on other
-    platforms.
-
 .. _cmake-ref-setting-cahute-libusb:
 
 ``CAHUTE_LIBUSB``
