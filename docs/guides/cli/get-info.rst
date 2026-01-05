@@ -34,7 +34,8 @@ If you are using serial
 
 The steps are the following:
 
-1. Connect the calculator to the PC using a USB to serial cable.
+1. Connect the calculator to the PC using a USB to serial cable;
+   see :ref:`protocol-topic-cables-usb-3pin` for more information.
 2. Configure the calculator to use serial and data transfer, and place
    the calculator in standby mode.
 3. Find out which serial port your calculator is connected on.
