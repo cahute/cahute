@@ -7,8 +7,8 @@
 
     In order to install Cahute on Linux, it is recommended to use one of the
     methods described in :ref:`install-guide-linux`. However, if Cahute is not
-    available for your system, or if you wish to build it manually, this guide
-    is for you.
+    available for your distribution, or if you wish to build it manually, this
+    guide is for you.
 
 The following building methods are available.
 
@@ -74,6 +74,47 @@ package manager. A few examples are the following:
 
       xbps-install cmake python3 python3-toml libusb-devel sdl2-devel
 
+.. _build-guide-linux-sh-group:
+
+Finding out the device group
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. warning::
+
+    This section assumes you have udev_, which is provided along with systemd.
+    If your distribution does not use systemd, such as `Artix Linux`_ or
+    Devuan_, you must skip this section.
+
+.. note::
+
+    If you do not wish to make USB and serial devices accessible to your user,
+    you can skip this section.
+
+On Linux distributions, serial devices such as ``/dev/ttyUSB*`` are usually
+assigned a group by udev_. Said group varies depending on your distribution,
+even though it usually is either ``dialout`` or ``uucp``.
+
+You can usually find out which group to use by checking the owner of any
+``/dev/ttyS*`` device, by running the following command:
+
+.. code-block:: bash
+
+    ls -l /dev/ttyS*
+
+On Arch Linux, the output of this command resembles the following:
+
+.. parsed-literal::
+
+    crw-rw---- 1 root **uucp** 4, 64 20 janv. 15:49 /dev/ttyS0
+    crw-rw---- 1 root **uucp** 4, 65 20 janv. 15:49 /dev/ttyS1
+    ...
+
+Which means that, in this case, the name of the device group is ``uucp``.
+
+If this method fails, you need to check what your distribution uses.
+Check the documentation and/or community of your distribution for something
+along "System groups" or "tty".
+
 Building the project
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -82,28 +123,13 @@ directory aside it, and install from it, by running the following commands:
 
 .. parsed-literal::
 
-    cmake -B build -S cahute-|version| -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
+    cmake -B build -S cahute-|version| -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DCAHUTE_UDEV_GROUP=\ *<your_device_group>*
     cmake --build build
 
 .. warning::
 
-    If you plan on installing the udev rules (*enabled by default*) to access
-    your calculator(s) by USB without needing root privileges every time:
-
-    * It is recommended you set the :ref:`CAHUTE_UDEV_GROUP
-      <cmake-ref-setting-cahute-udev-group>` setting to a value appropriate
-      for your distribution, e.g. ``-DCAHUTE_UDEV_GROUP=uucp`` or
-      ``-DCAHUTE_UDEV_GROUP=dialout``.
-
-      See :ref:`the related note
-      <cmake-ref-setting-cahute-udev-group-choose>` for more information;
-    * You **must not set** :ref:`CAHUTE_UDEV_GROUP
-      <cmake-ref-setting-cahute-udev-group>` **to the name of your (or any)
-      user group**, but to a system group, as recent versions of udev no longer
-      allow user groups to obtain access to devices.
-
-      See :ref:`the related warning
-      <cmake-ref-setting-cahute-udev-group-system>` for more information.
+    If you have skipped :ref:`build-guide-linux-sh-group`, replace
+    ``-DCAHUTE_UDEV_GROUP=...`` with ``-DCAHUTE_UDEV=OFF``.
 
 .. note::
 
@@ -132,27 +158,61 @@ you can use the following command:
 
     DESTDIR=./dist cmake --install build --strip
 
+Loading the new udev rules
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. warning::
 
-    For communicating with calculators over USB and serial, Cahute library
-    and command-line utilities require access to such devices.
+    If you have skipped :ref:`build-guide-linux-sh-group`, you must skip
+    this section.
 
-    For serial devices, this is traditionally represented by being a member
-    of the ``uucp`` group, defined as the group owner on ``/dev/ttyS*``
-    devices; you can check this by running ``ls -l /dev/ttyS*``.
-    However, by default, USB devices don't have such rules.
+In order to load the new udev rules, you must either run the following command,
+or reboot your system:
 
-    CMake automatically installs the udev rules, which means you need to
-    do the following:
+.. code-block:: bash
 
-    * Reload the udev daemon reload to apply the newly installed rules
-      on the running system without a reboot, with this command **as root**::
+    sudo udevadm control --reload
 
-          udevadm control --reload
+Providing access to USB and serial devices to your user
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    * Adding your user to the ``uucp`` group, then restarting your session::
+.. warning::
 
-          usermod -a -G uucp <your-username>
+    If you have skipped :ref:`build-guide-linux-sh-group`, you must skip
+    this section.
+
+In order to obtain access to both USB and serial devices as your current user,
+you must add the device group as a supplementary group to your user, by
+running the following command:
+
+.. parsed-literal::
+
+    sudo usermod -a -G *<your_device_group>* *<your_username>*
+
+For example, if your device group is ``dialout`` and your username is
+``john.cahute``, the command will be the following:
+
+.. code-block:: bash
+
+    sudo usermod -a -G dialout john.cahute
+
+.. note::
+
+    If you don't know your current username, you can find it out by running
+    the following command:
+
+    .. code-block:: bash
+
+        id -nu
+
+You must then either **log off completely then log in again**, or reboot your
+computer, for the new supplementary group to take effect.
+
+.. warning::
+
+    If you're using a desktop environment, locking the screen or putting your
+    computer in standby mode is **NOT** equivalent to logging off.
+    If in doubt, rebooting is a straightforward option in comparison.
 
 .. |linux| image:: ../install/linux.svg
 
@@ -168,6 +228,9 @@ you can use the following command:
 .. _pkg-config: https://git.sr.ht/~kaniini/pkgconf
 .. _SDL: https://www.libsdl.org/
 .. _libusb: https://libusb.info/
+.. _udev: https://wiki.archlinux.org/title/Udev
+.. _Artix Linux: https://artixlinux.org/
+.. _Devuan: https://www.devuan.org/
 
 .. _CMake Release undesired behaviour:
     https://wiki.archlinux.org/title/CMake_package_guidelines

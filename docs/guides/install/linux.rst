@@ -35,9 +35,12 @@ and install the package:
 
 Once installed, it is recommended to add your user to the ``uucp`` group,
 for access to serial and USB devices, by running the following command
-**as root** then restarting your session::
+**as root**::
 
     usermod -a -G uucp <your-username>
+
+Then, you must restart your session, either by logging off and on again, or
+by rebooting. You should then have access to the device!
 
 .. _install-guide-linux-aur-mingw:
 
@@ -130,6 +133,12 @@ by running the following command:
 
     giteapc install cahute/cahute@\ |version|
 
+.. warning::
+
+    **Do not close the terminal window once the command has finished.**
+    You may need information displayed in the log to continue following
+    this guide.
+
 .. note::
 
     By default, the logging level is set to ``warning``, and the command-line
@@ -143,33 +152,45 @@ by running the following command:
 
         giteapc install cahute/cahute@\ |version|\ :debug
 
-.. warning::
+Within the installation guides, you may see a warning such as the following:
 
-    If you are using GiteaPC on Linux, it is likely that your system is using
-    udev_. If this is the case, you must move the udev rule from the user
-    install directory to the system directory, by running the following
-    command:
+.. code-block:: text
 
-    .. code-block:: text
+    ********************************************************************
 
-        sudo mv ~/.local/lib/udev/rules.d/*.rules /etc/udev/rules.d/
+    The udev rules will be installed in the following directory:
 
-    From there, you must reload the rules to make sure they apply by running
-    the following command:
+        /home/your_user/.local/lib/udev/rules.d/
 
-    .. code-block:: text
+    You will need to copy them using the following command:
+
+        sudo cp /home/your_user/.local/lib/udev/rules.d/*.rules /etc/udev/rules.d/
+
+    Once installed, you will need to either reboot your computer,
+    or run the following command for the rules to be taken into
+    account:
 
         sudo udevadm control --reload-rules
 
-    If your user isn't already in the ``uucp`` group, you must also make that
-    the case by running the following command:
+    Then, add your user to the 'uucp' group, by running
+    the following command:
 
-    .. code-block:: text
+        sudo usermod -a -G uucp your_user
 
-        sudo usermod -a -G uucp <your_username>
+    Finally, either reboot your computer, or log off then onto the
+    computer for the new group to be taken into account.
 
-    Then restart the login session or host to ensure that the new group applies
-    to your new session.
+    ********************************************************************
+
+If this is the case, that means udev_ has been detected and support for it
+in Cahute has been enabled, thus, you must follow the instructions given in
+this block.
+
+.. warning::
+
+    Depending on your Linux distribution, the group might not be ``uucp``,
+    but another value such as ``dialout``. The safest option is to copy the
+    command directly!
 
 .. _install-guide-linux-giteapc-gint:
 
