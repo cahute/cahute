@@ -112,6 +112,18 @@ The following variables are specific to Cahute.
 
     This is enabled by default.
 
+.. _cmake-ref-setting-cahute-install-udevdir:
+
+``CAHUTE_INSTALL_UDEVDIR``
+    Path to the directory in which the udev configuration is assumed to be
+    stored.
+
+    If :ref:`CAHUTE_UDEV <cmake-ref-settings-cahute-udev>` is ``ON``, the
+    udev rules will be installed into ``${CAHUTE_INSTALL_UDEVDIR}/rules.d``.
+
+    By default, this is set to ``${CMAKE_INSTALL_LIBDIR}/udev``, e.g.
+    ``/usr/lib/udev`` on Linux.
+
 .. _cmake-ref-setting-cahute-library-type:
 
 ``CAHUTE_LIBRARY_TYPE``
@@ -128,7 +140,7 @@ The following variables are specific to Cahute.
     ``both``
         Build the library as both a static and a shared library.
 
-    This is set to ``shared`` on :ref:`feature-topic-system-win32`, and
+    This is set to ``both`` on :ref:`feature-topic-system-win32`, and
     to ``static`` on other platforms.
 
 .. _cmake-ref-setting-cahute-libusb:
@@ -143,6 +155,15 @@ The following variables are specific to Cahute.
 
     This is enabled by default on `platforms libusb support
     <libusb features_>`_.
+
+.. _cmake-ref-setting-cahute-pie:
+
+``CAHUTE_PIE``
+    Enable compiling libraries and executables as Position-Independent
+    (PIC, PIE).
+
+    This is enabled by default on Linux and Win32, and disabled by default
+    for other systems.
 
 .. _cmake-ref-setting-cahute-pkgconf:
 

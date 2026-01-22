@@ -23,6 +23,7 @@ endif()
 # Options.
 # ---
 
+include(GNUInstallDirs)
 include(CMakeDependentOption)
 
 set(CAHUTE_APPSTREAM OFF CACHE BOOL
@@ -55,8 +56,11 @@ set_property(CACHE CAHUTE_DEFAULT_LOGLEVEL PROPERTY STRINGS
 set(CAHUTE_GIT ON CACHE BOOL
     "Include git-related information if available?")
 
+set(CAHUTE_INSTALL_UDEVDIR "${CMAKE_INSTALL_LIBDIR}/udev" CACHE STRING
+    "Path in which to install udev rules?")
+
 if(WIN32)
-    set(_DEFAULT_LIBRARY_TYPE "shared")
+    set(_DEFAULT_LIBRARY_TYPE "both")
 else()
     set(_DEFAULT_LIBRARY_TYPE "static")
 endif()
@@ -73,6 +77,15 @@ endif()
 
 set(CAHUTE_LIBUSB ${_DEFAULT_LIBUSB} CACHE BOOL
     "Enable usage of libusb?")
+
+if(LINUX OR WIN32)
+    set(_DEFAULT_PIE ON)
+else()
+    set(_DEFAULT_PIE OFF)
+endif()
+
+set(CAHUTE_PIE ${_DEFAULT_PIE} CACHE BOOL
+    "Enable compiling the executables as Position-Independent (PIE)?")
 
 set(CAHUTE_PKGCONF ON CACHE BOOL
     "Enable installation of pkgconf files?")
@@ -150,8 +163,13 @@ else()
     set(USE_SDL OFF)
 endif()
 
-include(GNUInstallDirs)
 include(CheckTypeSize)
+
+if(CAHUTE_PIE)
+    include(CheckPIESupported)
+
+    check_pie_supported()
+endif()
 
 if(USE_LIBUSB)
     find_package(PkgConfig REQUIRED)
@@ -233,14 +251,6 @@ else()
     else()
         set(CLI_CAHUTE_DEP "cahute-static")
     endif()
-endif()
-
-# CLI_PIE represents whether we should build the command-line utilities with
-# -fPIE (or equivalent).
-if(LINUX OR WIN32)
-    set(CLI_PIE ON)
-else()
-    set(CLI_PIE OFF)
 endif()
 
 # LIB_INCLUDE_DIRS represents the directories to include in order to compile
@@ -583,19 +593,37 @@ add_custom_command(
     VERBATIM
 )
 
-add_library(cahute OBJECT ${LIB_SOURCES})
-add_dependencies(cahute cahute-headers)
-target_include_directories(cahute PRIVATE
-    ${LIB_INCLUDE_DIRS}
-    "${CMAKE_SOURCE_DIR}/lib")
-target_compile_definitions(cahute PRIVATE
-    ${LIB_COMPILE_DEFS})
-if(BUILD_SHARED)
-    set_property(TARGET cahute PROPERTY POSITION_INDEPENDENT_CODE ON)
+if(BUILD_SHARED OR (BUILD_STATIC AND CAHUTE_PIE))
+    add_library(cahute-pic OBJECT ${LIB_SOURCES})
+    set_property(TARGET cahute-pic PROPERTY POSITION_INDEPENDENT_CODE ON)
+    add_dependencies(cahute-pic cahute-headers)
+    target_include_directories(cahute-pic PRIVATE
+        ${LIB_INCLUDE_DIRS}
+        "${CMAKE_SOURCE_DIR}/lib")
+    target_compile_definitions(cahute-pic PRIVATE
+        ${LIB_COMPILE_DEFS})
+endif()
+
+if(BUILD_STATIC AND NOT CAHUTE_PIE)
+    add_library(cahute-pdc OBJECT ${LIB_SOURCES})
+    add_dependencies(cahute-pdc cahute-headers)
+    target_include_directories(cahute-pdc PRIVATE
+        ${LIB_INCLUDE_DIRS}
+        "${CMAKE_SOURCE_DIR}/lib")
+    target_compile_definitions(cahute-pdc PRIVATE
+        ${LIB_COMPILE_DEFS})
 endif()
 
 if(BUILD_STATIC)
-    add_library(cahute-static STATIC $<TARGET_OBJECTS:cahute>)
+    # If BUILD_SHARED is enabled, we can only reuse the "cahute-base" target
+    # if CAHUTE_PIE is also enabled, otherwise we need to recompile them
+    # without position-independent switches enabled.
+    if(CAHUTE_PIE)
+        add_library(cahute-static STATIC $<TARGET_OBJECTS:cahute-pic>)
+    else()
+        add_library(cahute-static STATIC $<TARGET_OBJECTS:cahute-pdc>)
+    endif()
+
     set_target_properties(cahute-static PROPERTIES OUTPUT_NAME "cahute-static")
 
     if(CAHUTE_PKGCONF)
@@ -615,7 +643,7 @@ if(BUILD_STATIC)
 endif()
 
 if(BUILD_SHARED)
-    add_library(cahute-shared SHARED $<TARGET_OBJECTS:cahute>)
+    add_library(cahute-shared SHARED $<TARGET_OBJECTS:cahute-pic>)
     set_target_properties(cahute-shared PROPERTIES OUTPUT_NAME "cahute")
     set_target_properties(cahute-shared PROPERTIES SOVERSION
         "${PROJECT_VERSION_PUBLIC}")
@@ -656,12 +684,12 @@ if(CAHUTE_UDEV)
 
     install(
         FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/60-casio-calculators.rules
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/udev/rules.d"
+        DESTINATION "${CAHUTE_INSTALL_UDEVDIR}/rules.d"
         COMPONENT udev
     )
     if(CAHUTE_APPSTREAM)
         install(
-            FILES ${CMAKE_CURRENT_SOURCE_DIR}/misc/org.cahuteproject.metainfo.xml
+            FILES ${CMAKE_CURRENT_SOURCE_DIR}/misc/org.cahuteproject.cahute.metainfo.xml
             DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
             COMPONENT udev
         )
@@ -680,7 +708,9 @@ if(CAHUTE_CLI_CAS)
         cli/common.c
         cli/options.c
     )
-    set_property(TARGET CaS PROPERTY POSITION_INDEPENDENT_CODE ${CLI_PIE})
+    if(CAHUTE_PIE)
+        set_property(TARGET CaS PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
     target_link_libraries(CaS PRIVATE ${CLI_LIBRARIES})
     target_include_directories(CaS PRIVATE ${CLI_INCLUDE_DIRS})
 
@@ -697,7 +727,9 @@ if(CAHUTE_CLI_P7)
         cli/common.c
         cli/options.c
     )
-    set_property(TARGET p7 PROPERTY POSITION_INDEPENDENT_CODE ${CLI_PIE})
+    if(CAHUTE_PIE)
+        set_property(TARGET p7 PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
     target_link_libraries(p7 PRIVATE ${CLI_LIBRARIES})
     target_include_directories(p7 PRIVATE ${CLI_INCLUDE_DIRS})
 
@@ -724,7 +756,9 @@ if(CAHUTE_CLI_P7OS)
         cli/options.c
         "${CMAKE_CURRENT_BINARY_DIR}/cli/fxremote-update.exe.bin.c"
     )
-    set_property(TARGET p7os PROPERTY POSITION_INDEPENDENT_CODE ${CLI_PIE})
+    if(CAHUTE_PIE)
+        set_property(TARGET p7os PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
     target_link_libraries(p7os PRIVATE ${CLI_LIBRARIES})
     target_include_directories(p7os PRIVATE ${CLI_INCLUDE_DIRS})
 
@@ -741,7 +775,9 @@ if(CAHUTE_CLI_P7SCREEN)
         cli/common.c
         cli/options.c
     )
-    set_property(TARGET p7screen PROPERTY POSITION_INDEPENDENT_CODE ${CLI_PIE})
+    if(CAHUTE_PIE)
+        set_property(TARGET p7screen PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
     target_link_libraries(p7screen PRIVATE
         ${CLI_LIBRARIES}
         ${SDL2_LIBRARIES}
@@ -764,7 +800,9 @@ if(CAHUTE_CLI_XFER9860)
         cli/common.c
         cli/options.c
     )
-    set_property(TARGET xfer9860 PROPERTY POSITION_INDEPENDENT_CODE ${CLI_PIE})
+    if(CAHUTE_PIE)
+        set_property(TARGET xfer9860 PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
     target_link_libraries(xfer9860 PRIVATE ${CLI_LIBRARIES})
     target_include_directories(xfer9860 PRIVATE ${CLI_INCLUDE_DIRS})
 
@@ -866,55 +904,52 @@ if(CAHUTE_UDEV)
     set(COMP_UDEV_DEP "udev")
     cpack_add_component(udev
         DISPLAY_NAME "libcahute device access"
-        DESCRIPTION "udev rules for interacting with CASIO calculators.\n\nThis package provides udev rules for CASIO calculators over USB."
+        DESCRIPTION "udev rules for interacting with CASIO calculators.\nThis package provides udev rules for CASIO calculators over USB."
         INSTALL_TYPES full dev min)
 endif()
 cpack_add_component(lib_runtime
     DISPLAY_NAME "libcahute runtime files"
-    DESCRIPTION "Library for interacting with CASIO calculators and related data.\n\nThis package contains what you need to run programs that use this library."
+    DESCRIPTION "Library for interacting with CASIO calculators and related data\nThis package contains what you need to run programs that use this library."
     REQUIRED
     DEPENDS ${COMP_UDEV_DEP}
     INSTALL_TYPES full dev min)
 cpack_add_component(lib_dev
     DISPLAY_NAME "libcahute development files"
-    DESCRIPTION "Library for interacting with CASIO calculators and related data.\n\nThis package contains what you need for compiling sources that use this library in your own code."
+    DESCRIPTION "Library for interacting with CASIO calculators and related data\nThis package contains what you need for compiling sources that use this library\nin your own code."
     DEPENDS lib_runtime
     INSTALL_TYPES full dev)
 
 cpack_add_component_group(cli
     DISPLAY_NAME "Cahute command-line utilities"
-    DESCRIPTION "Command-line utilities for interacting with CASIO calculators and related data.")
+    DESCRIPTION "Command-line utilities for CASIO calculators.")
 
 cpack_add_component(cli_cas
     DISPLAY_NAME "CaS command-line utility"
-    DESCRIPTION "Command-line utility for transferring to and from CASIO calculators' main
-memory."
+    DESCRIPTION "Main memory transfer utility for CASIO calculators\nThis utility allows one to send and receive main memory data to and from a\nCASIO calculator of any generation, such as programs, lists, matrixes,\nand so on, over USB or serial cables."
     GROUP cli
     DEPENDS lib_runtime
     INSTALL_TYPES full min)
 cpack_add_component(cli_p7
     DISPLAY_NAME "p7 command-line utility"
-    DESCRIPTION "Command-line utility for transferring to and from CASIO calculators' storage
-memory."
+    DESCRIPTION "Storage memory transfer utility for CASIO calculators\nThis utility allows one to send and receive files to and from a CASIO\ncalculator's storage (flash or SD card) memory, over USB or serial cables."
     GROUP cli
     DEPENDS lib_runtime
     INSTALL_TYPES full min)
 cpack_add_component(cli_p7os
     DISPLAY_NAME "p7os command-line utility"
-    DESCRIPTION "Command-line utility for interacting with CASIO calculators' system."
+    DESCRIPTION "System management utility for CASIO calculators\nThis utility allows one to flash or backup a CASIO calculator's system, over\nUSB or serial cables."
     GROUP cli
     DEPENDS lib_runtime
     INSTALL_TYPES full min)
 cpack_add_component(cli_p7screen
     DISPLAY_NAME "p7screen command-line utility"
-    DESCRIPTION "Command-line utility for projecting CASIO calculators' screen onto a computer."
+    DESCRIPTION "Virtual projector for CASIO calculators\nThis utility allows one to display the screen of a CASIO calculator in\n'Projector' or similar mode as a window, over USB cables."
     GROUP cli
     DEPENDS lib_runtime
     INSTALL_TYPES full min)
 cpack_add_component(cli_xfer9860
     DISPLAY_NAME "xfer9860 command-line utility"
-    DESCRIPTION "Command-line utility for transferring to and from CASIO calculators' storage
-memory."
+    DESCRIPTION "Storage memory transfer utility for CASIO calculators\nThis utility allows one to send and receive files to and from a CASIO\ncalculator's storage (flash or SD card) memory, over USB or serial cables."
     GROUP cli
     DEPENDS lib_runtime
     INSTALL_TYPES full min)
@@ -926,7 +961,9 @@ set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION ON)
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
 set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS OFF)
 set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS_POLICY ">=")
-if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
+if(DEFINED CPACK_DEBIAN_PACKAGE_ARCHITECTURE)
+    # No need to redefine it.
+elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "i386" OR ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "i686")
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "i386")

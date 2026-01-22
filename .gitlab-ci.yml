@@ -5,15 +5,11 @@ stages:
   - lint packages
   - publish
 
-pre-commit:
-    stage: lint
-    rules:
-        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    image: registry.gitlab.com/cahute/docker-images/pre-commit:latest
-    script:
-        - pre-commit run -v --all-files
+# ---
+# Abstract jobs.
+# ---
 
-build (x86_64-pc-linux-gnu):
+.build:
     stage: build
     rules:
         - if: $CI_COMMIT_BRANCH == "develop"
@@ -27,166 +23,38 @@ build (x86_64-pc-linux-gnu):
           - "lib/**/*"
           - "CMakeLists.txt"
           - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahute/docker-images/x86_64-pc-linux-gnu:latest
     script:
-        - >
-            cmake -B build-x86_64-pc-linux-gnu -S .
-            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
-            -DCAHUTE_LIBRARY_TYPE=both -DCMAKE_INSTALL_PREFIX=/usr
-            -DCAHUTE_APPSTREAM=ON
-        - cmake --build build-x86_64-pc-linux-gnu
+        - ./misc/build.sh
+    variables:
+        CMAKE_BUILD_TYPE: "Release"
+        CAHUTE_CLI_EXPERIMENTAL: "ON"
     artifacts:
         paths:
-            - build-x86_64-pc-linux-gnu
+            - build
 
-build (arm-pc-linux-gnueabihf):
-    stage: build
-    rules:
-        - if: $CI_COMMIT_BRANCH == "develop"
-        - if: $CI_COMMIT_TAG
-        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-          changes:
-          - "chars/**/*"
-          - "cli/**/*"
-          - "common/**/*"
-          - "include/**/*"
-          - "lib/**/*"
-          - "CMakeLists.txt"
-          - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahute/docker-images/arm-pc-linux-gnueabihf:latest
-    script:
-        - >
-            cmake -B build-arm-pc-linux-gnueabihf -S .
-            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
-            -DCAHUTE_LIBRARY_TYPE=both -DCMAKE_INSTALL_PREFIX=/usr
-        - cmake --build build-arm-pc-linux-gnueabihf
+.build (debian):
+    extends: .build
+    variables:
+        CMAKE_INSTALL_LIBDIR:
+            value: "/usr/lib/$DEB_HOST_MULTIARCH"
+            expand: true
+        CMAKE_INSTALL_PREFIX: "/usr"
+        CAHUTE_APPSTREAM: "ON"
+        CAHUTE_INSTALL_UDEVDIR: "/usr/lib/udev"
+        CAHUTE_LIBRARY_TYPE: "both"
+        CAHUTE_UDEV: "ON"
+        CAHUTE_UDEV_GROUP: "dialout"
 
-build (arm-pc-linux-musleabihf):
-    stage: build
-    rules:
-        - if: $CI_COMMIT_BRANCH == "develop"
-        - if: $CI_COMMIT_TAG
-        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-          changes:
-          - "chars/**/*"
-          - "cli/**/*"
-          - "common/**/*"
-          - "include/**/*"
-          - "lib/**/*"
-          - "CMakeLists.txt"
-          - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahute/docker-images/arm-pc-linux-musleabihf:latest
-    script:
-        - >
-            cmake -B build-arm-pc-linux-musleabihf -S .
-            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
-            -DCAHUTE_LIBRARY_TYPE=both -DCMAKE_INSTALL_PREFIX=/usr
-        - cmake --build build-arm-pc-linux-musleabihf
+.build (arch):
+    extends: .build
+    variables:
+        CMAKE_INSTALL_PREFIX: "/usr"
+        CAHUTE_LIBRARY_TYPE: "both"
+        CAHUTE_UDEV: "ON"
+        CAHUTE_UDEV_GROUP: "uucp"
 
-build (i686-w64-mingw32-msvcrt):
-    stage: build
-    rules:
-        - if: $CI_COMMIT_BRANCH == "develop"
-        - if: $CI_COMMIT_TAG
-        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-          changes:
-          - "chars/**/*"
-          - "cli/**/*"
-          - "common/**/*"
-          - "include/**/*"
-          - "lib/**/*"
-          - "CMakeLists.txt"
-          - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahute/docker-images/i686-w64-mingw32-msvcrt:latest
-    script:
-        - >
-            cmake -B build-i686-w64-mingw32-msvcrt -S .
-            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
-        - cmake --build build-i686-w64-mingw32-msvcrt
-
-build (i686-w64-mingw32-ucrt):
-    stage: build
-    rules:
-        - if: $CI_COMMIT_BRANCH == "develop"
-        - if: $CI_COMMIT_TAG
-        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-          changes:
-          - "chars/**/*"
-          - "cli/**/*"
-          - "common/**/*"
-          - "include/**/*"
-          - "lib/**/*"
-          - "CMakeLists.txt"
-          - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahute/docker-images/i686-w64-mingw32-ucrt:latest
-    script:
-        - >
-            cmake -B build-i686-w64-mingw32-ucrt -S .
-            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
-        - cmake --build build-i686-w64-mingw32-ucrt
-
-build (x86_64-w64-mingw32-msvcrt):
-    stage: build
-    rules:
-        - if: $CI_COMMIT_BRANCH == "develop"
-        - if: $CI_COMMIT_TAG
-        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-          changes:
-          - "chars/**/*"
-          - "cli/**/*"
-          - "common/**/*"
-          - "include/**/*"
-          - "lib/**/*"
-          - "CMakeLists.txt"
-          - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahute/docker-images/x86_64-w64-mingw32-msvcrt:latest
-    script:
-        - >
-            cmake -B build-x86_64-w64-mingw32-msvcrt -S .
-            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
-        - cmake --build build-x86_64-w64-mingw32-msvcrt
-
-build (x86_64-w64-mingw32-ucrt):
-    stage: build
-    rules:
-        - if: $CI_COMMIT_BRANCH == "develop"
-        - if: $CI_COMMIT_TAG
-        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-          changes:
-          - "chars/**/*"
-          - "cli/**/*"
-          - "common/**/*"
-          - "include/**/*"
-          - "lib/**/*"
-          - "CMakeLists.txt"
-          - ".gitlab-ci.yml"
-    image: registry.gitlab.com/cahute/docker-images/x86_64-w64-mingw32-ucrt:latest
-    script:
-        - >
-            cmake -B build-x86_64-w64-mingw32-ucrt -S .
-            -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
-        - cmake --build build-x86_64-w64-mingw32-ucrt
-
-build (m68k-amigaos):
-    stage: build
-    rules:
-        - if: $CI_COMMIT_BRANCH == "develop"
-        - if: $CI_COMMIT_TAG
-        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-          changes:
-          - "chars/**/*"
-          - "cli/**/*"
-          - "common/**/*"
-          - "include/**/*"
-          - "lib/**/*"
-          - "CMakeLists.txt"
-          - ".gitlab-ci.yml"
-    image: amigadev/crosstools:m68k-amigaos
-    before_script:
-        - apt-get update -y && apt-get install -y python3 python3-toml
-    script:
-        - cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCAHUTE_CLI_EXPERIMENTAL=ON
-        - cmake --build build
+.build (mingw-w64):
+    extends: .build
 
 .build docs:
     stage: build
@@ -196,6 +64,121 @@ build (m68k-amigaos):
     artifacts:
         paths:
             - docs/_build/html
+
+.package for debian:
+    stage: package
+    rules:
+        - if: $CI_COMMIT_BRANCH == "develop"
+        - if: $CI_COMMIT_TAG
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          changes:
+          - ".gitlab-ci.yml"
+          - "CMakeLists.txt"
+    script:
+        - cd build && cpack -G DEB
+    artifacts:
+        paths:
+            - build/*.deb
+
+.publish docs:
+    stage: publish
+    image: registry.gitlab.com/cahute/docker-images/rsync:latest
+    before_script:
+        - chmod 400 "$SSH_PRIVATE_KEY"
+        - ssh-add "$SSH_PRIVATE_KEY"
+    script:
+        - rsync -Prlt --delete docs/_build/html/ $UPLOAD_PATH
+    dependencies:
+        - build docs
+
+# ---
+# 'lint' stage jobs.
+# ---
+
+pre-commit:
+    stage: lint
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    image: registry.gitlab.com/cahute/docker-images/pre-commit:latest
+    script:
+        - pre-commit run -v --all-files
+
+# ---
+# 'build' stage jobs.
+# ---
+
+build (x86_64-pc-linux-gnu, debian):
+    extends: .build (debian)
+    image: registry.gitlab.com/cahute/docker-images/x86_64-pc-linux-gnu:latest
+    variables:
+        DEB_HOST_MULTIARCH: x86_64-linux-gnu
+
+build (x86_64-pc-linux-gnu, arch):
+    extends: .build (arch)
+    image: registry.gitlab.com/cahute/docker-images/x86_64-pc-linux-gnu:latest
+
+#build (i386-pc-linux-gnu, debian):
+#    extends: .build (debian)
+#    image: registry.gitlab.com/cahute/docker-images/i386-pc-linux-gnu:latest
+#    variables:
+#        DEB_HOST_MULTIARCH: i386-linux-gnu
+
+build (arm-pc-linux-gnueabihf, debian):
+    extends: .build (debian)
+    image: registry.gitlab.com/cahute/docker-images/arm-pc-linux-gnueabihf:latest
+    variables:
+        DEB_HOST_MULTIARCH: arm-linux-gnueabihf
+        CPACK_DEBIAN_PACKAGE_ARCHITECTURE: armhf
+
+build (aarch64-pc-linux-gnu, debian):
+    extends: .build (debian)
+    image: registry.gitlab.com/cahute/docker-images/aarch64-pc-linux-gnu:latest
+    variables:
+        DEB_HOST_MULTIARCH: aarch64-linux-gnu
+        CPACK_DEBIAN_PACKAGE_ARCHITECTURE: arm64
+
+build (powerpc64le-pc-linux-gnu, debian):
+    extends: .build (debian)
+    image: registry.gitlab.com/cahute/docker-images/powerpc64le-pc-linux-gnu:latest
+    variables:
+        DEB_HOST_MULTIARCH: powerpc64le-linux-gnu
+        CPACK_DEBIAN_PACKAGE_ARCHITECTURE: ppc64el
+
+#build (riscv64-pc-linux-gnu, debian):
+#    extends: .build (debian)
+#    image: registry.gitlab.com/cahute/docker-images/riscv64-pc-linux-gnu:latest
+#    variables:
+#        DEB_HOST_MULTIARCH: riscv64-pc-linux-gnu
+#        CPACK_DEBIAN_PACKAGE_ARCHITECTURE: riscv64
+
+build (s390x-pc-linux-gnu, debian):
+    extends: .build (debian)
+    image: registry.gitlab.com/cahute/docker-images/s390x-pc-linux-gnu:latest
+    variables:
+        DEB_HOST_MULTIARCH: s390x-linux-gnu
+        CPACK_DEBIAN_PACKAGE_ARCHITECTURE: s390x
+
+build (i686-w64-mingw32-msvcrt):
+    extends: .build (mingw-w64)
+    image: registry.gitlab.com/cahute/docker-images/i686-w64-mingw32-msvcrt:latest
+
+build (i686-w64-mingw32-ucrt):
+    extends: .build (mingw-w64)
+    image: registry.gitlab.com/cahute/docker-images/i686-w64-mingw32-ucrt:latest
+
+build (x86_64-w64-mingw32-msvcrt):
+    extends: .build (mingw-w64)
+    image: registry.gitlab.com/cahute/docker-images/x86_64-w64-mingw32-msvcrt:latest
+
+build (x86_64-w64-mingw32-ucrt):
+    extends: .build (mingw-w64)
+    image: registry.gitlab.com/cahute/docker-images/x86_64-w64-mingw32-ucrt:latest
+
+build (m68k-amigaos):
+    extends: .build
+    image: amigadev/crosstools:m68k-amigaos
+    before_script:
+        - apt-get update -y && apt-get install -y python3 python3-toml
 
 build next docs:
     extends: .build docs
@@ -214,6 +197,10 @@ build release docs:
     rules:
         - if: $CI_COMMIT_TAG
 
+# ---
+# 'package' stage jobs.
+# ---
+
 package source:
     stage: package
     rules:
@@ -229,30 +216,58 @@ package source:
             -DCAHUTE_CLI=OFF -DCAHUTE_GIT=OFF -DCAHUTE_LIBUSB=OFF
             -DCAHUTE_PKGCONF=OFF -DCAHUTE_SDL=OFF -DCAHUTE_UDEV=OFF
         - cpack --config build/CPackSourceConfig.cmake
+    dependencies: []
     artifacts:
         paths:
             - cahute-*.tar.gz
 
-package for debian (x86_64-pc-linux-gnu):
-    stage: package
-    rules:
-        - if: $CI_COMMIT_BRANCH == "develop"
-        - if: $CI_COMMIT_TAG
-        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-          changes:
-          - ".gitlab-ci.yml"
-          - "CMakeLists.txt"
+package for debian (amd64):
+    extends: .package for debian
     image: registry.gitlab.com/cahute/docker-images/x86_64-pc-linux-gnu:latest
-    script:
-        - cd build-* && cpack -G DEB
     dependencies:
-        - build (x86_64-pc-linux-gnu)
-    artifacts:
-        paths:
-            - build-*/*.deb
+        - build (x86_64-pc-linux-gnu, debian)
 
-# TODO: Enable Debian package linting on the CI; see #110 for more info.
-.lint debian packages (x86_64-pc-linux-gnu):
+#package for debian (i386):
+#    extends: .package for debian
+#    image: registry.gitlab.com/cahute/docker-images/i386-pc-linux-gnu:latest
+#    dependencies:
+#        - build (i386-pc-linux-gnu, debian)
+
+package for debian (armhf):
+    extends: .package for debian
+    image: registry.gitlab.com/cahute/docker-images/arm-pc-linux-gnueabihf:latest
+    dependencies:
+        - build (arm-pc-linux-gnueabihf, debian)
+
+package for debian (arm64):
+    extends: .package for debian
+    image: registry.gitlab.com/cahute/docker-images/aarch64-pc-linux-gnu:latest
+    dependencies:
+        - build (aarch64-pc-linux-gnu, debian)
+
+package for debian (ppc64el):
+    extends: .package for debian
+    image: registry.gitlab.com/cahute/docker-images/powerpc64le-pc-linux-gnu:latest
+    dependencies:
+        - build (powerpc64le-pc-linux-gnu, debian)
+
+#package for debian (riscv64):
+#    extends: .package for debian
+#    image: registry.gitlab.com/cahute/docker-images/riscv64-pc-linux-gnu:latest
+#    dependencies:
+#        - build (riscv64-pc-linux-gnu, debian)
+
+package for debian (s390x):
+    extends: .package for debian
+    image: registry.gitlab.com/cahute/docker-images/s390x-pc-linux-gnu:latest
+    dependencies:
+        - build (s390x-pc-linux-gnu, debian)
+
+# ---
+# 'lint packages' stage jobs.
+# ---
+
+lint debian packages:
     stage: lint packages
     rules:
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -261,20 +276,21 @@ package for debian (x86_64-pc-linux-gnu):
           - "CMakeLists.txt"
     image: registry.gitlab.com/cahute/docker-images/lintian:latest
     script:
-        - lintian build-*/*.deb
+        - >
+            lintian build/*.deb
+            --suppress-tags no-changelog,no-manual-page
     dependencies:
-        - package for debian (x86_64-pc-linux-gnu)
+        - package for debian (amd64)
+        #- package for debian (i386)
+        - package for debian (armhf)
+        - package for debian (arm64)
+        - package for debian (ppc64el)
+        #- package for debian (riscv64)
+        - package for debian (s390x)
 
-.publish docs:
-    stage: publish
-    image: registry.gitlab.com/cahute/docker-images/rsync:latest
-    before_script:
-        - chmod 400 "$SSH_PRIVATE_KEY"
-        - ssh-add "$SSH_PRIVATE_KEY"
-    script:
-        - rsync -Prlt --delete docs/_build/html/ $UPLOAD_PATH
-    dependencies:
-        - build docs
+# ---
+# 'publish' stage jobs.
+# ---
 
 publish next docs:
     extends: .publish docs
