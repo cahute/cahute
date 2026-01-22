@@ -23,7 +23,7 @@
 
         * - |system-win|
           - :ref:`feature-topic-system-windows`
-          - * :ref:`As dependency on Visual Studio
+          - * :ref:`As a dependency on Visual Studio
               <install-guide-windows-vcpkg>`
             * :ref:`On Windows 2000+ <install-guide-windows-msi>`
             * :ref:`On Windows 1.0+ <install-guide-windows-old>`

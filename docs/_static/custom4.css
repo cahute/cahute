@@ -130,6 +130,27 @@ figcaption > p {
 .system-name {
     padding: 0 1em;
     text-align: center;
+    grid-row: span 2;
+}
+
+.system-install-guides, .system-build-guides {
+    grid-row: span 2;
+}
+
+@media (max-width: 45em) {
+.system-list {
+    grid-template-columns: 10em 1fr;
+}
+
+.system-install-guides, .system-build-guides {
+    grid-row: span 1;
+}
+}
+
+@media (max-width: 30em) {
+.system-list {
+    grid-template-columns: 1fr;
+}
 }
 
 .system-name img {
