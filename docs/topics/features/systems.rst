@@ -73,69 +73,50 @@ See :ref:`build-guide-linux` for more information.
 |archlinux| Archlinux and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. include:: ../../guides/_system_guides_arch.rst
+
 Archlinux_ is a Linux distribution based on the Pacman_ / libalpm_ package
 manager.
 Many distributions are based on it, with one of the more well-known ones being
 Manjaro_. It uses the `GNU C library`_.
-
-The following guides apply to Archlinux and derivatives:
-
-* :ref:`install-guide-linux-aur`
-* :ref:`install-guide-linux-aur-mingw`
-* :ref:`install-guide-linux-giteapc`
-* :ref:`install-guide-linux-giteapc-gint`
-* :ref:`build-guide-linux`
 
 .. _feature-topic-system-debian:
 
 |debian| Debian and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. include:: ../../guides/_system_guides_debian.rst
+
 Debian_ is a Linux distribution based on APT_ (*Advanced Package Tool*).
 Many distributions are based on it, with some of the more well-known ones
 being Ubuntu_ and `Linux Mint`_. It uses the `GNU C library`_.
-
-The following guides apply to Debian and derivatives:
-
-* :ref:`install-guide-linux-deb`
-* :ref:`install-guide-linux-giteapc`
-* :ref:`install-guide-linux-giteapc-gint`
-* :ref:`build-guide-linux`
 
 .. _feature-topic-system-redhat:
 
 |redhat| RHEL and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. include:: ../../guides/_system_guides_redhat.rst
+
 RHEL_ (*Red Hat Enterprise Linux*) is a Linux distribution made by `Red Hat`_
 and based on RPM_. Some distributions are based on it, including CentOS_.
-
-The following guides apply to RHEL and derivatives:
-
-* :ref:`install-guide-linux-redhat`
-* :ref:`install-guide-linux-giteapc`
-* :ref:`install-guide-linux-giteapc-gint`
-* :ref:`build-guide-linux`
 
 .. _feature-topic-system-void:
 
 |void| Void Linux
 ~~~~~~~~~~~~~~~~~
 
+.. include:: ../../guides/_system_guides_voidlinux.rst
+
 `Void Linux`_ is a Linux distribution based on XBPS_ (*X Binary Package
 System*). It uses the `musl libc`_.
-
-The following guides apply to Void Linux:
-
-* :ref:`install-guide-linux-void`
-* :ref:`install-guide-linux-giteapc`
-* :ref:`install-guide-linux-giteapc-gint`
-* :ref:`build-guide-linux`
 
 .. _feature-topic-system-macos:
 
 |apple| macOS, OS X
 -------------------
+
+.. include:: ../../guides/_system_guides_macos.rst
 
 `macOS / OS X`_ is, in this context, an alias for Darwin_, a system based on
 XNU_ developed by Apple_ for its Mac_ computers, among others.
@@ -155,11 +136,6 @@ Installation on macOS / OS X of Cahute is done via Homebrew_, which requires
 macOS Sonoma (14) or higher; see :ref:`install-guide-macos` and `Homebrew macOS
 requirements`_ for more information.
 
-The following guides apply to macOS / OS X:
-
-* :ref:`install-guide-macos-homebrew`
-* :ref:`build-guide-macos`
-
 .. _feature-topic-system-freebsd:
 
 |freebsd| FreeBSD
@@ -168,6 +144,8 @@ The following guides apply to macOS / OS X:
 .. warning::
 
     FreeBSD is not yet supported as an official target by Cahute.
+
+.. include:: ../../guides/_system_guides_freebsd.rst
 
 FreeBSD_ is a BSD-derived system.
 
@@ -180,12 +158,16 @@ FreeBSD_ is a BSD-derived system.
 
     NetBSD is not yet supported as an official target by Cahute.
 
+.. include:: ../../guides/_system_guides_netbsd.rst
+
 NetBSD_ is a BSD-derived system.
 
 .. _feature-topic-system-windows:
 
 |win| Microsoft Windows
 -----------------------
+
+.. include:: ../../guides/_system_guides_win.rst
 
 `Microsoft Windows`_ is a family of operating systems made by Microsoft_
 since the 1980s, bearing multiple programmation interfaces, described in the
@@ -211,11 +193,6 @@ It is supported by the following systems:
   (NT 5.0).
 
 See :ref:`internals-topic-win16` for more information.
-
-The following guides apply to Win16-based systems:
-
-* :ref:`install-guide-windows-old`
-* :ref:`build-guide-windows-ow-win16`
 
 .. _feature-topic-system-win32:
 
@@ -254,16 +231,6 @@ details.
 Cahute currently supports Win32 starting from `Windows 2000`_ (NT 5.0), for
 both the UCRT and MSVCRT runtimes. See :ref:`internals-topic-win32` for
 more information.
-
-The following guides apply to Win32-based systems:
-
-* :ref:`install-guide-windows-vcpkg`
-* :ref:`install-guide-windows-msi`
-* :ref:`build-guide-windows-vs`
-* :ref:`build-guide-windows-vs-xp`
-* :ref:`build-guide-windows-vs-mingw`
-* :ref:`build-guide-windows-mingw`
-* :ref:`build-guide-windows-ow-win32`
 
 .. _feature-topic-system-win32-drivers:
 
@@ -332,6 +299,8 @@ USB device drivers for Win32.
 
     MS-DOS is not yet supported as an official target by Cahute.
 
+.. include:: ../../guides/_system_guides_msdos.rst
+
 `MS-DOS`_ is a system made by Microsoft_ in 1981.
 
 .. _feature-topic-system-os2:
@@ -343,12 +312,16 @@ USB device drivers for Win32.
 
     OS/2 is not yet supported as an official target by Cahute.
 
+.. include:: ../../guides/_system_guides_os2.rst
+
 `OS/2`_ is a system made by IBM_ and Microsoft_ between 1987 and 2001.
 
 .. _feature-topic-system-amigaos:
 
 |amigaos| AmigaOS and derivatives
 ---------------------------------
+
+.. include:: ../../guides/_system_guides_amigaos.rst
 
 AmigaOS_ is a system originally made by Commodore_ for the Amiga_ family of
 computers. Versions 3.2+ of the system were made by `Hyperion Entertainment`_,
@@ -364,11 +337,6 @@ which can be found in the `Hyperion Entertainment Downloads`_. See
 
 While AmigaOS doesn't natively support USB, it can through USB stacks such
 as |amigaos-poseidon| \ Poseidon_.
-
-The following guides apply to AmigaOS and derivatives:
-
-* :ref:`install-guide-amigaos-aminet`
-* :ref:`build-guide-amigaos`
 
 .. _feature-topic-system-aros:
 
