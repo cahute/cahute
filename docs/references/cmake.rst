@@ -118,7 +118,7 @@ The following variables are specific to Cahute.
     Path to the directory in which the udev configuration is assumed to be
     stored.
 
-    If :ref:`CAHUTE_UDEV <cmake-ref-settings-cahute-udev>` is ``ON``, the
+    If :ref:`CAHUTE_UDEV <cmake-ref-setting-cahute-udev>` is ``ON``, the
     udev rules will be installed into ``${CAHUTE_INSTALL_UDEVDIR}/rules.d``.
 
     By default, this is set to ``${CMAKE_INSTALL_LIBDIR}/udev``, e.g.
