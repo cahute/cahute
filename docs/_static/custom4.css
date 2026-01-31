@@ -94,30 +94,56 @@ figcaption > p {
 }
 
 .feature-list {
-    border-top: 1px solid var(--color-code-foreground);;
+    padding: 0 1em;
 }
+
 .feature {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: .5em 0;
-    border-bottom: 1px solid var(--color-code-foreground);
+    margin-bottom: 1em;
 }
+
 .feature-icons {
-    flex: 0 0 2.5em;
-    padding: 0 .5em;
-    align-self: center;
+    flex: 0 0 3em;
+    max-width: none;
+    padding: 0 1em 0 0;
+    align-self: flex-start;
 }
+
+.feature-icons > img {
+    width: 100%;
+    height: auto;
+}
+
 .feature-detail {
     flex: 1 0 10em;
+    max-width: 30em;
     padding: 0 .5em;
 }
+
 .feature-detail p {
     margin: 0;
 }
+
+.feature-title {
+    margin-top: .35em;
+    margin-bottom: .5em;
+}
+
 .feature-title p {
-    font-size: 1.1em;
-    font-weight: bold;
+    display: inline-block;
+    background-color: var(--color-admonition-title-background--seealso);
+    padding: .2em 1em;
+    font-size: 1.2em;
+    border-radius: .2em;
+}
+
+.feature:nth-child(odd) {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.feature:nth-child(odd) .feature-icons {
+    padding: 0 0 0 1em;
 }
 
 .system-list {

@@ -58,11 +58,11 @@ class feature_icons(nodes.General, nodes.Element):
     pass
 
 
-class feature_title(nodes.General, nodes.Element):
+class feature_detail(nodes.General, nodes.Element):
     pass
 
 
-class feature_detail(nodes.General, nodes.Element):
+class feature_title(nodes.General, nodes.Element):
     pass
 
 
@@ -142,29 +142,27 @@ class MyHTMLTranslator(HTMLTranslator):
 
     def visit_feature(self, node):
         self.body.append(self.starttag(node, "div", "", CLASS="feature"))
-        self.body.append(self.starttag(node, "div", "", CLASS="feature-icons"))
-
-        icons, title, detail = node
-        for node in icons:
-            node.walkabout(self)
-
-        self.body.append("</div>")
-        self.body.append(self.starttag(node, "div", "", CLASS="feature-detail"))
-        self.body.append(self.starttag(node, "div", "", CLASS="feature-title"))
-
-        for node in title:
-            node.walkabout(self)
-
-        self.body.append("</div>")
-
-        for node in detail:
-            node.walkabout(self)
-
-        self.body.append("</div></div>")
-        raise nodes.SkipChildren()
 
     def depart_feature(self, node):
-        pass
+        self.body.append("</div>")
+
+    def visit_feature_icons(self, node):
+        self.body.append(self.starttag(node, "div", "", CLASS="feature-icons"))
+
+    def depart_feature_icons(self, node):
+        self.body.append("</div>")
+
+    def visit_feature_detail(self, node):
+        self.body.append(self.starttag(node, "div", "", CLASS="feature-detail"))
+
+    def depart_feature_detail(self, node):
+        self.body.append("</div>")
+
+    def visit_feature_title(self, node):
+        self.body.append(self.starttag(node, "div", "", CLASS="feature-title"))
+
+    def depart_feature_title(self, node):
+        self.body.append("</div>")
 
     def visit_system_list(self, node):
         self.body.append(self.starttag(node, "div", "", CLASS="system-list"))
@@ -492,8 +490,11 @@ class FeatureListDirective(TwoLevelListDirective):
                         for icon in icon_paragraph
                     ),
                 ),
-                feature_title("", *title),
-                feature_detail("", *detail),
+                feature_detail(
+                    "",
+                    feature_title("", *title),
+                    *detail,
+                ),
             ]
             container.append(feat)
 
