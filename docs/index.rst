@@ -157,7 +157,7 @@ of you, but thank you all for your efforts!
 .. _UsbConnector:
     https://www.planet-casio.com/Fr/forums/topic13656-1-usbconnector
     -remplacement-de-fa124-multi-os.html
-.. _Massena: https://pannocatto.itch.io/
+.. _Massena: https://pannocat.to/
 
 .. _Casetta: https://casetta.tuxfamily.org/
 .. _Caspro:

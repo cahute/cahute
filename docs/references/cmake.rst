@@ -300,7 +300,7 @@ switches:
 .. _libusb features: https://github.com/libusb/libusb/wiki#features
 .. _SDL: https://libsdl.org/
 .. _SDL2 platforms:
-    https://wiki.libsdl.org/SDL2/Introduction#what_platforms_does_sdl_run_on
+    https://wiki.libsdl.org/SDL2/Introduction#what-platforms-does-sdl-run-on
 .. _pkgconf: https://github.com/pkgconf/pkgconf
 .. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
 

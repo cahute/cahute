@@ -107,7 +107,7 @@ following command:
 .. |homebrew| image:: ../install/homebrew.svg
 
 .. _Get notified when a release is created:
-    https://docs.gitlab.com/ee/user/project/releases/
+    https://docs.gitlab.com/user/project/releases/
     #get-notified-when-a-release-is-created
 .. _Notifications: https://gitlab.com/-/profile/notifications
 

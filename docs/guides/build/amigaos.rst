@@ -121,7 +121,7 @@ You can now build the project using the following command::
 .. |amigaos| image:: ../install/amigaos.png
 
 .. _Get notified when a release is created:
-    https://docs.gitlab.com/ee/user/project/releases/
+    https://docs.gitlab.com/user/project/releases/
     #get-notified-when-a-release-is-created
 .. _Notifications: https://gitlab.com/-/profile/notifications
 

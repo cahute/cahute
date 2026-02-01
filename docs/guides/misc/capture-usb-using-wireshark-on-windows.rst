@@ -87,4 +87,4 @@ identifying information.
     voir_un_logiciel_casio.php?showid=16
 .. _Wireshark: https://www.wireshark.org/
 .. _Wireshark USB capture setup for Windows:
-    https://wiki.wireshark.org/CaptureSetup/USB#windows
+    https://wiki.wireshark.org/CaptureSetup/USB#user-content-windows

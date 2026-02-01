@@ -217,7 +217,7 @@ computer, for the new supplementary group to take effect.
 .. |linux| image:: ../install/linux.svg
 
 .. _Get notified when a release is created:
-    https://docs.gitlab.com/ee/user/project/releases/
+    https://docs.gitlab.com/user/project/releases/
     #get-notified-when-a-release-is-created
 .. _Notifications: https://gitlab.com/-/profile/notifications
 

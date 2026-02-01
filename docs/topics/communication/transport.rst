@@ -217,7 +217,7 @@ Custom SCSI commands
     how to send and receive using these commands, what delay to apply, and
     so on.
 
-CASIO makes use of the ``C0h`` to ``FFh`` `SCSI vendor-specific range`_ to
+CASIO makes use of the ``C0h`` to ``FFh`` SCSI vendor-specific command range to
 implement its own SCSI commands.
 
 ``0xC0``
@@ -342,8 +342,6 @@ implement its own SCSI commands.
     https://en.wikipedia.org/wiki/USB_mass_storage_device_class
 .. _Bulk-Only Transport:
     https://www.usb.org/sites/default/files/usbmassbulk_10.pdf
-.. _SCSI Vendor-specific range:
-    https://en.wikipedia.org/wiki/SCSI_command#SCSI_command_lengths
 .. _`Améliore ta Graph 35+ USB/E en Graph 75(+E) !`:
     https://www.planet-casio.com/Fr/forums/
     topic13930-1-ameliore-ta-graph-35-usbe-en-graph-75e.html

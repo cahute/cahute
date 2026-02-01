@@ -279,7 +279,7 @@ Possible drivers include the following:
     * - `libusb0.sys`_
       - Generic USB device driver provided by `libusb-win32`_, a third-party
         library implementing the libusb_ 0.1 API.
-      - Windows 2000 (NT 5.0)+
+      - Windows 2000 (NT 5.0)+\ [#libusb0-compat]_
       - Not implemented
     * - UsbDk_
       - Generic USB device driver provided by the eponym, third-party
@@ -355,6 +355,13 @@ AROS_ is a derivative of AmigaOS.
 MorphOS_ is a derivative of AmigaOS.
 
 .. todo:: Write this!
+
+.. [#libusb0-compat] Only up to libusb-win32 1.2.6.0 (released on
+   2012-01-17). Versions from 1.2.7.1 (released on 2019-09-18) to
+   1.2.7.4 (released on 2023-09-20) are only compatible with
+   Windows 7 (NT 6.1)+, and versions starting from 1.3.0.0 (released on
+   2023-10-03) are only compatible with Windows 10 (NT 10.0)+.
+   See `libusb-win32 compatibility`_ for more information.
 
 .. |linux| image:: ../../guides/install/linux.svg
 .. |archlinux| image:: ../../guides/install/arch.svg
@@ -462,6 +469,8 @@ MorphOS_ is a derivative of AmigaOS.
 .. _`libusbK.sys`:
     https://libusbk.sourceforge.net/UsbK3/usbk_about.html#usbk_about_sys
 .. _libusb-win32: https://github.com/mcuee/libusb-win32
+.. _libusb-win32 compatibility:
+    https://github.com/mcuee/libusb-win32/wiki#libusb-win32
 .. _`libusb0.sys`:
     https://github.com/mcuee/libusb-win32/wiki#development
 .. _UsbDk: https://github.com/daynix/UsbDk

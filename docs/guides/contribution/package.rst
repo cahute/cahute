@@ -146,6 +146,6 @@ following the steps in `Get notified when a release is created`_.
 
 .. _Releases: https://gitlab.com/cahute/cahute/-/releases
 .. _Get notified when a release is created:
-    https://docs.gitlab.com/ee/user/project/releases/
+    https://docs.gitlab.com/user/project/releases/
     #get-notified-when-a-release-is-created
 .. _Notifications: https://gitlab.com/-/profile/notifications

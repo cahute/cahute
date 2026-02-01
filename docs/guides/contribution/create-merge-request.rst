@@ -249,5 +249,5 @@ Congratulations!
 
 .. _Git: https://git-scm.com/
 .. _Gitlab.com: https://about.gitlab.com/
-.. _Merge request: https://docs.gitlab.com/ee/user/project/merge_requests/
+.. _Merge request: https://docs.gitlab.com/user/project/merge_requests/
 .. _Sign up on Gitlab.com: https://gitlab.com/users/sign_up
