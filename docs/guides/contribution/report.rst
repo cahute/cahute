@@ -96,7 +96,7 @@ Sending your bug or vulnerability report
 If your issue has security implications, e.g. if it allows a malicious
 device to access the host and/or execute arbitrary code without authorisation,
 please send an e-mail to Thomas Touhey, the maintainer of Cahute,
-at <security@cahuteproject.org>.
+at <security@cahute.org>.
 
 .. note::
 

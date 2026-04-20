@@ -159,7 +159,7 @@ cahute_seven_receive_bytes(
         && (~flags & CAHUTE_SEVEN_RECEIVE_BYTES_FLAG_DISABLE_SHIFTING)) {
         /* We are about to start packet shifting.
          * For more information, please consult the following:
-         * https://cahuteproject.org/topics/protocols/seven/flows.html
+         * https://cahute.org/topics/protocols/seven/flows.html
          * #packet-shifting */
         err = cahute_seven_send_basic(
             link,

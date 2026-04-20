@@ -8,8 +8,8 @@ Releases
 --------
 
 Cahute's main source package distribution, also known as "tarballs", is
-on `ftp.cahuteproject.org/releases
-<https://ftp.cahuteproject.org/releases>`_.
+on `ftp.cahute.org/releases
+<https://ftp.cahute.org/releases>`_.
 
 Cahute uses `Semantic Versioning` with only major and minor versions, not
 patches. "Breaking changes" cover both the library and utilities, i.e.:
@@ -111,14 +111,14 @@ The documentation source is included within the repository, and included in
 the releases on Git (although removed from the tarballs).
 
 A built version of the documentation of the latest release is available at
-`cahuteproject.org`_, through HTTP.
+`cahute.org`_, through HTTP.
 
-A preview version is also available at `next.cahuteproject.org`_, through
+A preview version is also available at `next.cahute.org`_, through
 HTTP. It is built and published every time one or more new commits land on
 the ``develop`` branch, and as such, may include content that is not yet
 available in the latest release.
 
 .. _Semantic Versioning: https://semver.org/
 .. _Releases: https://gitlab.com/cahute/cahute/-/releases
-.. _cahuteproject.org: https://cahuteproject.org/
-.. _next.cahuteproject.org: https://next.cahuteproject.org/
+.. _cahute.org: https://cahute.org/
+.. _next.cahute.org: https://next.cahute.org/

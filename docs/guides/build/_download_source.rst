@@ -5,7 +5,7 @@ the following options:
 
   .. parsed-literal::
 
-      curl -o cahute-|version|.tar.gz https\://ftp.cahuteproject.org/releases/cahute-|version|.tar.gz
+      curl -o cahute-|version|.tar.gz https\://ftp.cahute.org/releases/cahute-|version|.tar.gz
       tar xvf cahute-|version|.tar.gz
 
 * You can clone the repository and checkout the tag corresponding to the

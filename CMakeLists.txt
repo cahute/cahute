@@ -3,7 +3,7 @@ project(
     cahute
     VERSION 0.6
     DESCRIPTION "Communication and file format handling tools for CASIO calculators"
-    HOMEPAGE_URL "https://cahuteproject.org/"
+    HOMEPAGE_URL "https://cahute.org/"
     LANGUAGES C
 )
 set(PROJECT_CONTACT "Thomas Touhey <thomas@touhey.fr>")
@@ -90,7 +90,7 @@ set(CAHUTE_PIE ${_DEFAULT_PIE} CACHE BOOL
 set(CAHUTE_PKGCONF ON CACHE BOOL
     "Enable installation of pkgconf files?")
 
-set(CAHUTE_REPORT_URL "https://cahuteproject.org/guides/report.html"
+set(CAHUTE_REPORT_URL "https://cahute.org/guides/report.html"
     CACHE STRING "Bug report guide URL?")
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Android|Darwin|iOS|Linux|Windows$")
@@ -1048,7 +1048,7 @@ set(CPACK_NSIS_MUI_UNWELCOMEFINISHPAGE_BITMAP
 set(CPACK_NSIS_MODIFY_PATH ON)
 set(CPACK_NSIS_DISPLAY_NAME "Cahute")
 set(CPACK_NSIS_PACKAGE_NAME "Cahute")
-set(CPACK_NSIS_HELP_LINK "https://cahuteproject.org/guides/install/windows.html")
-set(CPACK_NSIS_URL_INFO_ABOUT "https://cahuteproject.org/")
+set(CPACK_NSIS_HELP_LINK "https://cahute.org/guides/install/windows.html")
+set(CPACK_NSIS_URL_INFO_ABOUT "https://cahute.org/")
 
 include(CPack)

@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: cahute
-Upstream-Contact: security@cahuteproject.org
+Upstream-Contact: security@cahute.org
 Source: https://gitlab.com/cahute/cahute
 
 Files: *

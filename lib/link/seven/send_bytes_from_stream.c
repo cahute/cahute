@@ -74,7 +74,7 @@ cahute_seven_send_bytes_from_stream(
         && (~flags & CAHUTE_SEVEN_SEND_BYTES_FLAG_DISABLE_SHIFTING)) {
         /* We are about to start packet shifting.
          * For more information, please consult the following:
-         * https://cahuteproject.org/topics/protocols/seven/flows.html
+         * https://cahute.org/topics/protocols/seven/flows.html
          * #packet-shifting */
         buf[4] = '0';
         buf[5] = '0';
