@@ -1,3 +1,5 @@
+.. _protocol-topic-purposes:
+
 Purposes for the communication protocols
 ========================================
 

@@ -6,6 +6,6 @@
 .. warning::
 
     Cahute does not provide any official methods of building for OS/2
-    yet. See :ref:`feature-topic-system-freebsd` for more information.
+    yet. See :ref:`feature-topic-system-os2` for more information.
 
 .. |os2| image:: ../install/os2.svg

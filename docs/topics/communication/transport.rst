@@ -199,7 +199,7 @@ specific driver or software to interact with such filesystems.
 
 However, with the introduction of this mode, calculators now used UMS for all
 use cases, including screenstreaming which still uses
-:ref:`protocol-topic-seven-ohp`
+:ref:`protocol-topic-seven-ohp`.
 
 The following communication protocols can be found over UMS:
 

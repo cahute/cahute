@@ -134,6 +134,12 @@ class MyHTMLTranslator(HTMLTranslator):
         if self.context.pop():
             self.body.append("</div>")
 
+    def visit_definition_list_item(self, node):
+        self.body.append(self.starttag(node, "div", "", CLASS="dl-item"))
+
+    def depart_definition_list_item(self, node):
+        self.body.append("</div>")
+
     def visit_feature_list(self, node):
         self.body.append(self.starttag(node, "div", "", CLASS="feature-list"))
 

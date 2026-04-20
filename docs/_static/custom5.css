@@ -206,6 +206,40 @@ figcaption > p {
     width: 1rem;
 }
 
+dl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1em;
+}
+
+.dl-item {
+    flex: 1 0 20em;
+}
+
+dt {
+    background-color: var(--color-admonition-title-background--seealso);
+    font-size: var(--admonition-title-font-size);
+    font-weight: 500;
+    line-height: 1.3;
+    padding: .4rem .5rem .4rem 2rem;
+    position: relative;
+}
+
+dt::before {
+    background-color: var(--color-admonition-title--seealso);
+    -webkit-mask-image: var(--icon-abstract);
+    mask-image: var(--icon-abstract);
+    content: "";
+    height: 1rem;
+    left: .5rem;
+    position: absolute;
+    width: 1rem;
+}
+
+dd {
+    margin-left: 0;
+}
+
 .admonition .system ul {
     font-size: .9em;
 }

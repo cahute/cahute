@@ -92,6 +92,173 @@ basic understanding of key concepts.
     references/headers
     references/cmake
 
+Glossary
+--------
+
+The following are definitions for words and expressions used in this
+documentation.
+
+.. glossary::
+
+    3-pin
+        Serial connector available on all CASIO calculators from 1991
+        to today, used for both PC-to-calculator and calculator-to-calculator
+        communications.
+
+        See :ref:`protocol-topic-port-3pin` for more information.
+
+    Add-in
+        Additional application for calculators.
+
+        While the system applications are embedded in the calculator's
+        system, some calculators allow for additional applications to be
+        placed in the :term:`storage memory`, and can be executed from the
+        main menu; these are named "add-ins".
+
+    Addin
+        See :term:`Add-in`.
+
+    CAS40
+        Communication protocol used by pre-1996 CASIO calculators.
+
+        See :ref:`protocol-topic-cas40` for more information.
+
+    CAS50
+        Communication protocol used by CASIO calculators from 1996 to 2004.
+
+        See :ref:`protocol-topic-cas50` for more information.
+
+    CAS100
+        Communication protocol used by CASIO AFX / Graph 100(+) calculators.
+
+        See :ref:`protocol-topic-cas100` for more information.
+
+    CAS300
+        Communication protocol used by CASIO ClassPad 300/330(+) calculators.
+
+        See :ref:`protocol-topic-cas300` for more information.
+
+    Connector
+        Physical connector present on a host or a calculator, on which a
+        corresponding cable can be plugged.
+
+    Context
+        Collection of system and library resources used to accomplish tasks
+        using Cahute.
+
+        See :ref:`feature-topic-contexts` for more information.
+
+    Generic link
+        :term:`Link` with no protocol, providing access to the underlying
+        :term:`transport` for sending and receiving data using a custom
+        protocol.
+
+        See :ref:`feature-topic-links-generic` for more information.
+
+    Link
+        Link established with a calculator or host using a :term:`protocol`
+        over a :term:`transport`, within a :term:`context`.
+
+        See :ref:`feature-topic-links` for more information.
+
+    Main memory
+        Small filesystem present on all calculators used to store most files
+        used by various system applications, such as :term:`programs
+        <program>`. Usually 64 KiB or less, and stored in RAM.
+
+        See :ref:`feature-topic-data` for more information.
+
+    Main memory data
+        Data represented as a file on the :term:`main memory`, bearing a type
+        and type-specific data.
+
+        See :ref:`feature-topic-data` for more information.
+
+    OHP
+        Overhead projector; see :term:`Screenstreaming`.
+
+    PXH-A16
+        Calculator-side connector available on the Classpad 300.
+
+        See :ref:`protocol-topic-port-pxh-a16` for more information.
+
+    Port
+        See :term:`Connector`.
+
+    Program
+        :term:`main memory data` representing a CASIO BASIC program which can
+        be created, edited, deleted, and executed by a system application on
+        any CASIO calculator, usually PRGM.
+
+        See :ref:`feature-topic-data-program` for more information.
+
+    Protocol
+        Communication protocol used over a :term:`transport` to fulfill
+        one or more purposes, in the context of a :term:`link`.
+
+        See :ref:`protocol-topic-purposes` for more information.
+
+    Protocol 7.00
+        Communication protocol used over both serial and USB starting from the
+        fx-9860G (2004) calculators.
+
+        See :ref:`protocol-topic-seven` for more information.
+
+    SB-87
+        Official serial (DB-9) to 3-pin cable by CASIO.
+
+        See :ref:`protocol-topic-cable-sb-87` for more information.
+
+    SB-88
+        Official USB Type-A to 3-pin cable by CASIO.
+
+        See :ref:`protocol-topic-cable-sb-88` for more information.
+
+    SB-88(A)
+        Official variation of the :term:`SB-88` cable by CASIO.
+
+        See :ref:`protocol-topic-cable-sb-88` for more information.
+
+    SB-300
+        Official USB Type-A to :term:`PXH-A16` cable by CASIO.
+
+        See :ref:`protocol-topic-cable-sb-300` for more information.
+
+    SB-305
+        Official serial (DB-99) to 3-pin cable by CASIO.
+
+        See :ref:`protocol-topic-cable-sb-305` for more information.
+
+    Screenstreaming
+        Communications use case where the calculator shares the contents of
+        its screen to a host over serial or USB.
+
+        This can be used to project the screen contents onto a bigger screen
+        or wall using a projector, or record the screen contents on the
+        host.
+
+    Storage memory
+        Filesystem larger than the :term:`main memory`, than can contain
+        :term:`main memory` archives, :term:`add-ins <add-in>` and more.
+
+        Used for larger files with fewer changes during the calculator's
+        lifetime. Pricier calculators use a multi-MiB section on the flash
+        memory to provide a storage memory, and some calculators have a
+        secondary storage memory in the form of an SD card slot.
+
+    Transport
+        Transport underlying a link, composed of a physical transport
+        (:term:`connector` and cable set) as well as the system or hardware
+        interface (system interface, driver) used to access it.
+
+    UMS
+        See :term:`USB Mass Storage`.
+
+    USB Mass Storage
+        Used in this documentation to refer to both
+        :ref:`UMS as transport <protocol-topic-transport-ums>` and
+        :ref:`UMS as protocol <protocol-topic-ums>`.
+
 Acknowledgements
 ----------------
 
