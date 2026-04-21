@@ -206,17 +206,17 @@ figcaption > p {
     width: 1rem;
 }
 
-dl {
+.glossary {
     display: flex;
     flex-wrap: wrap;
     gap: 0 1em;
 }
 
-.dl-item {
+.glossary .dl-item {
     flex: 1 0 20em;
 }
 
-dt {
+.glossary dt {
     background-color: var(--color-admonition-title-background--seealso);
     font-size: var(--admonition-title-font-size);
     font-weight: 500;
@@ -225,7 +225,7 @@ dt {
     position: relative;
 }
 
-dt::before {
+.glossary dt::before {
     background-color: var(--color-admonition-title--seealso);
     -webkit-mask-image: var(--icon-abstract);
     mask-image: var(--icon-abstract);
@@ -236,7 +236,7 @@ dt::before {
     width: 1rem;
 }
 
-dd {
+.glossary dd {
     margin-left: 0;
 }
 
