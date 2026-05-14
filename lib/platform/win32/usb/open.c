@@ -30,6 +30,18 @@
 
 CAHUTE_DECLARE_TYPE(open_cookie)
 CAHUTE_DECLARE_TYPE(open_volmgr_cookie)
+CAHUTE_DECLARE_TYPE(device_interface_path)
+
+/**
+ * Device interface path.
+ *
+ * @property path Pointer to the final path.
+ * @property small_path Small path.
+ */
+struct device_interface_path {
+    char *path;
+    char small_path[300];
+};
 
 /**
  * Cookie for opening a device interface.
@@ -46,21 +58,29 @@ struct open_cookie {
  * Cookie for finding a Win32 VOLMGR device interface path.
  *
  * @property context Context in which the function is run.
- * @property path Path to the device interface.
- * @property path_size Size of the path to the device interface.
+ * @property path Device interface path to fill.
  */
 struct open_volmgr_cookie {
     cahute_context *context;
-    char *path;
-    size_t path_size;
+    device_interface_path *path;
 };
+
+/**
+ * Free a device interface path.
+ *
+ * @param path Device interface path object.
+ */
+CAHUTE_LOCAL(void)
+free_device_interface_path(device_interface_path *path) {
+    if (path->path && path->path != path->small_path)
+        free(path->path);
+}
 
 /**
  * Find a volume interface associated with the provided device identifier.
  *
  * @param context Context in which the function is run.
  * @param path Path to the device interface to fill.
- * @param path_size Size of the path.
  * @param device_id Device identifier.
  * @param raw_guid Device interface GUID to look for.
  * @return Cahute error.
@@ -68,19 +88,18 @@ struct open_volmgr_cookie {
 CAHUTE_LOCAL(int)
 find_win32_interface(
     cahute_context *context,
-    char *path,
-    size_t path_size,
+    device_interface_path *path,
     char const *device_id,
     GUID const *guid
 ) {
     DWORD property_size = 0;
     DWORD cret;
-    int err = 0;
+    int err = CAHUTE_ERROR_UNKNOWN;
     cahute_win32_cfgmgr32 *cfgmgr32;
 
     err = cahute_get_win32_cfgmgr32(context, &cfgmgr32);
     if (err)
-        return err;
+        goto fail;
 
     cret = (*cfgmgr32->get_device_interface_list_size)(
         &property_size,
@@ -94,20 +113,23 @@ find_win32_interface(
             "CM_Get_Device_Interface_List_SizeA returned error "
             "0x%08lX.",
             cret);
-        return CAHUTE_ERROR_UNKNOWN;
+        err = CAHUTE_ERROR_UNKNOWN;
+        goto fail;
     }
 
-    if (property_size > path_size) {
-        /* Relevant device interfaces encountered in the wild do
-         * not have such a big device interface name, we can skip
-         * the entry. */
-        return CAHUTE_ERROR_SIZE;
-    }
+    if (property_size > sizeof(path->small_path) - 1) {
+        path->path = malloc(property_size);
+        if (!path->path) {
+            err = CAHUTE_ERROR_ALLOC;
+            goto fail;
+        }
+    } else
+        path->path = path->small_path;
 
     cret = (*cfgmgr32->get_device_interface_list)(
         guid,
         device_id,
-        path,
+        path->path,
         property_size,
         0
     );
@@ -117,16 +139,24 @@ find_win32_interface(
             "CM_Get_Device_Interface_ListA returned error "
             "0x%08lX.",
             cret);
-        return CAHUTE_ERROR_UNKNOWN;
+        err = CAHUTE_ERROR_UNKNOWN;
+        goto fail;
     }
 
-    if (!path[0]) {
+    if (!path->path[0]) {
         /* Missing at least one interface, we want to ignore the
          * current USB device. */
-        return CAHUTE_ERROR_NOT_FOUND;
+        err = CAHUTE_ERROR_NOT_FOUND;
+        goto fail;
     }
 
     return CAHUTE_OK;
+
+fail:
+    if (path->path && path->path != path->small_path)
+        free(path->path);
+
+    return err;
 }
 
 /**
@@ -146,7 +176,6 @@ match_win32_volume(
     err = find_win32_interface(
         cookie->context,
         cookie->path,
-        cookie->path_size,
         device->device_id,
         &cahute_guid_devinterface_volume
     );
@@ -201,9 +230,11 @@ CAHUTE_LOCAL(int)
 match_device(open_cookie *cookie, cahute_win32_usb_device const *device) {
     cahute_win32_device_filter filter;
     open_volmgr_cookie volmgr_cookie;
-    char path[300];
+    device_interface_path path;
     size_t max_read_capacity = 0;
-    int err;
+    int err = CAHUTE_ERROR_IMPL;
+
+    path.path = NULL;
 
     switch (device->driver) {
     case CAHUTE_WIN32_USB_DRIVER_CESG_0:
@@ -214,29 +245,24 @@ match_device(open_cookie *cookie, cahute_win32_usb_device const *device) {
          * with the device. */
         err = find_win32_interface(
             cookie->context,
-            path,
-            sizeof(path),
+            &path,
             device->device_id,
             &cahute_guid_devinterface_usb_device
         );
         if (err)
-            return err;
+            goto fail;
 
         err = cahute_open_win32_cesg_link(
             cookie->context,
             cookie->open_params,
-            path,
+            path.path,
             max_read_capacity
         );
-        if (!err)
-            return CAHUTE_ERROR_ABORT;
-
-        return err;
+        break;
 
     case CAHUTE_WIN32_USB_DRIVER_VOLMGR:
         volmgr_cookie.context = cookie->context;
-        volmgr_cookie.path = path;
-        volmgr_cookie.path_size = sizeof(path);
+        volmgr_cookie.path = &path;
 
         filter.related_to_device_id = device->device_id;
         filter.in_removal_relations_of_device_id = NULL;
@@ -251,20 +277,19 @@ match_device(open_cookie *cookie, cahute_win32_usb_device const *device) {
             &volmgr_cookie
         );
 
-        if (err == CAHUTE_OK)
-            return CAHUTE_ERROR_NOT_FOUND;
-        else if (err != CAHUTE_ERROR_ABORT)
-            return err;
+        if (err != CAHUTE_ERROR_ABORT) {
+            if (!err)
+                err = CAHUTE_ERROR_NOT_FOUND;
+
+            goto fail;
+        }
 
         err = cahute_open_win32_ums_link(
             cookie->context,
             cookie->open_params,
-            path
+            path.path
         );
-        if (!err)
-            return CAHUTE_ERROR_ABORT;
-
-        return err;
+        break;
 
     case CAHUTE_WIN32_USB_DRIVER_WINUSB:
         if (device->entry_type != CAHUTE_USB_DETECTION_ENTRY_TYPE_SERIAL)
@@ -274,27 +299,33 @@ match_device(open_cookie *cookie, cahute_win32_usb_device const *device) {
          * with the device. */
         err = find_win32_interface(
             cookie->context,
-            path,
-            sizeof(path),
+            &path,
             device->device_id,
             &cahute_guid_devinterface_usb_device
         );
         if (err)
-            return err;
+            goto fail;
 
         err = cahute_open_win32_winusb_bulk_link(
             cookie->context,
             cookie->open_params,
-            path
+            path.path
         );
-        if (!err)
-            return CAHUTE_ERROR_ABORT;
+        break;
 
-        return err;
+    default:
+        msg(cookie->context,
+            ll_error,
+            "Unsupported USB driver / type for: %s",
+            device->device_id);
     }
 
-    msg(cookie->context, ll_error, "For USB device at %s:", device->device_id);
-    CAHUTE_RETURN_IMPL(cookie->context, "  Unsupported USB driver / type.");
+    if (!err)
+        err = CAHUTE_ERROR_ABORT;
+
+fail:
+    free_device_interface_path(&path);
+    return err;
 }
 
 /**

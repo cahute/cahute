@@ -142,6 +142,13 @@ cahute_enumerate_win32_devices(
         device_id_list_filter_flags
     );
     if (cret) {
+        if (cret == 0x25 /* CR_NO_SUCH_VALUE */) {
+            /* We just consider that there's no device in the device list
+             * in such a case. */
+            err = CAHUTE_OK;
+            goto fail;
+        }
+
         msg(context,
             ll_error,
             "CM_Get_Device_ID_List_SizeA returned error 0x%08lX.",
@@ -164,6 +171,13 @@ cahute_enumerate_win32_devices(
         device_id_list_filter_flags
     );
     if (cret) {
+        if (cret == 0x25 /* CR_NO_SUCH_VALUE */) {
+            /* We just consider that there's no device in the device list
+             * in such a case. */
+            err = CAHUTE_OK;
+            goto fail;
+        }
+
         msg(context,
             ll_error,
             "CM_Get_Device_ID_ListA returned error 0x%08lX.",
