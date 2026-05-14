@@ -34,7 +34,7 @@
  * @param protocol Protocol identifier, as a constant.
  * @return Textual name of the protocol.
  */
-CAHUTE_EXTERN(char const *) cahute_get_protocol_name(int protocol) {
+CAHUTE_INTERNAL(char const *) cahute_get_protocol_name(int protocol) {
     switch (protocol) {
     case CAHUTE_LINK_PROTOCOL_SERIAL_NONE:
         return "Generic (serial)";

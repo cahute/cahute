@@ -48,7 +48,7 @@
  * @param param6_sizep Pointer to the sixth parameter size to define.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_decode_command(
     cahute_link *link,
     int *overwritep,

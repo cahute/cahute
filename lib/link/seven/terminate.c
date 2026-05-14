@@ -37,7 +37,7 @@
  * @param link Link on which to initiate the Protocol 7.00 communication.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int) cahute_seven_terminate(cahute_link *link) {
+CAHUTE_INTERNAL(int) cahute_seven_terminate(cahute_link *link) {
     int err;
 
     if (link->flags & CAHUTE_LINK_FLAG_TERMINATED)

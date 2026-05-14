@@ -40,7 +40,7 @@
  * @param size Size of the buffer to send.
  * @return Error, or CAHUTE_OK if no error has occurred.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_send_on_link_transport(
     cahute_link *link,
     cahute_u8 const *buf,

@@ -41,7 +41,7 @@
 #define VARIANT_CAS50  2
 #define VARIANT_CAS100 3
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_determine_header_variant(cahute_u8 const *data);
 
 #endif /* LINK_CASIOLINK_INTERNALS_H */

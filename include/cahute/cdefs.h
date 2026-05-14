@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2024-2026 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -67,15 +67,90 @@ CAHUTE_BEGIN_NAMESPACE
 #endif
 
 /* Macro to check if we have at least a specific version of MSC. */
-#if defined(CAHUTE_MSC_PREREQ) || defined(_MSC_VER)
+#if defined(_MSC_VER)
 # define CAHUTE_MSC_PREREQ(CAHUTE__MAJ, CAHUTE__MIN) \
      (_MSC_VER >= (CAHUTE__MAJ) * 100 + (CAHUTE__MIN))
 #else
 # define CAHUTE_MSC_PREREQ(CAHUTE__MAJ, CAHUTE__MIN) 0
 #endif
 
-/* Export the function to be used in an extern context. */
-#define CAHUTE_EXTERN(TYPE) extern TYPE
+/* Macro to declare or define a function to be exported at the library
+ * level. */
+#if defined(WIN32) || defined(WINDOWS)
+# if CAHUTE_GNUC_PREREQ(3, 0)
+#  if defined(CAHUTE_STATIC) && CAHUTE_STATIC
+#  elif defined(CAHUTE_IS_INTERNAL) && CAHUTE_IS_INTERNAL
+#   if defined(__i386__)
+#    define CAHUTE_EXTERN(CAHUTE__TYPE) \
+        extern __attribute__((dllexport, stdcall)) CAHUTE__TYPE
+#    define CAHUTE_EXTERN_VA(CAHUTE__TYPE) \
+        extern __attribute__((dllexport, cdecl)) CAHUTE__TYPE
+#   else
+#    define CAHUTE_EXTERN(CAHUTE__TYPE) \
+        extern __attribute__((dllexport)) CAHUTE__TYPE
+#    define CAHUTE_EXTERN_VA(CAHUTE__TYPE) \
+        extern __attribute__((dllexport)) CAHUTE__TYPE
+#   endif
+#  else
+#   if defined(__i386__)
+#    define CAHUTE_EXTERN(CAHUTE__TYPE) \
+        extern __attribute__((dllimport, stdcall)) CAHUTE__TYPE
+#    define CAHUTE_EXTERN_VA(CAHUTE__TYPE) \
+        extern __attribute__((dllimport, cdecl)) CAHUTE__TYPE
+#   else
+#    define CAHUTE_EXTERN(CAHUTE__TYPE) \
+        extern __attribute__((dllimport)) CAHUTE__TYPE
+#    define CAHUTE_EXTERN_VA(CAHUTE__TYPE) \
+        extern __attribute__((dllimport)) CAHUTE__TYPE
+#   endif
+#  endif
+# elif CAHUTE_MSC_PREREQ(12, 0)
+#  if defined(CAHUTE_STATIC) && CAHUTE_STATIC
+#  elif defined(CAHUTE_IS_INTERNAL) && CAHUTE_IS_INTERNAL
+#   if defined(_M_I86)
+#    define CAHUTE_EXTERN(CAHUTE__TYPE) \
+        extern __declspec(dllexport) __stdcall CAHUTE__TYPE
+#    define CAHUTE_EXTERN_VA(CAHUTE__TYPE) \
+        extern __declspec(dllexport) __cdecl CAHUTE__TYPE
+#   else
+#    define CAHUTE_EXTERN(CAHUTE__TYPE) \
+        extern __declspec(dllexport) CAHUTE__TYPE
+#    define CAHUTE_EXTERN_VA(CAHUTE__TYPE) \
+        extern __declspec(dllexport) CAHUTE__TYPE
+#   endif
+#  else
+#   if defined(_M_I86)
+#    define CAHUTE_EXTERN(CAHUTE__TYPE) \
+        extern __declspec(dllimport) __stdcall CAHUTE__TYPE
+#    define CAHUTE_EXTERN_VA(CAHUTE__TYPE) \
+        extern __declspec(dllimport) __cdecl CAHUTE__TYPE
+#   else
+#    define CAHUTE_EXTERN(CAHUTE__TYPE) \
+        extern __declspec(dllimport) CAHUTE__TYPE
+#    define CAHUTE_EXTERN_VA(CAHUTE__TYPE) \
+        extern __declspec(dllimport) CAHUTE__TYPE
+#   endif
+#  endif
+# endif
+#endif
+
+#ifndef CAHUTE_EXTERN
+# if CAHUTE_GNUC_PREREQ(3, 0) && defined(__i386__)
+#  define CAHUTE_EXTERN(CAHUTE__TYPE) \
+      extern __attribute__((stdcall)) CAHUTE__TYPE
+#  define CAHUTE_EXTERN_VA(CAHUTE__TYPE) \
+      extern __attribute__((cdecl)) CAHUTE__TYPE
+# elif CAHUTE_MSC_PREREQ(12, 0) && defined(_M_I86)
+#  define CAHUTE_EXTERN(CAHUTE__TYPE)    extern __stdcall CAHUTE__TYPE
+#  define CAHUTE_EXTERN_VA(CAHUTE__TYPE) extern __cdecl CAHUTE_TYPE
+# else
+#  define CAHUTE_EXTERN(CAHUTE__TYPE) extern CAHUTE__TYPE
+# endif
+#endif
+
+#ifndef CAHUTE_EXTERN_VA
+# define CAHUTE_EXTERN_VA(CAHUTE__TYPE) CAHUTE_EXTERN(CAHUTE__TYPE)
+#endif
 
 /* Export whether the function is deprecated. */
 #if CAHUTE_GNUC_PREREQ(3, 0)

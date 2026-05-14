@@ -36,7 +36,7 @@
  * @param speed Speed to set.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_set_serial_params_on_link_transport(
     cahute_link *link,
     unsigned long flags,

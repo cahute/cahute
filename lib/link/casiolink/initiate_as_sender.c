@@ -34,7 +34,7 @@
  * @param link Link for which to initiate the connection as a sender.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link) {
+CAHUTE_INTERNAL(int) cahute_casiolink_initiate_as_sender(cahute_link *link) {
     int initial_attempts = 6, attempts, err, byte;
 
     msg(link->context,

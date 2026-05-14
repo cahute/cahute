@@ -40,7 +40,7 @@
  * @param buf_size Buffer capacity to not go past.
  * @param statusp Pointer to the SCSI status to set to the received one.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_scsi_request_from_link_transport(
     cahute_link *link,
     cahute_u8 const *command,

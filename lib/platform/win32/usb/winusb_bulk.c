@@ -345,7 +345,7 @@ find_bulk_pipes(
  * @param path Path to the device interface.
  * @return Error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_win32_winusb_bulk_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,

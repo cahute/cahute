@@ -37,7 +37,7 @@
  * @param cookie Cookie to pass to the user function.
  * @return Error, or CAHUTE_OK if no error has occurred.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_win32_detect_serial(
     cahute_context *context,
     cahute_detect_serial_entry_func *func,

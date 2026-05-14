@@ -33,14 +33,14 @@
 #define PACKET_TYPE_ACK  0x06
 #define PACKET_TYPE_DATA 0x3A
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas40_determine_data_description(
     cahute_context *context,
     cahute_u8 const *data,
     cahute_casiolink_data_description *desc
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas40_decode_data_using_description(
     cahute_data **final_datap,
     cahute_file *file,
@@ -49,7 +49,7 @@ cahute_cas40_decode_data_using_description(
     struct cahute_casiolink_data_description *desc
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas40_receive_raw_data(
     cahute_link *link,
     cahute_u8 const *header,

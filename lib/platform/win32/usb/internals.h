@@ -55,7 +55,7 @@ struct cahute_win32_usb_device {
 
 typedef int(cahute_enumerate_win32_usb_device_func)(void *, cahute_win32_usb_device const *);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_enumerate_win32_usb_devices(
     cahute_context *context,
     char const *device_path,
@@ -63,7 +63,7 @@ cahute_enumerate_win32_usb_devices(
     void *cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_win32_cesg_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
@@ -71,14 +71,14 @@ cahute_open_win32_cesg_link(
     size_t max_read_capacity
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_win32_ums_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
     char const *path
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_win32_winusb_bulk_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,

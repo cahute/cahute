@@ -56,13 +56,13 @@ struct cahute_posix_serial_link_cookie {
     int fd;
 };
 
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_close_posix_serial_link(
     cahute_context *context,
     cahute_posix_serial_link_cookie *cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_receive_on_posix_serial_link(
     cahute_context *context,
     cahute_posix_serial_link_cookie *cookie,
@@ -72,7 +72,7 @@ cahute_receive_on_posix_serial_link(
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_send_on_posix_serial_link(
     cahute_context *context,
     cahute_posix_serial_link_cookie *cookie,
@@ -81,7 +81,7 @@ cahute_send_on_posix_serial_link(
     size_t *sentp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_set_posix_serial_link_params(
     cahute_context *context,
     cahute_posix_serial_link_cookie *cookie,
@@ -104,13 +104,13 @@ struct cahute_posix_file_cookie {
     int fd;
 };
 
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_close_posix_file(
     cahute_context *context,
     cahute_posix_file_cookie *cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_read_from_posix_file(
     cahute_context *context,
     cahute_posix_file_cookie *cookie,
@@ -119,7 +119,7 @@ cahute_read_from_posix_file(
     size_t *readp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_write_to_posix_file(
     cahute_context *context,
     cahute_posix_file_cookie *cookie,
@@ -128,7 +128,7 @@ cahute_write_to_posix_file(
     size_t *writtenp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_move_in_posix_file(
     cahute_context *context,
     cahute_posix_file_cookie *cookie,

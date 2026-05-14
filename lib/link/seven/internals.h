@@ -51,10 +51,10 @@
 #define CAHUTE_SEVEN_FILE_TYPE_FILE 1 /* Path leads to a regular file. */
 #define CAHUTE_SEVEN_FILE_TYPE_DIR  2 /* Path leads to a directory. */
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_receive(cahute_link *link, unsigned long timeout);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_send_and_receive(
     cahute_link *link,
     unsigned long flags,
@@ -63,7 +63,7 @@ cahute_seven_send_and_receive(
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_send_basic(
     cahute_link *link,
     unsigned long flags,
@@ -71,7 +71,7 @@ cahute_seven_send_basic(
     int subtype
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_send_extended(
     cahute_link *link,
     unsigned long flags,
@@ -82,7 +82,7 @@ cahute_seven_send_extended(
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_send_command(
     cahute_link *link,
     int code,
@@ -98,7 +98,7 @@ cahute_seven_send_command(
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_decode_command(
     cahute_link *link,
     int *overwritep,
@@ -118,7 +118,7 @@ cahute_seven_decode_command(
     size_t *param6_sizep
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_send_bytes_from_stream(
     cahute_link *link,
     unsigned long flags,
@@ -128,7 +128,7 @@ cahute_seven_send_bytes_from_stream(
     void *progress_cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_send_bytes(
     cahute_link *link,
     unsigned long flags,
@@ -138,7 +138,7 @@ cahute_seven_send_bytes(
     void *progress_cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_receive_bytes(
     cahute_link *link,
     unsigned long flags,
@@ -149,7 +149,7 @@ cahute_seven_receive_bytes(
     void *progress_cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_receive_bytes_into_stream(
     cahute_link *link,
     cahute_file *file,
@@ -297,7 +297,7 @@ CAHUTE_INLINE(unsigned long) cahute_get_long_dec(cahute_u8 const *raw) {
     return x;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_request_file_type(
     cahute_link *link,
     int *typep,

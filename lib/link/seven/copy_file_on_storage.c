@@ -39,7 +39,7 @@
  * @param storage Name of the storage device.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_copy_file_on_storage(
     cahute_link *link,
     char const *source_directory,

@@ -33,7 +33,7 @@
  *
  * @param desc Data description to show.
  */
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_casiolink_log_data_description(
     cahute_context *context,
     struct cahute_casiolink_data_description const *desc

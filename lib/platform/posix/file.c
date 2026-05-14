@@ -34,7 +34,7 @@
  * @param context
  * @param cookie
  */
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_close_posix_file(
     cahute_context *context,
     cahute_posix_file_cookie *cookie
@@ -53,7 +53,7 @@ cahute_close_posix_file(
  * @param readp
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_read_from_posix_file(
     cahute_context *context,
     cahute_posix_file_cookie *cookie,
@@ -89,7 +89,7 @@ cahute_read_from_posix_file(
  * @param writtenp
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_write_to_posix_file(
     cahute_context *context,
     cahute_posix_file_cookie *cookie,
@@ -123,7 +123,7 @@ cahute_write_to_posix_file(
  * @param offset
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_move_in_posix_file(
     cahute_context *context,
     cahute_posix_file_cookie *cookie,

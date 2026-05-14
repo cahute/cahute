@@ -70,7 +70,7 @@ match_device(detect_cookie *cookie, cahute_win32_usb_device const *device) {
  * @param cookie Cookie to pass to the user function.
  * @return Error, or CAHUTE_OK if no error has occurred.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_win32_detect_usb(
     cahute_context *context,
     cahute_detect_usb_entry_func CAHUTE_NNPTR(func),

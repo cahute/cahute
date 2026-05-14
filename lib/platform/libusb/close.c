@@ -34,7 +34,7 @@
  * @param context Context in which the function is called.
  * @param cookie Cookie.
  */
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_close_libusb_link(
     cahute_context *context,
     cahute_libusb_link_cookie *cookie

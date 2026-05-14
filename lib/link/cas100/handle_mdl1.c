@@ -46,7 +46,7 @@
  *        In the first context, this is expected to be set to NULL.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_handle_mdl1(cahute_link *link, cahute_u8 const *header) {
     cahute_u8 buf[40];
     int byte, err;

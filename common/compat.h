@@ -30,23 +30,27 @@
 #define COMPAT_H 1
 #include <cahute/cdefs.h>
 
-/* Make a function local. */
+/* Make a function accessible to the rest of the library. */
+#define CAHUTE_INTERNAL(TYPE)    extern TYPE
+#define CAHUTE_INTERNAL_VA(TYPE) extern TYPE
+
+/* Make read-only data accessible to the rest of the library.
+ * Unfortunately, we need to separate the declaration macro from the
+ * definition macro. */
+#define CAHUTE_INTERNAL_DATA_DECL(TYPE) extern TYPE const
+#define CAHUTE_INTERNAL_DATA(TYPE)      TYPE const
+
+/* Make a function accessible locally only. */
 #define CAHUTE_LOCAL(TYPE) static TYPE
 
-/* Make a function local and inline. */
+/* Make a function accessible locally only, and optionally inline. */
 #define CAHUTE_INLINE(TYPE) static inline TYPE
 
-/* Make some data local. */
+/* Make some read-only data accessible locally only. */
 #define CAHUTE_LOCAL_DATA(TYPE) static TYPE const
 
-/* Make some data local and mutable. */
+/* Make some read-write data accessible locally only. */
 #define CAHUTE_LOCAL_MUTABLE_DATA(TYPE) static TYPE
-
-/* Declare some extern data. */
-#define CAHUTE_EXTERN_DATA(TYPE) extern TYPE const
-
-/* Make some data extern. */
-#define CAHUTE_EXPORT_DATA(TYPE) TYPE const
 
 #if CAHUTE_MSC_PREREQ(12, 0)
 # include <BaseTsd.h>

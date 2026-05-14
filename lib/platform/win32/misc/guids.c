@@ -29,7 +29,7 @@
 #include "../internals.h"
 #undef DEFINE_GUID
 #define DEFINE_GUID(NAME, L, W1, W2, B1, B2, B3, B4, B5, B6, B7, B8) \
-    CAHUTE_EXPORT_DATA(GUID) \
+    CAHUTE_INTERNAL_DATA(GUID) \
     NAME = {L, W1, W2, {B1, B2, B3, B4, B5, B6, B7, B8}}
 
 DEFINE_GUID(

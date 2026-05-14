@@ -39,7 +39,7 @@
  * @param link Link in which to discover device information.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int) cahute_cas300_discover(cahute_link *link) {
+CAHUTE_INTERNAL(int) cahute_cas300_discover(cahute_link *link) {
     int err;
 
     err = cahute_cas300_send_command(link, 0x0011, NULL, 0);

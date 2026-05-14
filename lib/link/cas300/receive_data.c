@@ -44,7 +44,7 @@ default_0002_payload =
  * @param timeout Timeout to receive the first byte.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas300_receive_data(
     cahute_link *link,
     cahute_data **datap,

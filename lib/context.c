@@ -92,7 +92,7 @@ CAHUTE_EXTERN(void) cahute_destroy_context(cahute_context *context) {
  *        initialized.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_context_pointer(
     cahute_context *context,
     void **valuep,

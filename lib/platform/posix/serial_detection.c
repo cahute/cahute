@@ -41,7 +41,7 @@ CAHUTE_INLINE(int) all_numbers(char const *s) {
     return 1;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_posix_detect_serial(
     cahute_context *context,
     cahute_detect_serial_entry_func *func,

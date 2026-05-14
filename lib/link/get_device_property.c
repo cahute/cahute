@@ -43,7 +43,7 @@ CAHUTE_LINK_PROTOCOL_SERIAL_SEVEN: \
  * @param name Name of the device property to extract.
  * @return Error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_EXTERN_VA(int)
 cahute_get_device_property(cahute_link *link, char const *name, ...) {
     va_list ap;
     char *buf;

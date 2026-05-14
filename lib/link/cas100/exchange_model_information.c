@@ -34,7 +34,7 @@
  * @param link Link for which to initiate the connection as a receiver.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_exchange_model_information(cahute_link *link) {
     cahute_u8 *buf = link->data_buffer;
     int byte, err;

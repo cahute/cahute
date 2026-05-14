@@ -220,7 +220,7 @@ libusb_scsi_request(
  * @param statusp Pointer to the SCSI status to set to the received one.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_scsi_request_to_libusb_device(
     cahute_context *context,
     cahute_libusb_link_cookie *cookie,
@@ -254,7 +254,7 @@ cahute_scsi_request_to_libusb_device(
  * @param statusp
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_scsi_request_from_libusb_device(
     cahute_context *context,
     cahute_libusb_link_cookie *cookie,

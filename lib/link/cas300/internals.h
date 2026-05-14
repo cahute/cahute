@@ -39,7 +39,7 @@
 #define TIMEOUT_ACK             1000
 #define TIMEOUT_PACKET_CONTENTS 500
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas300_send_command(
     cahute_link *link,
     unsigned int command,
@@ -47,7 +47,7 @@ cahute_cas300_send_command(
     size_t payload_size
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas300_send_data_packet(
     cahute_link *link,
     unsigned int command,

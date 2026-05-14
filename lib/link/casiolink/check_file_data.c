@@ -36,7 +36,7 @@
  * @param desc Data description based on which to check the file.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_check_file_data(
     cahute_file *file,
     unsigned long offset,

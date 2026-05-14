@@ -36,7 +36,7 @@
  * @param desc Data description to fill.
  * @return Error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas40_determine_data_description(
     cahute_context *context,
     cahute_u8 const *data,

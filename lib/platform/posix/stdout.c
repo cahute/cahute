@@ -41,7 +41,7 @@ posix_stdout_interface = {
  * @param open_params
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_posix_stdout(
     cahute_context *context,
     cahute_stdout_open_params *open_params

@@ -38,7 +38,7 @@
  * @param readp
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_read_from_win32_file(
     cahute_context *context,
     cahute_win32_file_cookie *cookie,

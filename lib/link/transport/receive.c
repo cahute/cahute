@@ -47,7 +47,7 @@
  *        in milliseconds.
  * @return Error, or CAHUTE_OK if no error has occurred.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_receive_on_link_transport(
     cahute_link *link,
     cahute_u8 *buf,

@@ -40,7 +40,7 @@
  * @param guid GUID to serialize.
  * @return Error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_serialize_win32_guid(
     cahute_context *context,
     char *buf,
@@ -104,7 +104,7 @@ cahute_serialize_win32_guid(
  * @param raw Raw GUID to parse.
  * @return 1 if parsing has failed, 0 otherwise.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_decode_win32_guid(
     cahute_context *context,
     GUID *guid,

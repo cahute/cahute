@@ -56,13 +56,13 @@ struct cahute_libusb_link_cookie {
     int bulk_out;
 };
 
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_close_libusb_link(
     cahute_context *context,
     cahute_libusb_link_cookie *cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_receive_on_libusb_bulk_link(
     cahute_context *context,
     cahute_libusb_link_cookie *cookie,
@@ -72,7 +72,7 @@ cahute_receive_on_libusb_bulk_link(
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_send_on_libusb_bulk_link(
     cahute_context *context,
     cahute_libusb_link_cookie *cookie,
@@ -81,7 +81,7 @@ cahute_send_on_libusb_bulk_link(
     size_t *sentp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_scsi_request_to_libusb_device(
     cahute_context *context,
     cahute_libusb_link_cookie *cookie,
@@ -92,7 +92,7 @@ cahute_scsi_request_to_libusb_device(
     int *statusp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_scsi_request_from_libusb_device(
     cahute_context *context,
     cahute_libusb_link_cookie *cookie,
@@ -103,7 +103,7 @@ cahute_scsi_request_from_libusb_device(
     int *statusp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_libusb_context(cahute_context *context, libusb_context **contextp);
 
 #endif /* PLATFORM_POSIX_INTERNALS_H */

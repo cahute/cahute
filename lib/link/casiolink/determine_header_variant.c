@@ -34,7 +34,7 @@
  * @param data First 40 bytes of the CASIOLINK header, including the 0x3A.
  * @return Variant.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_determine_header_variant(cahute_u8 const *data) {
     /* We want to try to determine the currently selected variant based
      * on the header's content. */

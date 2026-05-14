@@ -75,17 +75,21 @@ Cahute is designed to be more compatible than not, but to make use of
 compiler and platform specific tools for static analysis if possible.
 As such, you must use the relevant compatibility macros for your case:
 
-* Both function declarations and definitions must use the following:
+* Both function declarations and definitions must use either of the following:
 
-  - Either :c:macro:`CAHUTE_EXTERN`, or the function is only to be used by
-    other code **in the same file**, :c:macro:`CAHUTE_LOCAL` or
-    :c:macro:`CAHUTE_INLINE`.
+  - :c:macro:`CAHUTE_EXTERN` if the function is to be exported in the
+    library output. This must only be the case if the function is declared
+    in a public header and, incidentally, documented in the :ref:`header
+    reference <header-ref>`;
+  - :c:macro:`CAHUTE_INTERNAL` if the function is to be used in other source
+    files within the library. This must only be used if the function is
+    declared in an internal header (such as ``lib/internals.h``) instead of
+    the public headers;
+  - :c:macro:`CAHUTE_LOCAL` or :c:macro:`CAHUTE_INLINE` if the function is
+    only to be used in the same file.
 
-    Functions internal to Cahute but used cross-file must make use of
-    :c:macro:`CAHUTE_EXTERN`, but be declared in ``lib/internals.h`` instead
-    of the public headers.
-  - :c:macro:`CAHUTE_NNPTR` and :c:macro:`CAHUTE_NONNULL` together, where
-    relevant.
+* :c:macro:`CAHUTE_NNPTR` and :c:macro:`CAHUTE_NONNULL` must be used together,
+  where relevant.
 * Function declarations only must use :c:macro:`CAHUTE_DEPRECATED` and
   :c:macro:`CAHUTE_WUR` where relevant.
 

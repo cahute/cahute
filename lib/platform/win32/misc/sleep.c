@@ -28,7 +28,7 @@
 
 #include "../internals.h"
 
-CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms) {
+CAHUTE_INTERNAL(int) cahute_sleep(cahute_context *context, unsigned long ms) {
     Sleep(ms);
     return CAHUTE_OK;
 }

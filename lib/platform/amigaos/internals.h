@@ -52,14 +52,14 @@ struct cahute_amigaos_device {
     unsigned long unit;
 };
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_amiga_timer(
     cahute_context *context,
     struct MsgPort **msg_portp,
     struct timerequest **timerp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_amigaos_device(
     cahute_context *context,
     cahute_amigaos_device *devp,

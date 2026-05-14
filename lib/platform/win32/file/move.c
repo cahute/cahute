@@ -36,7 +36,7 @@
  * @param offset
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_move_in_win32_file(
     cahute_context *context,
     cahute_win32_file_cookie *cookie,

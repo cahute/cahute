@@ -39,7 +39,7 @@
  * @param file_size Size of the file.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_file_from_interface(
     cahute_file_open_params *open_params,
     cahute_file_open_interface const *interface,

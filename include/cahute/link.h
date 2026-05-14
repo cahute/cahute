@@ -192,7 +192,7 @@ cahute_set_serial_params_to_link(
  * Device metadata access.
  * --- */
 
-CAHUTE_EXTERN(int)
+CAHUTE_EXTERN_VA(int)
 cahute_get_device_property(
     cahute_link *cahute__link,
     char const *cahute__name,

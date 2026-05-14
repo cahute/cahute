@@ -44,7 +44,7 @@ posix_open_file_interface = {
  * @param path_type
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_posix_file(
     cahute_context *context,
     cahute_file_open_params *open_params,

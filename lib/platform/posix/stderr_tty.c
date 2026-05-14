@@ -33,6 +33,6 @@
  *
  * @return
  */
-CAHUTE_EXTERN(int) cahute_posix_is_stderr_tty(void) {
+CAHUTE_INTERNAL(int) cahute_posix_is_stderr_tty(void) {
     return isatty(fileno(stderr));
 }

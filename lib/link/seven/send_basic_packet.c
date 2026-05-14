@@ -39,7 +39,7 @@
  * @param subtype Numeric subtype (*ST*) of the packet to send.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_send_basic(
     cahute_link *link,
     unsigned long flags,

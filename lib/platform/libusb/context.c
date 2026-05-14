@@ -231,7 +231,7 @@ fail:
  * @param lu_contextp Pointer to set to the libusb context.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_libusb_context(
     cahute_context *context,
     libusb_context **lu_contextp

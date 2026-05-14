@@ -43,13 +43,13 @@ struct cahute_win32_file_cookie {
     int close;
 };
 
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_close_win32_file(
     cahute_context *context,
     cahute_win32_file_cookie *cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_read_from_win32_file(
     cahute_context *context,
     cahute_win32_file_cookie *cookie,
@@ -58,7 +58,7 @@ cahute_read_from_win32_file(
     size_t *readp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_write_to_win32_file(
     cahute_context *context,
     cahute_win32_file_cookie *cookie,
@@ -67,7 +67,7 @@ cahute_write_to_win32_file(
     size_t *writtenp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_move_in_win32_file(
     cahute_context *context,
     cahute_win32_file_cookie *cookie,

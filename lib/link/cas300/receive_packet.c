@@ -40,7 +40,7 @@
  * @param timeout Timeout for the first byte.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas300_receive_packet(
     cahute_link *link,
     int first_byte,

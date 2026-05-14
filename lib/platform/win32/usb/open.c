@@ -356,7 +356,7 @@ fail:
  * @param path
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_win32_usb_device(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,

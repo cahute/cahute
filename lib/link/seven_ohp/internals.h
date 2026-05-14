@@ -36,10 +36,10 @@
 #define PACKET_TYPE_FRAME 11 /* 0x0B */
 #define PACKET_TYPE_CHECK 22 /* 0x16 */
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_ohp_receive(cahute_link *link, int align, unsigned long timeout);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_ohp_send_basic(
     cahute_link *link,
     int type,

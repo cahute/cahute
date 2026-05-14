@@ -27,10 +27,34 @@ here. For the public ones, see :ref:`header-ref-cahute-cdefs`.
 Macro definitions
 -----------------
 
+.. c:macro:: CAHUTE_INTERNAL(TYPE)
+
+    Macro to use on library function declarations and definitions to make them
+    accessible to the rest of the library, but not exported (if such
+    a distinction exists).
+
+    The macro wraps the return type, for example::
+
+        CAHUTE_INTERNAL(int) my_internal_utility(int arg1, char const *arg2);
+
+    Example outputs of the above are the following::
+
+        /* Default */
+        extern int my_internal_utility(int arg1, char const *arg2);
+
+        /* WINAPI x86 */
+        extern _stdcall int my_internal_utility(int arg1, char const *arg2);
+
+        /* GCC x86 */
+        extern int __cdecl my_internal_utility(int arg1, char const *arg2);
+
 .. c:macro:: CAHUTE_LOCAL(TYPE)
 
-    Macro to use in Cahute function definitions, surrounding the return type,
-    as opposed to :c:macro:`CAHUTE_EXTERN`. For example::
+    Macro to use on library function declarations and definitions to make
+    them local to the file they're defined in, as opposed to both
+    :c:macro:`CAHUTE_EXTERN` and :c:macro:`CAHUTE_INTERNAL`.
+
+    The macro wraps the return type, for example::
 
         CAHUTE_LOCAL(int) my_local_utility(int arg1, char const *arg2);
 
@@ -40,11 +64,11 @@ Macro definitions
 
 .. c:macro:: CAHUTE_INLINE(TYPE)
 
-    Macro to use in inlinable local Cahute function definitions, surrounding
-    the return type. This macro extends on :c:macro:`CAHUTE_LOCAL`'s meaning,
-    by making the function inlinable if the compiler is so inclined.
+    Macro to use on library function definitions to make them both local and,
+    if the compiler provides the option and is so inclined, inlined or
+    inlinable.
 
-    For example::
+    The macro wraps the return type, for example::
 
         CAHUTE_INLINE(int) my_tiny_utility(int arg1, char const *arg2);
 

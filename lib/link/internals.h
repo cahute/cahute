@@ -311,13 +311,13 @@ struct cahute_link {
 #define CHECK_SENDER   0x00000001 /* Check that a link is not a receiver. */
 #define CHECK_RECEIVER 0x00000002 /* Check that a link is a receiver. */
 
-CAHUTE_EXTERN(int) cahute_check_link(cahute_link *link, unsigned long flags);
+CAHUTE_INTERNAL(int) cahute_check_link(cahute_link *link, unsigned long flags);
 
 /* ---
  * CAS40 protocol functions.
  * --- */
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas40_receive_data(
     cahute_link *link,
     cahute_data **datap,
@@ -325,7 +325,7 @@ cahute_cas40_receive_data(
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas40_receive_screen(
     cahute_link *link,
     cahute_frame *frame,
@@ -333,13 +333,13 @@ cahute_cas40_receive_screen(
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int) cahute_cas40_terminate(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_cas40_terminate(cahute_link *link);
 
 /* ---
  * CAS50 protocol functions, defined in cas50.c
  * --- */
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas50_receive_data(
     cahute_link *link,
     cahute_data **datap,
@@ -347,13 +347,13 @@ cahute_cas50_receive_data(
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int) cahute_cas50_terminate(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_cas50_terminate(cahute_link *link);
 
 /* ---
  * CAS100 protocol functions, defined in cas100.c
  * --- */
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_receive_data(
     cahute_link *link,
     cahute_data **datap,
@@ -361,37 +361,38 @@ cahute_cas100_receive_data(
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_get_flash_rom_capacity(cahute_link *link, unsigned long *valuep);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_get_ram_capacity(cahute_link *link, unsigned long *valuep);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_get_os_version(cahute_link *link, char *buf, size_t size);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_get_hwid(cahute_link *link, char *buf, size_t size);
 
-CAHUTE_EXTERN(int) cahute_cas100_exchange_model_information(cahute_link *link);
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
+cahute_cas100_exchange_model_information(cahute_link *link);
+CAHUTE_INTERNAL(int)
 cahute_cas100_handle_mdl1(cahute_link *link, cahute_u8 const *header);
 
-CAHUTE_EXTERN(int) cahute_cas100_initiate(cahute_link *link);
-CAHUTE_EXTERN(int) cahute_cas100_terminate(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_cas100_initiate(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_cas100_terminate(cahute_link *link);
 
 /* ---
  * CAS300 protocol functions, defined in cas300.c
  * --- */
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas300_receive_packet(
     cahute_link *link,
     int first_byte,
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas300_receive_data(
     cahute_link *link,
     cahute_data **datap,
@@ -399,100 +400,100 @@ cahute_cas300_receive_data(
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int) cahute_cas300_initiate_as_sender(cahute_link *link);
-CAHUTE_EXTERN(int) cahute_cas300_initiate_as_receiver(cahute_link *link);
-CAHUTE_EXTERN(int) cahute_cas300_discover(cahute_link *link);
-CAHUTE_EXTERN(int) cahute_cas300_terminate(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_cas300_initiate_as_sender(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_cas300_initiate_as_receiver(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_cas300_discover(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_cas300_terminate(cahute_link *link);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas300_get_flash_rom_capacity(cahute_link *link, unsigned long *valuep);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas300_get_bootcode_version(cahute_link *link, char *buf, size_t size);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas300_get_os_version(cahute_link *link, char *buf, size_t size);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas300_get_hwid(cahute_link *link, char *buf, size_t size);
 
 /* ---
  * Protocol 7.00 functions, defined in seven.c
  * --- */
 
-CAHUTE_EXTERN(int) cahute_seven_initiate(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_seven_initiate(cahute_link *link);
 
-CAHUTE_EXTERN(int) cahute_seven_terminate(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_seven_terminate(cahute_link *link);
 
-CAHUTE_EXTERN(int) cahute_seven_discover(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_seven_discover(cahute_link *link);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_receive_data(
     cahute_link *link,
     cahute_data **datap,
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_negotiate_serial_params(
     cahute_link *link,
     unsigned long flags,
     unsigned long speed
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_product_id(cahute_link *link, char *buf, size_t size);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_username(cahute_link *link, char *buf, size_t size);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_organisation(cahute_link *link, char *buf, size_t size);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_hwid(cahute_link *link, char *buf, size_t size);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_cpuid(cahute_link *link, char *buf, size_t size);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_rom_capacity(cahute_link *link, unsigned long *valuep);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_flash_rom_capacity(cahute_link *link, unsigned long *valuep);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_ram_capacity(cahute_link *link, unsigned long *valuep);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_rom_version(cahute_link *link, char *buf, size_t size);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_bootcode_version(cahute_link *link, char *buf, size_t size);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_bootcode_offset(cahute_link *link, unsigned long *valuep);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_bootcode_size(cahute_link *link, unsigned long *valuep);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_os_version(cahute_link *link, char *buf, size_t size);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_os_offset(cahute_link *link, unsigned long *valuep);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_os_size(cahute_link *link, unsigned long *valuep);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_request_storage_capacity(
     cahute_link *link,
     char const *storage,
     unsigned long *capacityp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_send_file_to_storage(
     cahute_link *link,
     unsigned long flags,
@@ -506,7 +507,7 @@ cahute_seven_send_file_to_storage(
     void *progress_cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_request_file_from_storage(
     cahute_link *link,
     char const *directory,
@@ -518,7 +519,7 @@ cahute_seven_request_file_from_storage(
     void *progress_cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_copy_file_on_storage(
     cahute_link *link,
     char const *source_directory,
@@ -528,7 +529,7 @@ cahute_seven_copy_file_on_storage(
     char const *storage
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_delete_file_from_storage(
     cahute_link *link,
     char const *directory,
@@ -536,7 +537,7 @@ cahute_seven_delete_file_from_storage(
     char const *storage
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_list_storage_entries(
     cahute_link *link,
     char const *storage,
@@ -544,13 +545,13 @@ cahute_seven_list_storage_entries(
     void *cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_reset_storage(cahute_link *link, char const *storage);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_optimize_storage(cahute_link *link, char const *storage);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_backup_rom(
     cahute_link *link,
     cahute_u8 **romp,
@@ -559,7 +560,7 @@ cahute_seven_backup_rom(
     void *progress_cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_upload_and_run_program(
     cahute_link *link,
     cahute_u8 const *program,
@@ -570,7 +571,7 @@ cahute_seven_upload_and_run_program(
     void *progress_cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_flash_system_using_fxremote_method(
     cahute_link *link,
     unsigned long flags,
@@ -582,7 +583,7 @@ cahute_seven_flash_system_using_fxremote_method(
  * Protocol 7.00 Screenstreaming functions, defined in seven_ohp.c
  * --- */
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_ohp_receive_screen(
     cahute_link *link,
     cahute_frame *frame,

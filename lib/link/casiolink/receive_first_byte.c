@@ -38,7 +38,7 @@
  * @param timeout Timeout, in ms.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_receive_first_byte(
     cahute_link *link,
     int *first_bytep,

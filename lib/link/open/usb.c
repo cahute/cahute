@@ -201,7 +201,7 @@ cahute_send_on_ums_link(
  * @param cookie_size Cookie size.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_serial_over_usb_bulk_link_from_interface(
     cahute_usb_link_open_params *open_params,
     cahute_serial_over_usb_bulk_link_interface const *interface,
@@ -247,7 +247,7 @@ fail:
  * @param cookie_size Cookie size.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_ums_link_from_interface(
     cahute_usb_link_open_params *open_params,
     cahute_ums_link_interface const *interface,

@@ -75,11 +75,46 @@ The following variables are specific to Cahute.
 
 ``CAHUTE_CLI_LIBRARY_TYPE``
     Which type of the Cahute library should the CLI utilities, if built, depend
-    on, among ``static`` and ``shared``.
+    on.
 
-    This is only taken into account if :ref:`CAHUTE_LIBRARY_TYPE
-    <cmake-ref-setting-cahute-library-type>` is set to ``both``.
-    It is set to ``shared`` by default.
+    This can be set to the following values:
+
+    ``auto`` (*by default*)
+        The most suitable library type is chosen:
+
+        * If :ref:`CAHUTE_SHARED <cmake-ref-setting-cahute-shared>` is enabled,
+          the shared library is used;
+        * Otherwise, if :ref:`CAHUTE_CLI_PIE
+          <cmake-ref-setting-cahute-cli-pie>` is enabled, the static library
+          with position-independent code is used, which means
+          :ref:`CAHUTE_STATIC_PIC <cmake-ref-setting-cahute-static-pic>` must
+          be enabled;
+        * Otherwise, the static library with position-dependent code is used,
+          which means :ref:`CAHUTE_STATIC <cmake-ref-setting-cahute-static>`
+          must be enabled.
+
+    ``shared``
+        The shared library is used, which means :ref:`CAHUTE_SHARED
+        <cmake-ref-setting-cahute-shared>` must be enabled.
+
+    ``static``
+        The most suitable static library is chosen:
+
+        * If :ref:`CAHUTE_CLI_PIE <cmake-ref-setting-cahute-cli-pie>` is
+          enabled, the static library with position-independent code is used,
+          which means :ref:`CAHUTE_STATIC_PIC
+          <cmake-ref-setting-cahute-static-pic>` must be enabled;
+        * Otherwise, the static library with position-dependent code is used,
+          which means :ref:`CAHUTE_STATIC <cmake-ref-setting-cahute-static>`
+          must be enabled.
+
+.. _cmake-ref-setting-cahute-cli-pie:
+
+``CAHUTE_CLI_PIE``
+    Enable building CLI utilities as position-independent executables (PIE).
+
+    By default, this is enabled on :ref:`feature-topic-system-linux` and
+    :ref:`feature-topic-system-win32`, and disabled on all others.
 
 .. _cmake-ref-setting-cahute-cli-runtime-deps:
 
@@ -124,25 +159,6 @@ The following variables are specific to Cahute.
     By default, this is set to ``${CMAKE_INSTALL_LIBDIR}/udev``, e.g.
     ``/usr/lib/udev`` on Linux.
 
-.. _cmake-ref-setting-cahute-library-type:
-
-``CAHUTE_LIBRARY_TYPE``
-    Type to build the Cahute library as, among the following possibilities:
-
-    ``static``
-        Only build the library as a static library (``.a`` or ``.lib``,
-        depending on the platform).
-
-    ``shared``
-        Only build the library as a shared library (``.so`` or ``.dll``,
-        depending on the platform).
-
-    ``both``
-        Build the library as both a static and a shared library.
-
-    This is set to ``both`` on :ref:`feature-topic-system-win32`, and
-    to ``static`` on other platforms.
-
 .. _cmake-ref-setting-cahute-libusb:
 
 ``CAHUTE_LIBUSB``
@@ -155,15 +171,6 @@ The following variables are specific to Cahute.
 
     This is enabled by default on `platforms libusb support
     <libusb features_>`_.
-
-.. _cmake-ref-setting-cahute-pie:
-
-``CAHUTE_PIE``
-    Enable compiling libraries and executables as Position-Independent
-    (PIC, PIE).
-
-    This is enabled by default on Linux and Win32, and disabled by default
-    for other systems.
 
 .. _cmake-ref-setting-cahute-pkgconf:
 
@@ -185,6 +192,31 @@ The following variables are specific to Cahute.
 
     This is enabled by default on `platforms SDL2 support
     <SDL2 platforms_>`_.
+
+.. _cmake-ref-setting-cahute-shared:
+
+``CAHUTE_SHARED``
+    Enable building the library as a shared library (``.so``, ``.dylib``
+    or ``.dll``, depending on the platform).
+
+    By default, this is enabled on :ref:`feature-topic-system-win32`, and
+    disabled on all others.
+
+.. _cmake-ref-setting-cahute-static:
+
+``CAHUTE_STATIC``
+    Enable building the library as a static library (``.a``, ``.lib``),
+    with position-dependent code.
+
+    By default, this is enabled on all platforms.
+
+.. _cmake-ref-setting-cahute-static-pic:
+
+``CAHUTE_STATIC_PIC``
+    Enable building the library as a static library (``.a``, ``.lib``),
+    with position-independent code.
+
+    By default, this is disabled on all platforms.
 
 .. _cmake-ref-setting-cahute-udev:
 

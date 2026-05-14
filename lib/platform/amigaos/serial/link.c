@@ -348,7 +348,7 @@ amigaos_serial_link_interface = {
  * @param name_or_path Name or path to the serial port to open.
  * @return Error, or CAHUTE_OK if no error has occurred.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_amigaos_serial_link(
     cahute_context *context,
     cahute_serial_link_open_params *open_params,

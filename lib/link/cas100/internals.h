@@ -34,14 +34,14 @@
 #define PACKET_TYPE_CORRUPTED 0x2B
 #define PACKET_TYPE_HEADER    0x3A
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_determine_data_description(
     cahute_context *context,
     cahute_u8 const *data,
     cahute_casiolink_data_description *desc
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_decode_data_using_description(
     cahute_data **final_datap,
     cahute_file *file,
@@ -50,7 +50,7 @@ cahute_cas100_decode_data_using_description(
     struct cahute_casiolink_data_description *desc
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_receive_raw_data(
     cahute_link *link,
     cahute_u8 const *header,
@@ -58,6 +58,6 @@ cahute_cas100_receive_raw_data(
     struct cahute_casiolink_data_description *desc
 );
 
-CAHUTE_EXTERN(int) cahute_cas100_send_model_information(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_cas100_send_model_information(cahute_link *link);
 
 #endif /* LINK_CAS100_INTERNALS_H */

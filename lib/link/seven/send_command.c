@@ -48,7 +48,7 @@
  * @param timeout Timeout for the command.
  * @return Cahute error, or 0 if no error has occurred.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_send_command(
     cahute_link *link,
     int code,

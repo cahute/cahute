@@ -125,7 +125,7 @@ fail:
  * @param timerp Pointer to set to the timer request, if set.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_amiga_timer(
     cahute_context *context,
     struct MsgPort **msg_portp,

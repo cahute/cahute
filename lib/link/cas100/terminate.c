@@ -36,7 +36,7 @@
  * @param link Link for which to terminate the connection.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int) cahute_cas100_terminate(cahute_link *link) {
+CAHUTE_INTERNAL(int) cahute_cas100_terminate(cahute_link *link) {
     cahute_u8 buf[40];
     int err;
 

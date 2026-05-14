@@ -38,7 +38,7 @@
  * @param cookie_size Size of the cookie to pass.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_create_file_from_interface(
     cahute_file_create_params *create_params,
     cahute_file_create_interface const *interface,

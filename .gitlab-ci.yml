@@ -41,7 +41,7 @@ stages:
         CMAKE_INSTALL_PREFIX: "/usr"
         CAHUTE_APPSTREAM: "ON"
         CAHUTE_INSTALL_UDEVDIR: "/usr/lib/udev"
-        CAHUTE_LIBRARY_TYPE: "both"
+        CAHUTE_SHARED: "ON"
         CAHUTE_UDEV: "ON"
         CAHUTE_UDEV_GROUP: "dialout"
 
@@ -49,7 +49,7 @@ stages:
     extends: .build
     variables:
         CMAKE_INSTALL_PREFIX: "/usr"
-        CAHUTE_LIBRARY_TYPE: "both"
+        CAHUTE_SHARED: "ON"
         CAHUTE_UDEV: "ON"
         CAHUTE_UDEV_GROUP: "uucp"
 

@@ -46,7 +46,7 @@
  * @param progress_cookie Cookie to pass to the progress function.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_receive_bytes(
     cahute_link *link,
     unsigned long flags,

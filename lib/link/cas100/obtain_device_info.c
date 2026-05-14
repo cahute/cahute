@@ -42,7 +42,7 @@ obtain_raw_device_info(cahute_link *link, cahute_u8 const **rawp) {
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_get_flash_rom_capacity(
     cahute_link *link,
     unsigned long *valuep
@@ -59,7 +59,7 @@ cahute_cas100_get_flash_rom_capacity(
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_get_ram_capacity(cahute_link *link, unsigned long *valuep) {
     cahute_u8 const *raw;
     int err;
@@ -73,7 +73,7 @@ cahute_cas100_get_ram_capacity(cahute_link *link, unsigned long *valuep) {
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_get_os_version(cahute_link *link, char *buf, size_t size) {
     cahute_u8 const *raw;
     int err;
@@ -90,7 +90,7 @@ cahute_cas100_get_os_version(cahute_link *link, char *buf, size_t size) {
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_get_hwid(cahute_link *link, char *buf, size_t size) {
     cahute_u8 const *raw;
     int err;

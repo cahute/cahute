@@ -43,7 +43,7 @@ default_mdl1_payload =
  * @param link Link on which to send CAS100 model information.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int) cahute_cas100_send_model_information(cahute_link *link) {
+CAHUTE_INTERNAL(int) cahute_cas100_send_model_information(cahute_link *link) {
     cahute_u8 buf[40];
     char serial_params[7];
 

@@ -36,7 +36,7 @@
  * @param timeout Timeout to apply.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_receive_data(
     cahute_link *link,
     cahute_data **datap,

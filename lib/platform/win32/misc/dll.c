@@ -36,7 +36,7 @@
  * @param name Name of the library to load.
  * @return Error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_load_win32_system_library(
     cahute_context *context,
     HMODULE *dllp,
@@ -81,7 +81,7 @@ cahute_load_win32_system_library(
  * @param name Name of the function to extract from the library.
  * @return Error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_win32_library_function(
     cahute_context *context,
     FARPROC *funcp,

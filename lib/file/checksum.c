@@ -37,7 +37,7 @@
  * @param checksum Checksum pointer.
  * @return Error, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_checksum_from_file(
     cahute_file *file,
     unsigned long offset,

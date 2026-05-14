@@ -39,7 +39,7 @@
  * @param cookie_size
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_serial_link_from_interface(
     cahute_serial_link_open_params *open_params,
     cahute_serial_link_interface const *interface,

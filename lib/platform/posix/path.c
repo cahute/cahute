@@ -33,7 +33,7 @@
  *
  * @return Maximum path size.
  */
-CAHUTE_EXTERN(size_t) cahute_get_posix_path_max(cahute_context *context) {
+CAHUTE_INTERNAL(size_t) cahute_get_posix_path_max(cahute_context *context) {
     cahute_ssize path_max;
 
 #ifdef PATH_MAX

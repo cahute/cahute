@@ -40,7 +40,7 @@
  * @param data_size Size of the optional data to append to the command.
  * @param statusp Pointer to the SCSI status to set to the received one.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_scsi_request_to_link_transport(
     cahute_link *link,
     cahute_u8 const *command,

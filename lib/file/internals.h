@@ -41,6 +41,6 @@
     } \
     (void)0
 
-CAHUTE_EXTERN(int) cahute_examine_file(cahute_file *file);
+CAHUTE_INTERNAL(int) cahute_examine_file(cahute_file *file);
 
 #endif /* FILE_INTERNALS_H */

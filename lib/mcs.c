@@ -47,7 +47,7 @@
  * @param data_type Type of the data to decode.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_mcs_decode_data(
     cahute_context *context,
     cahute_data **final_datap,

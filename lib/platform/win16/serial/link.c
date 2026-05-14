@@ -350,7 +350,7 @@ win16_serial_link_interface = {
  * @param name_or_path
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_win16_serial_link(
     cahute_context *context,
     cahute_serial_link_open_params *open_params,

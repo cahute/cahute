@@ -43,7 +43,7 @@
  * @param timeout Timeout for the first byte of the packet.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_receive_packet(
     cahute_link *link,
     cahute_u8 *buf,

@@ -36,7 +36,7 @@
  * @param timeout Timeout to apply.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_ohp_receive_screen(
     cahute_link *link,
     cahute_frame *frame,

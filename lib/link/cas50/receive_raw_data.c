@@ -38,7 +38,7 @@
  * @param desc Data description to fill and use.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas50_receive_raw_data(
     cahute_link *link,
     cahute_u8 const *header,

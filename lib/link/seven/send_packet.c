@@ -49,7 +49,7 @@ timeout_check_packet[] = {5, '0', '1', '0', '6', 'F'};
  * @param timeout Timeout to use for start of packet.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_send_and_receive(
     cahute_link *link,
     unsigned long flags,

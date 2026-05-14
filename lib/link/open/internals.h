@@ -129,7 +129,7 @@ struct cahute_usb_link_open_params {
     unsigned long init_flags;
 };
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_initialize_link_protocol(
     cahute_link *link,
     int protocol,

@@ -28,7 +28,7 @@
 
 #include "../internals.h"
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_monotonic(cahute_context *context, unsigned long *msp) {
     *msp = GetTickCount();
     return CAHUTE_OK;

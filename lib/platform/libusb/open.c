@@ -98,7 +98,7 @@ cahute_parse_libusb_device_path(char const *path, int *busp, int *addrp) {
  * @param path Path to the USB device to open.
  * @return Error, or CAHUTE_OK if no error has occurred.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_libusb_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,

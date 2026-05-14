@@ -39,7 +39,7 @@
  * @param timeout Timeout; 0 for infinite.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_receive_on_libusb_bulk_link(
     cahute_context *context,
     cahute_libusb_link_cookie *cookie,
@@ -97,7 +97,7 @@ cahute_receive_on_libusb_bulk_link(
  * @param sentp Pointer to the written bytes count to set.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_send_on_libusb_bulk_link(
     cahute_context *context,
     cahute_libusb_link_cookie *cookie,

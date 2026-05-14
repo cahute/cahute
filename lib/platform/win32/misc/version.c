@@ -35,7 +35,7 @@
  *        minor version.
  * @return 1 if the version is correct, 0 otherwise.
  */
-CAHUTE_EXTERN(int) cahute_check_win32_version(unsigned int version) {
+CAHUTE_INTERNAL(int) cahute_check_win32_version(unsigned int version) {
     OSVERSIONINFOEX vi;
     DWORDLONG mask = 0;
 

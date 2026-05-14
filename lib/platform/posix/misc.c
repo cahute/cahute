@@ -28,12 +28,12 @@
 
 #include "internals.h"
 
-CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms) {
+CAHUTE_INTERNAL(int) cahute_sleep(cahute_context *context, unsigned long ms) {
     usleep(ms * 1000);
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_monotonic(cahute_context *context, unsigned long *msp) {
 #if DJGPP_ENABLED
     /* DJGPP does not define 'clock_gettime()', however it defines 'uclock()'

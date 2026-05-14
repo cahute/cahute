@@ -171,7 +171,7 @@ fail:
  * @param libp
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_win32_winusb(cahute_context *context, cahute_win32_winusb **libp) {
     return cahute_get_context_pointer(
         context,

@@ -36,7 +36,7 @@
  * @param subtype Subtype of the packet to send, 5 bytes long.
  * @return Cahute error, or 0 if no error has occurred.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_ohp_send_basic(
     cahute_link *link,
     int type,

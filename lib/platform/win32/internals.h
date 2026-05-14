@@ -48,16 +48,16 @@
 CAHUTE_DECLARE_TYPE(cahute_win32_cfgmgr32)
 CAHUTE_DECLARE_TYPE(cahute_win32_winusb)
 
-CAHUTE_EXTERN_DATA(GUID) cahute_guid_devinterface_usb_hub;
-CAHUTE_EXTERN_DATA(GUID) cahute_guid_devinterface_usb_device;
-CAHUTE_EXTERN_DATA(GUID) cahute_guid_devinterface_volume;
+CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devinterface_usb_hub;
+CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devinterface_usb_device;
+CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devinterface_volume;
 
-CAHUTE_EXTERN_DATA(GUID) cahute_guid_devclass_usb;
-CAHUTE_EXTERN_DATA(GUID) cahute_guid_devclass_usb_device;
-CAHUTE_EXTERN_DATA(GUID) cahute_guid_devclass_diskdrive;
-CAHUTE_EXTERN_DATA(GUID) cahute_guid_devclass_volume;
+CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devclass_usb;
+CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devclass_usb_device;
+CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devclass_diskdrive;
+CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devclass_volume;
 
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_win32_log_error(
     cahute_context *context,
     char const *func_name,
@@ -68,10 +68,10 @@ cahute_win32_log_error(
 #define log_windows_error(CTX, FUNC, CODE) \
     cahute_win32_log_error(CTX, CAHUTE_LOGFUNC, FUNC, CODE)
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_decode_win32_guid(cahute_context *context, GUID *guid, char const *raw);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_serialize_win32_guid(
     cahute_context *context,
     char *buf,
@@ -79,14 +79,14 @@ cahute_serialize_win32_guid(
     GUID const *guid
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_load_win32_system_library(
     cahute_context *context,
     HMODULE *dllp,
     char const *name
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_win32_library_function(
     cahute_context *context,
     FARPROC *funcp,
@@ -94,7 +94,7 @@ cahute_get_win32_library_function(
     char const *name
 );
 
-CAHUTE_EXTERN(int) cahute_check_win32_version(unsigned int version);
+CAHUTE_INTERNAL(int) cahute_check_win32_version(unsigned int version);
 
 #define cahute_is_win_vista() cahute_check_win32_version(0x0600)
 #define cahute_is_win_7()     cahute_check_win32_version(0x0601)
@@ -197,7 +197,7 @@ struct cahute_win32_cfgmgr32 {
     cahute_cfgmgr32_get_parent_func *get_parent;
 };
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_win32_cfgmgr32(
     cahute_context *context,
     cahute_win32_cfgmgr32 **libp
@@ -292,7 +292,7 @@ struct cahute_win32_winusb {
     cahute_winusb_get_overlapped_result_func *get_overlapped_result;
 };
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_win32_winusb(cahute_context *context, cahute_win32_winusb **libp);
 
 /* ---
@@ -342,7 +342,7 @@ struct cahute_win32_device {
 
 typedef int(cahute_enumerate_win32_device_func)(void *, cahute_win32_device const *);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_enumerate_win32_devices(
     cahute_context *context,
     cahute_win32_device_filter const *filter,

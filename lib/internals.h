@@ -62,15 +62,15 @@ CAHUTE_DECLARE_TYPE(cahute_stdout_open_interface)
  * Endianess management.
  * --- */
 
-CAHUTE_EXTERN(cahute_u16) cahute_be16toh(cahute_u16 cahute__x);
-CAHUTE_EXTERN(cahute_u16) cahute_le16toh(cahute_u16 cahute__x);
-CAHUTE_EXTERN(cahute_u32) cahute_be32toh(cahute_u32 cahute__x);
-CAHUTE_EXTERN(cahute_u32) cahute_le32toh(cahute_u32 cahute__x);
+CAHUTE_INTERNAL(cahute_u16) cahute_be16toh(cahute_u16 cahute__x);
+CAHUTE_INTERNAL(cahute_u16) cahute_le16toh(cahute_u16 cahute__x);
+CAHUTE_INTERNAL(cahute_u32) cahute_be32toh(cahute_u32 cahute__x);
+CAHUTE_INTERNAL(cahute_u32) cahute_le32toh(cahute_u32 cahute__x);
 
-CAHUTE_EXTERN(cahute_u16) cahute_htobe16(cahute_u16 cahute__x);
-CAHUTE_EXTERN(cahute_u16) cahute_htole16(cahute_u16 cahute__x);
-CAHUTE_EXTERN(cahute_u32) cahute_htobe32(cahute_u32 cahute__x);
-CAHUTE_EXTERN(cahute_u32) cahute_htole32(cahute_u32 cahute__x);
+CAHUTE_INTERNAL(cahute_u16) cahute_htobe16(cahute_u16 cahute__x);
+CAHUTE_INTERNAL(cahute_u16) cahute_htole16(cahute_u16 cahute__x);
+CAHUTE_INTERNAL(cahute_u32) cahute_htobe32(cahute_u32 cahute__x);
+CAHUTE_INTERNAL(cahute_u32) cahute_htole32(cahute_u32 cahute__x);
 
 /* Try to get native macros. */
 #if defined(__APPLE__)
@@ -180,7 +180,7 @@ struct cahute_context {
  * Logging internals.
  * --- */
 
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL_VA(void)
 cahute_log_message(
     cahute_context *cahute__context,
     int cahute__loglevel,
@@ -189,7 +189,7 @@ cahute_log_message(
     ...
 );
 
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_log_memory(
     cahute_context *cahute__context,
     int cahute__loglevel,
@@ -198,7 +198,7 @@ cahute_log_memory(
     size_t cahute__size
 );
 
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_log_external_message(
     cahute_context *context,
     int loglevel,
@@ -437,7 +437,7 @@ struct cahute_stdout_open_interface {
 
 /* Internal function to declare a file for a memory buffer, without having
  * to use dynamic memory. */
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_populate_file_from_memory(
     cahute_file *file,
     cahute_context *context,
@@ -445,7 +445,7 @@ cahute_populate_file_from_memory(
     size_t size
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_create_file_from_interface(
     cahute_file_create_params *create_params,
     cahute_file_create_interface const *interface,
@@ -453,7 +453,7 @@ cahute_create_file_from_interface(
     size_t cookie_size
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_file_from_interface(
     cahute_file_open_params *open_params,
     cahute_file_open_interface const *interface,
@@ -462,7 +462,7 @@ cahute_open_file_from_interface(
     unsigned long file_size
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_stdout_from_interface(
     cahute_stdout_open_params *open_params,
     cahute_stdout_open_interface const *interface,
@@ -470,7 +470,7 @@ cahute_open_stdout_from_interface(
     size_t cookie_size
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_checksum_from_file(
     cahute_file *file,
     unsigned long offset,
@@ -483,14 +483,14 @@ cahute_checksum_from_file(
  * --- */
 
 #if CAHUTE_PLATFORM_AMIGAOS
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_amigaos_detect_serial(
     cahute_context *context,
     cahute_detect_serial_entry_func *func,
     void *cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_amigaos_serial_link(
     cahute_context *context,
     cahute_serial_link_open_params *open_params,
@@ -499,7 +499,7 @@ cahute_open_amigaos_serial_link(
 #endif
 
 #if CAHUTE_PLATFORM_LINUX
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_linux_detect_serial(
     cahute_context *context,
     cahute_detect_serial_entry_func *func,
@@ -508,25 +508,25 @@ cahute_linux_detect_serial(
 #endif
 
 #if CAHUTE_PLATFORM_POSIX
-CAHUTE_EXTERN(size_t) cahute_get_posix_path_max(cahute_context *context);
+CAHUTE_INTERNAL(size_t) cahute_get_posix_path_max(cahute_context *context);
 
-CAHUTE_EXTERN(int) cahute_posix_is_stderr_tty(void);
+CAHUTE_INTERNAL(int) cahute_posix_is_stderr_tty(void);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_posix_detect_serial(
     cahute_context *context,
     cahute_detect_serial_entry_func *func,
     void *cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_posix_serial_link(
     cahute_context *context,
     cahute_serial_link_open_params *open_params,
     char const *name_or_path
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_create_posix_file(
     cahute_context *context,
     cahute_file_create_params *create_params,
@@ -535,7 +535,7 @@ cahute_create_posix_file(
     int path_type
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_posix_file(
     cahute_context *context,
     cahute_file_open_params *open_params,
@@ -543,7 +543,7 @@ cahute_open_posix_file(
     int path_type
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_posix_stdout(
     cahute_context *context,
     cahute_stdout_open_params *open_params
@@ -551,35 +551,35 @@ cahute_open_posix_stdout(
 #endif
 
 #if CAHUTE_PLATFORM_WIN32
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_win32_detect_serial(
     cahute_context *context,
     cahute_detect_serial_entry_func *func,
     void *cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_win32_serial_link(
     cahute_context *context,
     cahute_serial_link_open_params *open_params,
     char const *name_or_path
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_win32_detect_usb(
     cahute_context *context,
     cahute_detect_usb_entry_func CAHUTE_NNPTR(func),
     void *cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_win32_usb_device(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
     char const *name
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_create_win32_file(
     cahute_context *context,
     cahute_file_create_params *create_params,
@@ -588,7 +588,7 @@ cahute_create_win32_file(
     int path_type
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_win32_file(
     cahute_context *context,
     cahute_file_open_params *create_params,
@@ -596,7 +596,7 @@ cahute_open_win32_file(
     int path_type
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_win32_stdout(
     cahute_context *context,
     cahute_stdout_open_params *open_params
@@ -604,14 +604,14 @@ cahute_open_win32_stdout(
 #endif
 
 #if CAHUTE_PLATFORM_WIN16
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_win16_detect_serial(
     cahute_context *context,
     cahute_detect_serial_entry_func *func,
     void *cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_win16_serial_link(
     cahute_context *context,
     cahute_serial_link_open_params *open_params,
@@ -620,14 +620,14 @@ cahute_open_win16_serial_link(
 #endif
 
 #if CAHUTE_PLATFORM_LIBUSB
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_libusb_detect_usb(
     cahute_context *context,
     cahute_detect_usb_entry_func CAHUTE_NNPTR(func),
     void *cookie
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_libusb_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
@@ -639,15 +639,15 @@ cahute_open_libusb_link(
  * Miscellaneous functions, defined in misc.c
  * --- */
 
-CAHUTE_EXTERN(int) cahute_sleep(cahute_context *context, unsigned long ms);
+CAHUTE_INTERNAL(int) cahute_sleep(cahute_context *context, unsigned long ms);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_monotonic(cahute_context *context, unsigned long *msp);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_pad_data(cahute_u8 *buf, cahute_u8 const *data, size_t data_size);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_unpad_data(
     cahute_u8 *buf,
     size_t *buf_sizep,
@@ -726,7 +726,7 @@ cahute_checksum(cahute_u8 const *data, size_t size) {
  * Context management functions.
  * --- */
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_context_pointer(
     cahute_context *context,
     void **valuep,
@@ -739,7 +739,7 @@ cahute_get_context_pointer(
  * --- */
 
 /* From link_open_serial.c */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_serial_link_from_interface(
     cahute_serial_link_open_params *open_params,
     cahute_serial_link_interface const *interface,
@@ -748,7 +748,7 @@ cahute_open_serial_link_from_interface(
 );
 
 /* From link_open_serial_over_usb_bulk.c */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_serial_over_usb_bulk_link_from_interface(
     cahute_usb_link_open_params *open_params,
     cahute_serial_over_usb_bulk_link_interface const *interface,
@@ -757,7 +757,7 @@ cahute_open_serial_over_usb_bulk_link_from_interface(
 );
 
 /* From link_open_ums.c */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_ums_link_from_interface(
     cahute_usb_link_open_params *open_params,
     cahute_ums_link_interface const *interface,
@@ -766,15 +766,15 @@ cahute_open_ums_link_from_interface(
 );
 
 /* From link_init.c */
-CAHUTE_EXTERN(int) cahute_initialize_link(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_initialize_link(cahute_link *link);
 
-CAHUTE_EXTERN(char const *) cahute_get_protocol_name(int protocol);
+CAHUTE_INTERNAL(char const *) cahute_get_protocol_name(int protocol);
 
 /* ---
  * Link transport functions.
  * --- */
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_receive_on_link_transport(
     cahute_link *link,
     cahute_u8 *buf,
@@ -783,21 +783,21 @@ cahute_receive_on_link_transport(
     unsigned long next_timeout
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_send_on_link_transport(
     cahute_link *link,
     cahute_u8 const *buf,
     size_t size
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_set_serial_params_on_link_transport(
     cahute_link *link,
     unsigned long flags,
     unsigned long speed
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_scsi_request_to_link_transport(
     cahute_link *link,
     cahute_u8 const *command,
@@ -807,7 +807,7 @@ cahute_scsi_request_to_link_transport(
     int *statusp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_scsi_request_from_link_transport(
     cahute_link *link,
     cahute_u8 const *command,
@@ -863,7 +863,7 @@ cahute_send_byte_on_link_transport(cahute_link *link, int byte) {
  * Data management, defined in data.c
  * --- */
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_create_program_from_file(
     cahute_data **datap,
     int encoding,
@@ -950,27 +950,27 @@ cahute_casiolink_compute_data_description_size(
     return total_size;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_check_file_data(
     cahute_file *file,
     unsigned long offset,
     struct cahute_casiolink_data_description const *desc
 );
 
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_casiolink_log_data_description(
     cahute_context *context,
     struct cahute_casiolink_data_description const *desc
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_decode_data(
     cahute_data **datap,
     cahute_file *file,
     unsigned long *offsetp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_receive_raw_data(
     cahute_link *link,
     struct cahute_casiolink_data_description const *desc,
@@ -979,17 +979,17 @@ cahute_casiolink_receive_raw_data(
 );
 
 /* Make the CASIOLINK handshake only. */
-CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_receiver(cahute_link *link);
-CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_sender(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_casiolink_initiate_as_receiver(cahute_link *link);
+CAHUTE_INTERNAL(int) cahute_casiolink_initiate_as_sender(cahute_link *link);
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_receive_first_byte(
     cahute_link *link,
     int *first_bytep,
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_receive_packet(
     cahute_link *link,
     cahute_u8 *buf,
@@ -998,7 +998,7 @@ cahute_casiolink_receive_packet(
     unsigned long timeout
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_receive_data(
     cahute_link *link,
     cahute_data **datap,
@@ -1009,14 +1009,14 @@ cahute_casiolink_receive_data(
  * CASIOLINK main memory decoding functions.
  * --- */
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas40_decode_data(
     cahute_data **final_datap,
     cahute_file *file,
     unsigned long *offsetp
 );
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas50_decode_data(
     cahute_data **final_datap,
     cahute_file *file,
@@ -1027,7 +1027,7 @@ cahute_cas50_decode_data(
  * MCS encoding and decoding functions, defined in mcs.c
  * --- */
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_mcs_decode_data(
     cahute_context *context,
     cahute_data **datap,

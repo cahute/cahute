@@ -91,7 +91,7 @@ end_packet[] = {
  * @param link Link for which to terminate the connection.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int) cahute_cas50_terminate(cahute_link *link) {
+CAHUTE_INTERNAL(int) cahute_cas50_terminate(cahute_link *link) {
     int err;
 
     if (link->flags & CAHUTE_LINK_FLAG_TERMINATED)

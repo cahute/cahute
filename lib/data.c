@@ -42,7 +42,7 @@
  * @param content_size Size of the content to read.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_create_program_from_file(
     cahute_data **datap,
     int encoding,

@@ -34,7 +34,8 @@
  * @param link Link to check.
  * @return Cahute error, or 0 if no error has occurred.
  */
-CAHUTE_EXTERN(int) cahute_check_link(cahute_link *link, unsigned long flags) {
+CAHUTE_INTERNAL(int)
+cahute_check_link(cahute_link *link, unsigned long flags) {
     if (link->flags & CAHUTE_LINK_FLAG_GONE)
         return CAHUTE_ERROR_GONE;
     if (link->flags & CAHUTE_LINK_FLAG_IRRECOVERABLE)

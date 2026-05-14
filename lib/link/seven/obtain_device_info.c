@@ -92,7 +92,7 @@ extract_info_string(
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_product_id(cahute_link *link, char *buf, size_t size) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -105,7 +105,7 @@ cahute_seven_get_product_id(cahute_link *link, char *buf, size_t size) {
     return extract_info_string(buf, size, &raw[132], 16);
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_username(cahute_link *link, char *buf, size_t size) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -123,7 +123,7 @@ cahute_seven_get_username(cahute_link *link, char *buf, size_t size) {
     );
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_organisation(cahute_link *link, char *buf, size_t size) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -139,7 +139,7 @@ cahute_seven_get_organisation(cahute_link *link, char *buf, size_t size) {
     return extract_info_string(buf, size, &raw[168], 20);
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_hwid(cahute_link *link, char *buf, size_t size) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -152,7 +152,7 @@ cahute_seven_get_hwid(cahute_link *link, char *buf, size_t size) {
     return extract_info_string(buf, size, raw, 8);
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_cpuid(cahute_link *link, char *buf, size_t size) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -165,7 +165,7 @@ cahute_seven_get_cpuid(cahute_link *link, char *buf, size_t size) {
     return extract_info_string(buf, size, &raw[8], 16);
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_rom_capacity(cahute_link *link, unsigned long *valuep) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -182,7 +182,7 @@ cahute_seven_get_rom_capacity(cahute_link *link, unsigned long *valuep) {
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_flash_rom_capacity(cahute_link *link, unsigned long *valuep) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -196,7 +196,7 @@ cahute_seven_get_flash_rom_capacity(cahute_link *link, unsigned long *valuep) {
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_ram_capacity(cahute_link *link, unsigned long *valuep) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -210,7 +210,7 @@ cahute_seven_get_ram_capacity(cahute_link *link, unsigned long *valuep) {
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_rom_version(cahute_link *link, char *buf, size_t size) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -226,7 +226,7 @@ cahute_seven_get_rom_version(cahute_link *link, char *buf, size_t size) {
     return extract_info_string(buf, size, &raw[48], 16);
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_bootcode_version(cahute_link *link, char *buf, size_t size) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -242,7 +242,7 @@ cahute_seven_get_bootcode_version(cahute_link *link, char *buf, size_t size) {
     return extract_info_string(buf, size, &raw[64], 16);
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_bootcode_offset(cahute_link *link, unsigned long *valuep) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -259,7 +259,7 @@ cahute_seven_get_bootcode_offset(cahute_link *link, unsigned long *valuep) {
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_bootcode_size(cahute_link *link, unsigned long *valuep) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -276,7 +276,7 @@ cahute_seven_get_bootcode_size(cahute_link *link, unsigned long *valuep) {
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_os_version(cahute_link *link, char *buf, size_t size) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -292,7 +292,7 @@ cahute_seven_get_os_version(cahute_link *link, char *buf, size_t size) {
     return extract_info_string(buf, size, &raw[96], 16);
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_os_offset(cahute_link *link, unsigned long *valuep) {
     cahute_u8 const *raw;
     size_t raw_size;
@@ -309,7 +309,7 @@ cahute_seven_get_os_offset(cahute_link *link, unsigned long *valuep) {
     return CAHUTE_OK;
 }
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_get_os_size(cahute_link *link, unsigned long *valuep) {
     cahute_u8 const *raw;
     size_t raw_size;

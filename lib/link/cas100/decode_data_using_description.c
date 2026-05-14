@@ -39,7 +39,7 @@
  * @param desc Data description to exploit.
  * @return Error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_decode_data_using_description(
     cahute_data **final_datap,
     cahute_file *file,

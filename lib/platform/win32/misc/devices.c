@@ -38,7 +38,7 @@
  * @param cookie Cookie to call the function with.
  * @return Error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_enumerate_win32_devices(
     cahute_context *context,
     cahute_win32_device_filter const *filter,

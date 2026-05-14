@@ -97,7 +97,7 @@ CAHUTE_EXTERN(char const *) cahute_get_error_name(int code) {
  * @param data_size Size of the source data to apply padding to.
  * @return Size of the unpadded data.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_pad_data(cahute_u8 *buf, cahute_u8 const *data, size_t data_size) {
     cahute_u8 *orig = buf;
     cahute_u8 const *p;
@@ -130,7 +130,7 @@ cahute_pad_data(cahute_u8 *buf, cahute_u8 const *data, size_t data_size) {
  * @param data_size Size of the source data to apply padding to.
  * @return Error code, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_unpad_data(
     cahute_u8 *buf,
     size_t *buf_sizep,

@@ -41,7 +41,7 @@
  * @param size Size of the buffer.
  * @return Error, or 0 if successful.
  */
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_populate_file_from_memory(
     cahute_file *file,
     cahute_context *context,

@@ -34,7 +34,7 @@
  * @param context Context in which the function is called.
  * @param cookie Cookie.
  */
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_close_posix_serial_link(
     cahute_context *context,
     cahute_posix_serial_link_cookie *cookie
@@ -54,7 +54,7 @@ cahute_close_posix_serial_link(
  * @param timeout Timeout; 0 for infinite.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_receive_on_posix_serial_link(
     cahute_context *context,
     cahute_posix_serial_link_cookie *cookie,
@@ -140,7 +140,7 @@ cahute_receive_on_posix_serial_link(
  * @param sentp Pointer to the sent bytes count to set.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_send_on_posix_serial_link(
     cahute_context *context,
     cahute_posix_serial_link_cookie *cookie,
@@ -174,7 +174,7 @@ cahute_send_on_posix_serial_link(
  * @param speed
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_set_posix_serial_link_params(
     cahute_context *context,
     cahute_posix_serial_link_cookie *cookie,
@@ -373,7 +373,7 @@ posix_serial_interface = {
  * @param name_or_path Name or path to the serial port to open.
  * @return Error, or CAHUTE_OK if no error has occurred.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_open_posix_serial_link(
     cahute_context *context,
     cahute_serial_link_open_params *open_params,

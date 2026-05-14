@@ -46,7 +46,7 @@
  * @param default_device Default device name.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_amigaos_device(
     cahute_context *context,
     cahute_amigaos_device *dev,

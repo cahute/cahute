@@ -54,7 +54,7 @@ alignment_sequence_count = sizeof(alignment_sequences) / sizeof(char const *);
  * @param timeout Timeout before the first byte.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_ohp_receive(cahute_link *link, int align, unsigned long timeout) {
     struct cahute_seven_ohp_state *state = &link->protocol_state.seven_ohp;
     cahute_u8 buf[50], *data_buf = state->picture_buf;

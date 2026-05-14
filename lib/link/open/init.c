@@ -691,7 +691,7 @@ found:
  * @param flags Flags to tweak the function's behaviour.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_initialize_link_protocol(
     cahute_link *link,
     int protocol,

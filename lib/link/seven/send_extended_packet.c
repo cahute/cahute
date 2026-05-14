@@ -45,7 +45,7 @@
  * @param timeout Timeout in which to expect the response to the packet.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_send_extended(
     cahute_link *link,
     unsigned long flags,

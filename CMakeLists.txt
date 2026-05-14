@@ -35,9 +35,12 @@ set(CAHUTE_CLI ON CACHE BOOL
 set(CAHUTE_CLI_EXPERIMENTAL OFF CACHE BOOL
     "Enable experimental command-line utilities?")
 
-set(CAHUTE_CLI_LIBRARY_TYPE "shared" CACHE STRING
-    "If both Cahute library types are enabled, on which should the CLI depend?")
-set_property(CACHE CAHUTE_CLI_LIBRARY_TYPE PROPERTY STRINGS "shared" "static")
+set(CAHUTE_CLI_LIBRARY_TYPE "auto" CACHE STRING
+    "Which library type should the CLI be built against?")
+set_property(CACHE CAHUTE_CLI_LIBRARY_TYPE PROPERTY STRINGS "auto" "shared" "static")
+
+set(CAHUTE_CLI_PIE OFF CACHE BOOL
+    "Enable compiling the CLI utilities as position-independent executables (PIE)?")
 
 set(CAHUTE_CLI_RUNTIME_DEPS OFF CACHE BOOL
     "Enable installation of runtime dependencies with command-line utilities?")
@@ -59,16 +62,6 @@ set(CAHUTE_GIT ON CACHE BOOL
 set(CAHUTE_INSTALL_UDEVDIR "${CMAKE_INSTALL_LIBDIR}/udev" CACHE STRING
     "Path in which to install udev rules?")
 
-if(WIN32)
-    set(_DEFAULT_LIBRARY_TYPE "both")
-else()
-    set(_DEFAULT_LIBRARY_TYPE "static")
-endif()
-
-set(CAHUTE_LIBRARY_TYPE ${_DEFAULT_LIBRARY_TYPE} CACHE STRING
-    "Build Cahute library as shared, static, or both?")
-set_property(CACHE CAHUTE_LIBRARY_TYPE PROPERTY STRINGS "shared" "static" "both")
-
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Android|Darwin|Haiku|iOS|Linux|NetBSD|OpenBSD|SunOS")
     set(_DEFAULT_LIBUSB ON)
 else()
@@ -77,15 +70,6 @@ endif()
 
 set(CAHUTE_LIBUSB ${_DEFAULT_LIBUSB} CACHE BOOL
     "Enable usage of libusb?")
-
-if(LINUX OR WIN32)
-    set(_DEFAULT_PIE ON)
-else()
-    set(_DEFAULT_PIE OFF)
-endif()
-
-set(CAHUTE_PIE ${_DEFAULT_PIE} CACHE BOOL
-    "Enable compiling the executables as Position-Independent (PIE)?")
 
 set(CAHUTE_PKGCONF ON CACHE BOOL
     "Enable installation of pkgconf files?")
@@ -101,6 +85,21 @@ endif()
 
 set(CAHUTE_SDL ${_DEFAULT_SDL} CACHE BOOL
     "Enable usage of SDL?")
+
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows$")
+    set(_DEFAULT_SHARED ON)
+else()
+    set(_DEFAULT_SHARED OFF)
+endif()
+
+set(CAHUTE_SHARED ${_DEFAULT_SHARED} CACHE BOOL
+    "Enable compiling the library as shared?")
+
+set(CAHUTE_STATIC ON CACHE BOOL
+    "Enable compiling the library as position-dependent static?")
+
+set(CAHUTE_STATIC_PIC OFF CACHE BOOL
+    "Enable compiling the library as position-independent static?")
 
 if(LINUX)
     set(_DEFAULT_UDEV ON)
@@ -165,7 +164,7 @@ endif()
 
 include(CheckTypeSize)
 
-if(CAHUTE_PIE)
+if(CAHUTE_CLI_PIE OR CAHUTE_STATIC_PIC OR CAHUTE_SHARED)
     include(CheckPIESupported)
 
     check_pie_supported()
@@ -232,25 +231,43 @@ else()
     )
 endif()
 
-# BUILD_STATIC represents whether we are building the library as static.
-# BUILD_SHARED represents whether we are building the library as shared.
+# CLI_CAHUTE_DEP_VAR represents the name of the variable we need to check.
 # CLI_CAHUTE_DEP represents the name of the target used by the CLI utilities.
-if(CAHUTE_LIBRARY_TYPE STREQUAL "static")
-    set(BUILD_STATIC ON)
-    set(BUILD_SHARED OFF)
-    set(CLI_CAHUTE_DEP "cahute-static")
-elseif(CAHUTE_LIBRARY_TYPE STREQUAL "shared")
-    set(BUILD_STATIC OFF)
-    set(BUILD_SHARED ON)
-    set(CLI_CAHUTE_DEP "cahute-shared")
-else()
-    set(BUILD_STATIC ON)
-    set(BUILD_SHARED ON)
-    if(CAHUTE_CLI_LIBRARY_TYPE STREQUAL "shared")
+if(CAHUTE_CLI_LIBRARY_TYPE STREQUAL "auto")
+    if(CAHUTE_SHARED)
+        set(CLI_CAHUTE_DEP_VAR "CAHUTE_SHARED")
         set(CLI_CAHUTE_DEP "cahute-shared")
     else()
-        set(CLI_CAHUTE_DEP "cahute-static")
+        if(CAHUTE_CLI_PIE)
+            set(CLI_CAHUTE_DEP_VAR "CAHUTE_STATIC_PIC")
+            set(CLI_CAHUTE_DEP "cahute-static-pic")
+        else()
+            set(CLI_CAHUTE_DEP_VAR "CAHUTE_STATIC")
+            set(CLI_CAHUTE_DEP "cahute-static")
+        endif()
+
+        if(NOT ${${CLI_CAHUTE_DEP_VAR}})
+            message(FATAL_ERROR
+                "CLI utilities' library type \"${CAHUTE_CLI_LIBRARY_TYPE}\" "
+                "require that you either set CAHUTE_SHARED or "
+                "${CLI_CAHUTE_DEP_VAR} to ON.")
+        endif()
     endif()
+elseif(CAHUTE_CLI_LIBRARY_TYPE STREQUAL "shared")
+    set(CLI_CAHUTE_DEP_VAR "CAHUTE_SHARED")
+    set(CLI_CAHUTE_DEP "cahute-shared")
+elseif(CAHUTE_CLI_PIE)
+    set(CLI_CAHUTE_DEP_VAR "CAHUTE_STATIC_PIC")
+    set(CLI_CAHUTE_DEP "cahute-static-pic")
+else()
+    set(CLI_CAHUTE_DEP_VAR "CAHUTE_STATIC")
+    set(CLI_CAHUTE_DEP "cahute-static")
+endif()
+
+if(NOT ${${CLI_CAHUTE_DEP_VAR}})
+    message(FATAL_ERROR
+        "CLI utilities' library type \"${CAHUTE_CLI_LIBRARY_TYPE}\" require "
+        "that you set ${CLI_CAHUTE_DEP_VAR} to ON.")
 endif()
 
 # LIB_INCLUDE_DIRS represents the directories to include in order to compile
@@ -265,7 +282,9 @@ set(LIB_INCLUDE_DIRS
 # LIB_COMPILE_DEFS represents the additional defines to pass to the compiler
 # while compiling library, as compiler options ("-DXYZ=ABC").
 string(TOUPPER ${CAHUTE_DEFAULT_LOGLEVEL} CAHUTE_DEFAULT_LOGLEVEL_UPPER)
-set(LIB_COMPILE_DEFS "-DCAHUTE_DEFAULT_LOGLEVEL=CAHUTE_LOGLEVEL_${CAHUTE_DEFAULT_LOGLEVEL_UPPER}")
+set(LIB_COMPILE_DEFS
+    CAHUTE_DEFAULT_LOGLEVEL=CAHUTE_LOGLEVEL_${CAHUTE_DEFAULT_LOGLEVEL_UPPER}
+    CAHUTE_IS_INTERNAL=1)
 
 # LIB_SOURCES represents the names of the sources used to compile the library.
 set(LIB_SOURCES
@@ -489,8 +508,15 @@ set(CLI_INCLUDE_DIRS
 # CLI_LIBRARIES represent the libraries against which to link for any
 # command-line utility.
 set(CLI_LIBRARIES
-    ${CLI_CAHUTE_DEP}
-)
+    ${CLI_CAHUTE_DEP})
+
+# CLI_COMPILE_DEFS defines the compile definitions.
+set(CLI_COMPILE_DEFS
+    CAHUTE_STATIC=0)
+if(CLI_CAHUTE_DEP STREQUAL "cahute-static")
+    set(CLI_COMPILE_DEFS
+        CAHUTE_STATIC=1)
+endif()
 
 # PKGCONFIG_DEPS represent the additional dependencies to place in the
 # pkgconf / pkg-config configuration file when installing the library.
@@ -593,7 +619,7 @@ add_custom_command(
     VERBATIM
 )
 
-if(BUILD_SHARED OR (BUILD_STATIC AND CAHUTE_PIE))
+if(CAHUTE_SHARED OR CAHUTE_STATIC_PIC)
     add_library(cahute-pic OBJECT ${LIB_SOURCES})
     set_property(TARGET cahute-pic PROPERTY POSITION_INDEPENDENT_CODE ON)
     add_dependencies(cahute-pic cahute-headers)
@@ -604,7 +630,7 @@ if(BUILD_SHARED OR (BUILD_STATIC AND CAHUTE_PIE))
         ${LIB_COMPILE_DEFS})
 endif()
 
-if(BUILD_STATIC AND NOT CAHUTE_PIE)
+if(CAHUTE_STATIC)
     add_library(cahute-pdc OBJECT ${LIB_SOURCES})
     add_dependencies(cahute-pdc cahute-headers)
     target_include_directories(cahute-pdc PRIVATE
@@ -614,16 +640,8 @@ if(BUILD_STATIC AND NOT CAHUTE_PIE)
         ${LIB_COMPILE_DEFS})
 endif()
 
-if(BUILD_STATIC)
-    # If BUILD_SHARED is enabled, we can only reuse the "cahute-base" target
-    # if CAHUTE_PIE is also enabled, otherwise we need to recompile them
-    # without position-independent switches enabled.
-    if(CAHUTE_PIE)
-        add_library(cahute-static STATIC $<TARGET_OBJECTS:cahute-pic>)
-    else()
-        add_library(cahute-static STATIC $<TARGET_OBJECTS:cahute-pdc>)
-    endif()
-
+if(CAHUTE_STATIC)
+    add_library(cahute-static STATIC $<TARGET_OBJECTS:cahute-pdc>)
     set_target_properties(cahute-static PROPERTIES OUTPUT_NAME "cahute-static")
 
     if(CAHUTE_PKGCONF)
@@ -642,7 +660,27 @@ if(BUILD_STATIC)
             COMPONENT lib_dev)
 endif()
 
-if(BUILD_SHARED)
+if(CAHUTE_STATIC_PIC)
+    add_library(cahute-static-pic STATIC $<TARGET_OBJECTS:cahute-pic>)
+    set_target_properties(cahute-static-pic PROPERTIES OUTPUT_NAME "cahute-static-pic")
+
+    if(CAHUTE_PKGCONF)
+        configure_file(misc/cahute-static-pic.pc.in misc/cahute-static-pic.pc ESCAPE_QUOTES @ONLY)
+
+        install(
+            FILES ${CMAKE_CURRENT_BINARY_DIR}/misc/cahute-static-pic.pc
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
+            COMPONENT lib_dev
+            RENAME "cahute-${PROJECT_VERSION_PUBLIC}-static-pic.pc"
+        )
+    endif()
+
+    install(TARGETS cahute-static-pic
+        ARCHIVE
+            COMPONENT lib_dev)
+endif()
+
+if(CAHUTE_SHARED)
     add_library(cahute-shared SHARED $<TARGET_OBJECTS:cahute-pic>)
     set_target_properties(cahute-shared PROPERTIES OUTPUT_NAME "cahute")
     set_target_properties(cahute-shared PROPERTIES SOVERSION
@@ -708,11 +746,12 @@ if(CAHUTE_CLI_CAS)
         cli/common.c
         cli/options.c
     )
-    if(CAHUTE_PIE)
+    if(CAHUTE_CLI_PIE)
         set_property(TARGET CaS PROPERTY POSITION_INDEPENDENT_CODE ON)
     endif()
     target_link_libraries(CaS PRIVATE ${CLI_LIBRARIES})
     target_include_directories(CaS PRIVATE ${CLI_INCLUDE_DIRS})
+    target_compile_definitions(CaS PRIVATE ${CLI_COMPILE_DEFS})
 
     install(TARGETS CaS
         RUNTIME_DEPENDENCY_SET cli
@@ -727,11 +766,12 @@ if(CAHUTE_CLI_P7)
         cli/common.c
         cli/options.c
     )
-    if(CAHUTE_PIE)
+    if(CAHUTE_CLI_PIE)
         set_property(TARGET p7 PROPERTY POSITION_INDEPENDENT_CODE ON)
     endif()
     target_link_libraries(p7 PRIVATE ${CLI_LIBRARIES})
     target_include_directories(p7 PRIVATE ${CLI_INCLUDE_DIRS})
+    target_compile_definitions(p7 PRIVATE ${CLI_COMPILE_DEFS})
 
     install(TARGETS p7
         RUNTIME_DEPENDENCY_SET cli
@@ -756,11 +796,12 @@ if(CAHUTE_CLI_P7OS)
         cli/options.c
         "${CMAKE_CURRENT_BINARY_DIR}/cli/fxremote-update.exe.bin.c"
     )
-    if(CAHUTE_PIE)
+    if(CAHUTE_CLI_PIE)
         set_property(TARGET p7os PROPERTY POSITION_INDEPENDENT_CODE ON)
     endif()
     target_link_libraries(p7os PRIVATE ${CLI_LIBRARIES})
     target_include_directories(p7os PRIVATE ${CLI_INCLUDE_DIRS})
+    target_compile_definitions(p7os PRIVATE ${CLI_COMPILE_DEFS})
 
     install(TARGETS p7os
         RUNTIME_DEPENDENCY_SET cli
@@ -775,7 +816,7 @@ if(CAHUTE_CLI_P7SCREEN)
         cli/common.c
         cli/options.c
     )
-    if(CAHUTE_PIE)
+    if(CAHUTE_CLI_PIE)
         set_property(TARGET p7screen PROPERTY POSITION_INDEPENDENT_CODE ON)
     endif()
     target_link_libraries(p7screen PRIVATE
@@ -786,6 +827,7 @@ if(CAHUTE_CLI_P7SCREEN)
         ${CLI_INCLUDE_DIRS}
         ${SDL2_INCLUDE_DIRS}
     )
+    target_compile_definitions(p7screen PRIVATE ${CLI_COMPILE_DEFS})
 
     install(TARGETS p7screen
         RUNTIME_DEPENDENCY_SET cli
@@ -800,11 +842,12 @@ if(CAHUTE_CLI_XFER9860)
         cli/common.c
         cli/options.c
     )
-    if(CAHUTE_PIE)
+    if(CAHUTE_CLI_PIE)
         set_property(TARGET xfer9860 PROPERTY POSITION_INDEPENDENT_CODE ON)
     endif()
     target_link_libraries(xfer9860 PRIVATE ${CLI_LIBRARIES})
     target_include_directories(xfer9860 PRIVATE ${CLI_INCLUDE_DIRS})
+    target_compile_definitions(xfer9860 PRIVATE ${CLI_COMPILE_DEFS})
 
     install(TARGETS xfer9860
         RUNTIME_DEPENDENCY_SET cli

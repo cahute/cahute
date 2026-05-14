@@ -28,7 +28,7 @@
 
 #include "internals.h"
 
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_linux_detect_serial(
     cahute_context *context,
     cahute_detect_serial_entry_func *func,

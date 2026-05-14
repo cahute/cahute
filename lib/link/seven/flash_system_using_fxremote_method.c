@@ -157,7 +157,7 @@ cahute_seven_flash_sector_using_fxremote_method(
  * @param system_size Size of the system to flash on the device.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_flash_system_using_fxremote_method(
     cahute_link *link,
     unsigned long flags,

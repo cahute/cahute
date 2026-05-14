@@ -36,7 +36,7 @@
  * @param payload_size Size of the payload to include with the command.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas300_send_data_packet(
     cahute_link *link,
     unsigned int command,

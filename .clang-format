@@ -18,7 +18,7 @@ AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakBeforeMultilineStrings: true
-AttributeMacros: ['CAHUTE_WUR', 'CAHUTE_DEPRECATED', 'CAHUTE_EXTERN']
+AttributeMacros: ['CAHUTE_DEPRECATED', 'CAHUTE_EXTERN', 'CAHUTE_INTERNAL', 'CAHUTE_WUR']
 BinPackArguments: false
 BinPackParameters: false
 BitFieldColonSpacing: After

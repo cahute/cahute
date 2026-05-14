@@ -38,7 +38,7 @@
  * @param cookie Cookie to pass to the callback.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_list_storage_entries(
     cahute_link *link,
     char const *storage,

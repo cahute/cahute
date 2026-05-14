@@ -34,7 +34,7 @@
  * @param link Link for which to initiate the connection as a receiver.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int) cahute_casiolink_initiate_as_receiver(cahute_link *link) {
+CAHUTE_INTERNAL(int) cahute_casiolink_initiate_as_receiver(cahute_link *link) {
     int byte = -1, err;
 
     /* On CAS300 serial links, the calculator may send invalid 0x00 bytes

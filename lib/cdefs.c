@@ -38,7 +38,7 @@
  * @param x Integer in big endian.
  * @return Integer in host endianness.
  */
-CAHUTE_EXTERN(cahute_u16) cahute_be16toh(cahute_u16 x) {
+CAHUTE_INTERNAL(cahute_u16) cahute_be16toh(cahute_u16 x) {
 #ifdef cahute_macro_be16toh
     return cahute_macro_be16toh(x);
 #else
@@ -61,7 +61,7 @@ CAHUTE_EXTERN(cahute_u16) cahute_be16toh(cahute_u16 x) {
  * @param x Integer in little endian.
  * @return Integer in host endianness.
  */
-CAHUTE_EXTERN(cahute_u16) cahute_le16toh(cahute_u16 x) {
+CAHUTE_INTERNAL(cahute_u16) cahute_le16toh(cahute_u16 x) {
 #ifdef cahute_macro_le16toh
     return cahute_macro_le16toh(x);
 #else
@@ -84,7 +84,7 @@ CAHUTE_EXTERN(cahute_u16) cahute_le16toh(cahute_u16 x) {
  * @param x Integer in big endian.
  * @return Integer in host endianness.
  */
-CAHUTE_EXTERN(cahute_u32) cahute_be32toh(cahute_u32 x) {
+CAHUTE_INTERNAL(cahute_u32) cahute_be32toh(cahute_u32 x) {
 #ifdef cahute_macro_be32toh
     return cahute_macro_be32toh(x);
 #else
@@ -108,7 +108,7 @@ CAHUTE_EXTERN(cahute_u32) cahute_be32toh(cahute_u32 x) {
  * @param x Integer in little endian.
  * @return Integer in host endianness.
  */
-CAHUTE_EXTERN(cahute_u32) cahute_le32toh(cahute_u32 x) {
+CAHUTE_INTERNAL(cahute_u32) cahute_le32toh(cahute_u32 x) {
 #ifdef cahute_macro_le32toh
     return cahute_macro_le32toh(x);
 #else
@@ -132,7 +132,7 @@ CAHUTE_EXTERN(cahute_u32) cahute_le32toh(cahute_u32 x) {
  * @param x Integer in host endianness.
  * @return Integer in big endian.
  */
-CAHUTE_EXTERN(cahute_u16) cahute_htobe16(cahute_u16 x) {
+CAHUTE_INTERNAL(cahute_u16) cahute_htobe16(cahute_u16 x) {
 #ifdef cahute_macro_htobe16
     return cahute_macro_htobe16(x);
 #else
@@ -156,7 +156,7 @@ CAHUTE_EXTERN(cahute_u16) cahute_htobe16(cahute_u16 x) {
  * @param x Integer in host endianness.
  * @return Integer in little endian.
  */
-CAHUTE_EXTERN(cahute_u16) cahute_htole16(cahute_u16 x) {
+CAHUTE_INTERNAL(cahute_u16) cahute_htole16(cahute_u16 x) {
 #ifdef cahute_macro_htole16
     return cahute_macro_htole16(x);
 #else
@@ -180,7 +180,7 @@ CAHUTE_EXTERN(cahute_u16) cahute_htole16(cahute_u16 x) {
  * @param x Integer in host endianness.
  * @return Integer in big endian.
  */
-CAHUTE_EXTERN(cahute_u32) cahute_htobe32(cahute_u32 x) {
+CAHUTE_INTERNAL(cahute_u32) cahute_htobe32(cahute_u32 x) {
 #ifdef cahute_macro_htobe32
     return cahute_macro_htobe32(x);
 #else
@@ -206,7 +206,7 @@ CAHUTE_EXTERN(cahute_u32) cahute_htobe32(cahute_u32 x) {
  * @param x Integer in host endianness.
  * @return Integer in little endian.
  */
-CAHUTE_EXTERN(cahute_u32) cahute_htole32(cahute_u32 x) {
+CAHUTE_INTERNAL(cahute_u32) cahute_htole32(cahute_u32 x) {
 #ifdef cahute_macro_htole32
     return cahute_macro_htole32(x);
 #else

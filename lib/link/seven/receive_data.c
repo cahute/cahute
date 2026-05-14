@@ -54,7 +54,7 @@ fake_device_info[164] = {
  * @param timeout Timeout in milliseconds.
  * @return Cahute error, or 0 if no error has occurred.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_receive_data(
     cahute_link *link,
     cahute_data **datap,

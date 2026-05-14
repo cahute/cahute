@@ -38,7 +38,7 @@
  * @param timeout Timeout of the packet start.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_receive(cahute_link *link, unsigned long timeout) {
     struct cahute_seven_state *state = &link->protocol_state.seven;
     cahute_u8 buf[SEVEN_MAX_PACKET_SIZE];

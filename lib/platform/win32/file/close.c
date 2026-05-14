@@ -34,7 +34,7 @@
  * @param context
  * @param cookie
  */
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_close_win32_file(
     cahute_context *context,
     cahute_win32_file_cookie *cookie

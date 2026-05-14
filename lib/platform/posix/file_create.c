@@ -45,7 +45,7 @@ posix_create_file_interface = {
  * @param path_type
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_create_posix_file(
     cahute_context *context,
     cahute_file_create_params *create_params,

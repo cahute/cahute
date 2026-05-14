@@ -40,7 +40,7 @@
  *        error.
  * @param code Windows API error code that was actually returned.
  */
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_win32_log_error(
     cahute_context *context,
     char const *func_name,

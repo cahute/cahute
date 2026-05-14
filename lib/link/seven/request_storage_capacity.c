@@ -36,7 +36,7 @@
  * @param capacityp Pointer to the capacity to set.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_request_storage_capacity(
     cahute_link *link,
     char const *storage,

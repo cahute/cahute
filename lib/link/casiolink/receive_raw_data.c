@@ -41,7 +41,7 @@
  *        at the end of the process.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_receive_raw_data(
     cahute_link *link,
     struct cahute_casiolink_data_description const *desc,

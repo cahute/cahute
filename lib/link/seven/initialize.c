@@ -40,7 +40,7 @@ initial_check_packet[] = {5, '0', '0', '0', '7', '0'};
  * @param link Link on which to initiate the Protocol 7.00 communication.
  * @return Cahute error.
  */
-CAHUTE_EXTERN(int) cahute_seven_initiate(cahute_link *link) {
+CAHUTE_INTERNAL(int) cahute_seven_initiate(cahute_link *link) {
     int err, attempts = 8;
 
     if (link->flags & CAHUTE_LINK_FLAG_RECEIVER) {

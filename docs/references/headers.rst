@@ -1,3 +1,5 @@
+.. _header-ref:
+
 Header reference
 ================
 

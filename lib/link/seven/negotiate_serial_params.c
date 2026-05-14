@@ -36,7 +36,7 @@
  * @param speed Speed to negotiate.
  * @return Cahute error, or 0 if no error has occurred.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_negotiate_serial_params(
     cahute_link *link,
     unsigned long flags,

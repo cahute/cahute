@@ -18,8 +18,10 @@ Macro definitions
 
 .. c:macro:: CAHUTE_EXTERN(TYPE)
 
-    Macro to use in Cahute function declarations, surrounding the return type,
-    for compatibility. For example::
+    Macro to use on library function declarations and definitions to export
+    them on the library, if such a notion exists.
+
+    The macro wraps the return type, for example::
 
         CAHUTE_EXTERN(int) my_function(int arg1, char const *arg2);
 
@@ -29,13 +31,26 @@ Macro definitions
 
     Example outputs of the above are the following::
 
-        int my_function(int arg1, char const *arg2); /* Default. */
+        /* Default */
+        extern int my_function(int arg1, char const *arg2);
 
-        _stdcall int my_function(int arg1, char const *arg2); /* WINAPI x86 */
+        /* WINAPI x86 */
+        extern _stdcall int my_function(int arg1, char const *arg2);
 
-        int __cdecl my_function(int arg1, char const *arg2); /* GCC x86 */
+        /* GCC x86 */
+        extern int __cdecl my_function(int arg1, char const *arg2);
 
-        extern __declspec(dllexport) int my_function(int arg1, char const *arg2); /* Borland C */
+        /* MSVC / Borland C */
+        extern __declspec(dllexport) int my_function(int arg1, char const *arg2);
+
+.. c:macro:: CAHUTE_EXTERN_VA(TYPE)
+
+    Macro to use on declarations and definitions of library functions with
+    variadic arguments (``...``) to export them on the library, if such a
+    notion exists.
+
+    This is an alternative to :c:macro:`CAHUTE_EXTERN` for specific functions,
+    and is used the same way.
 
 .. c:macro:: CAHUTE_DEPRECATED
 

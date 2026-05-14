@@ -192,7 +192,7 @@ CAHUTE_EXTERN(void) cahute_reset_log_func(cahute_context *context) {
  * @param len Maximum length of the message to push.
  *        If set to 0, the length will be automatically computed.
  */
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_log_external_message(
     cahute_context *context,
     int loglevel,
@@ -264,7 +264,7 @@ cahute_log_external_message(
  * @param format Format string to evaluate with the parameters.
  * @param ... Optional parameters for formatting.
  */
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL_VA(void)
 cahute_log_message(
     cahute_context *context,
     int loglevel,
@@ -309,7 +309,7 @@ cahute_log_message(
  * @param mem Pointer to the memory area to present in the messages.
  * @param size Size of the memory area to present in the messages.
  */
-CAHUTE_EXTERN(void)
+CAHUTE_INTERNAL(void)
 cahute_log_memory(
     cahute_context *context,
     int loglevel,

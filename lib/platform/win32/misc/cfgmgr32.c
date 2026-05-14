@@ -180,7 +180,7 @@ fail:
  * @param libp
  * @return
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_get_win32_cfgmgr32(
     cahute_context *context,
     cahute_win32_cfgmgr32 **libp

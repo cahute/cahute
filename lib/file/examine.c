@@ -34,7 +34,7 @@
  * @param file File object.
  * @return Error, or 0 if successful.
  */
-CAHUTE_EXTERN(int) cahute_examine_file(cahute_file *file) {
+CAHUTE_INTERNAL(int) cahute_examine_file(cahute_file *file) {
     cahute_u8 buf[32], *p, *q;
     cahute_u8 std[32];
     int err;

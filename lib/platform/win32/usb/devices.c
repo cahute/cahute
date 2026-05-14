@@ -686,7 +686,7 @@ fail:
  * @param cookie Cookie to pass to the user function.
  * @return Error, or CAHUTE_OK if no error has occurred.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_enumerate_win32_usb_devices(
     cahute_context *context,
     char const *filter,

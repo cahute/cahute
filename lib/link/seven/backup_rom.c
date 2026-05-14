@@ -38,7 +38,7 @@
  * @param progress_cookie Cookie to pass to the progress function.
  * @return Cahute error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_seven_backup_rom(
     cahute_link *link,
     cahute_u8 **romp,

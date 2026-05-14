@@ -38,7 +38,7 @@
  * @param timeout Timeout for the header, if not read yet.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_cas100_receive_data(
     cahute_link *link,
     cahute_data **datap,

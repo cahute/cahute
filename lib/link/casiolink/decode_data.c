@@ -37,7 +37,7 @@
  *        the offset after the data afterwards.
  * @return Error, or 0 if successful.
  */
-CAHUTE_EXTERN(int)
+CAHUTE_INTERNAL(int)
 cahute_casiolink_decode_data(
     cahute_data **datap,
     cahute_file *file,
