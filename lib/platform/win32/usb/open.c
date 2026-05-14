@@ -101,46 +101,66 @@ find_win32_interface(
     if (err)
         goto fail;
 
-    cret = (*cfgmgr32->get_device_interface_list_size)(
-        &property_size,
-        guid,
-        device_id,
-        0
-    );
-    if (cret) {
-        msg(context,
-            ll_error,
-            "CM_Get_Device_Interface_List_SizeA returned error "
-            "0x%08lX.",
-            cret);
-        err = CAHUTE_ERROR_UNKNOWN;
-        goto fail;
-    }
-
-    if (property_size > sizeof(path->small_path) - 1) {
-        path->path = malloc(property_size);
-        if (!path->path) {
-            err = CAHUTE_ERROR_ALLOC;
+    /* Heeding the advice given in the MS docs:
+     * > Callers should be robust to [the condition that a new device
+     * > can be added between the CM_Get_Device_Interface_List_Size call
+     * > and the CM_Get_Device_Interface_List call] and retry getting
+     * > the size if CM_Get_Device_Interface_List returns CR_BUFFER_SMALL. */
+    while (1) {
+        cret = (*cfgmgr32->get_device_interface_list_size)(
+            &property_size,
+            guid,
+            device_id,
+            0
+        );
+        if (cret) {
+            msg(context,
+                ll_error,
+                "CM_Get_Device_Interface_List_SizeA returned error "
+                "0x%08lX.",
+                cret);
+            err = CAHUTE_ERROR_UNKNOWN;
             goto fail;
         }
-    } else
-        path->path = path->small_path;
 
-    cret = (*cfgmgr32->get_device_interface_list)(
-        guid,
-        device_id,
-        path->path,
-        property_size,
-        0
-    );
-    if (cret) {
-        msg(context,
-            ll_error,
-            "CM_Get_Device_Interface_ListA returned error "
-            "0x%08lX.",
-            cret);
-        err = CAHUTE_ERROR_UNKNOWN;
-        goto fail;
+        if (property_size > sizeof(path->small_path) - 1) {
+            path->path = malloc(property_size);
+            if (!path->path) {
+                err = CAHUTE_ERROR_ALLOC;
+                goto fail;
+            }
+        } else {
+            path->path = path->small_path;
+            property_size = sizeof(path->small_path) - 1;
+        }
+
+        cret = (*cfgmgr32->get_device_interface_list)(
+            guid,
+            device_id,
+            path->path,
+            property_size,
+            0
+        );
+        if (cret == 0x1A /* CR_BUFFER_SMALL */) {
+            if (path->path != path->small_path) {
+                free(path->path);
+                path->path = NULL;
+            }
+
+            continue;
+        }
+
+        if (cret) {
+            msg(context,
+                ll_error,
+                "CM_Get_Device_Interface_ListA returned error "
+                "0x%08lX.",
+                cret);
+            err = CAHUTE_ERROR_UNKNOWN;
+            goto fail;
+        }
+
+        break;
     }
 
     if (!path->path[0]) {
