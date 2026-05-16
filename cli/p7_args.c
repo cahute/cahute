@@ -58,7 +58,7 @@ static char const help_main[] =
     "  -h, --help        Display the help page of the (sub)command and quit.\n"
     "  -v, --version     Display the version message and quit.\n"
     "  -l, --log <level> Logging level to use, instead of the default one.\n"
-    "                    One of: info, warning, error, fatal, none.\n"
+    "                    One of: debug, info, warning, error, fatal, none.\n"
     "\n"
     "Link-related options:\n"
     "  --com <device>    Path or name of the serial device with which to\n"

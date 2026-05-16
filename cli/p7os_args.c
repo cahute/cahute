@@ -59,7 +59,7 @@ static char const help_main[] =
     "  -v, --version     Display the version message and quit.\n"
     "  -l <level>, --log <level>\n"
     "                    Logging level to use, instead of the default one.\n"
-    "                    One of: info, warning, error, fatal, none.\n"
+    "                    One of: debug, info, warning, error, fatal, none.\n"
     "  -#                Display a nice progress bar.\n"
     "  -S, --start-address <addr>\n"
     "                    Start address for the update program\n"

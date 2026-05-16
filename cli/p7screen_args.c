@@ -41,7 +41,7 @@ static char const help_message[] =
     "  -h, --help        Display this help page\n"
     "  -v, --version     Displays the version\n"
     "  -l, --log <level> Logging level to use, instead of the default one.\n"
-    "                    One of: info, warning, error, fatal, none.\n"
+    "                    One of: debug, info, warning, error, fatal, none.\n"
     "  --com <device>    Path or name of the serial device with which to\n"
     "                    communicate. If this option isn't used, the\n"
     "                    program will use USB to find the calculator.\n "
