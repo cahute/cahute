@@ -239,8 +239,7 @@ The following variables are specific to Cahute.
 
         * Debian Forky (14) and above, unreleased as of writing (planned for
           2027);
-        * Ubuntu Resolute Raccoon (26.04) and above, unreleased as of writing
-          (planned for April 2026);
+        * `Ubuntu Resolute Raccoon (26.04)`_ and above, since April 2026;
         * Arch Linux and up-to-date derivatives, since September 2025.
 
 .. _cmake-ref-cli:
@@ -314,3 +313,4 @@ switches:
     https://docs.voidlinux.org/config/users-and-groups.html#default-groups
 .. _systemd v258:
     https://github.com/systemd/systemd/releases/tag/v258
+.. _`Ubuntu Resolute Raccoon (26.04)`: https://releases.ubuntu.com/resolute/
