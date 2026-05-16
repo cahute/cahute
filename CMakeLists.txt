@@ -689,7 +689,7 @@ if(CAHUTE_UDEV)
     )
     if(CAHUTE_APPSTREAM)
         install(
-            FILES ${CMAKE_CURRENT_SOURCE_DIR}/misc/org.cahuteproject.cahute.metainfo.xml
+            FILES ${CMAKE_CURRENT_SOURCE_DIR}/misc/org.cahute.cahute.metainfo.xml
             DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
             COMPONENT udev
         )

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component>
-    <id>org.cahuteproject.cahute</id>
+    <id>org.cahute.cahute</id>
     <metadata_license>MIT</metadata_license>
     <name>Cahute</name>
     <summary>Communicate with CASIO calculators</summary>
-    <developer id="org.cahuteproject">
+    <developer id="org.cahute">
         <name>Cahute contributors</name>
     </developer>
     <description>
