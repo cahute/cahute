@@ -204,6 +204,12 @@ documentation.
 
         See :ref:`protocol-topic-seven` for more information.
 
+    SB-62
+        Official 3-pin to 3-pin cable by CASIO, used for calculator to
+        calculator communication.
+
+        See :ref:`protocol-topic-cable-sb-62` for more information.
+
     SB-87
         Official serial (DB-9) to 3-pin cable by CASIO.
 
