@@ -47,7 +47,10 @@ cahute_enumerate_win32_devices(
 ) {
     cahute_win32_cfgmgr32 *cfgmgr32;
     cahute_win32_device result;
-    char *device_id_list = NULL, *device_id;
+    char *allocated_device_id_list = NULL;
+    char const *device_id_list;
+    char const *device_id;
+    size_t device_id_size = 0;
     GUID const *device_class = NULL, *interface_class = NULL;
     PCSTR device_id_list_filter = NULL;
     char device_id_list_filter_buf[40];
@@ -58,76 +61,6 @@ cahute_enumerate_win32_devices(
 
     msg(context, ll_debug, "Looking for devices.");
 
-    if (filter && filter->device_class) {
-        char buf[40];
-
-        device_class = filter->device_class;
-        cahute_serialize_win32_guid(context, buf, sizeof(buf), device_class);
-
-        msg(context, ll_debug, "  With device class: %s", buf);
-    }
-
-    if (filter && filter->interface_class) {
-        char buf[40];
-
-        interface_class = filter->interface_class;
-        cahute_serialize_win32_guid(
-            context,
-            buf,
-            sizeof(buf),
-            interface_class
-        );
-
-        msg(context, ll_debug, "  With interface class: %s", buf);
-    }
-
-    if (filter && filter->related_to_device_id) {
-        msg(context,
-            ll_debug,
-            "  With bus relations to: %s",
-            filter->related_to_device_id);
-
-        device_id_list_filter = filter->related_to_device_id;
-        device_id_list_filter_flags =
-            0x20 /* CM_GETIDLIST_FILTER_BUSRELATIONS */;
-    } else if (filter && filter->in_removal_relations_of_device_id) {
-        msg(context,
-            ll_debug,
-            "  With removal relations to: %s",
-            filter->in_removal_relations_of_device_id);
-
-        /* Removal relations are available starting on Windows Vista.
-         * Before that, we just want to use bus relations. */
-        device_id_list_filter = filter->in_removal_relations_of_device_id;
-        if (cahute_is_win_vista())
-            device_id_list_filter_flags =
-                0x08 /* CM_GETIDLIST_FILTER_REMOVALRELATIONS */;
-        else {
-            msg(context,
-                ll_warn,
-                "Removal relations are not available, falling back on "
-                "bus relations.");
-            device_id_list_filter_flags =
-                0x20 /* CM_GETIDLIST_FILTER_BUSRELATIONS */;
-        }
-    } else if (device_class && cahute_is_win_7()) {
-        cahute_serialize_win32_guid(
-            context,
-            device_id_list_filter_buf,
-            sizeof(device_id_list_filter_buf),
-            device_class
-        );
-
-        device_id_list_filter = device_id_list_filter_buf;
-        device_id_list_filter_flags = 0x200 /* CM_GETIDLIST_FILTER_CLASS */;
-
-        /* No need to filter on the device class below. */
-        device_class = NULL;
-    }
-
-    if (filter && filter->path)
-        msg(context, ll_debug, "  Looking for path: %s", filter->path);
-
     /* Get dynamic access to the Cfgmgr32 library. */
     err = cahute_get_win32_cfgmgr32(context, &cfgmgr32);
     if (err)
@@ -135,58 +68,139 @@ cahute_enumerate_win32_devices(
 
     err = CAHUTE_ERROR_UNKNOWN;
 
-    /* Get all devices, without distinction. */
-    cret = (*cfgmgr32->get_device_id_list_size)(
-        &device_id_list_size,
-        device_id_list_filter,
-        device_id_list_filter_flags
-    );
-    if (cret) {
-        if (cret == 0x25 /* CR_NO_SUCH_VALUE */) {
-            /* We just consider that there's no device in the device list
-             * in such a case. */
-            err = CAHUTE_OK;
+    if (filter && filter->path) {
+        msg(context, ll_debug, "  Looking for path: %s", filter->path);
+
+        device_id_list = filter->path;
+        device_id_list_size = strlen(filter->path) + 1;
+    } else {
+        if (filter && filter->device_class) {
+            char buf[40];
+
+            device_class = filter->device_class;
+            cahute_serialize_win32_guid(
+                context,
+                buf,
+                sizeof(buf),
+                device_class
+            );
+
+            msg(context, ll_debug, "  With device class: %s", buf);
+        }
+
+        if (filter && filter->interface_class) {
+            char buf[40];
+
+            interface_class = filter->interface_class;
+            cahute_serialize_win32_guid(
+                context,
+                buf,
+                sizeof(buf),
+                interface_class
+            );
+
+            msg(context, ll_debug, "  With interface class: %s", buf);
+        }
+
+        if (filter && filter->related_to_device_id) {
+            msg(context,
+                ll_debug,
+                "  With bus relations to: %s",
+                filter->related_to_device_id);
+
+            device_id_list_filter = filter->related_to_device_id;
+            device_id_list_filter_flags =
+                0x20 /* CM_GETIDLIST_FILTER_BUSRELATIONS */;
+        } else if (filter && filter->in_removal_relations_of_device_id) {
+            msg(context,
+                ll_debug,
+                "  With removal relations to: %s",
+                filter->in_removal_relations_of_device_id);
+
+            /* Removal relations are available starting on Windows Vista.
+             * Before that, we just want to use bus relations. */
+            device_id_list_filter = filter->in_removal_relations_of_device_id;
+            if (cahute_is_win_vista())
+                device_id_list_filter_flags =
+                    0x08 /* CM_GETIDLIST_FILTER_REMOVALRELATIONS */;
+            else {
+                msg(context,
+                    ll_warn,
+                    "Removal relations are not available, falling back on "
+                    "bus relations.");
+                device_id_list_filter_flags =
+                    0x20 /* CM_GETIDLIST_FILTER_BUSRELATIONS */;
+            }
+        } else if (device_class && cahute_is_win_7()) {
+            cahute_serialize_win32_guid(
+                context,
+                device_id_list_filter_buf,
+                sizeof(device_id_list_filter_buf),
+                device_class
+            );
+
+            device_id_list_filter = device_id_list_filter_buf;
+            device_id_list_filter_flags =
+                0x200 /* CM_GETIDLIST_FILTER_CLASS */;
+
+            /* No need to filter on the device class below. */
+            device_class = NULL;
+        }
+
+        /* Get all devices, without distinction. */
+        cret = (*cfgmgr32->get_device_id_list_size)(
+            &device_id_list_size,
+            device_id_list_filter,
+            device_id_list_filter_flags
+        );
+        if (cret) {
+            if (cret == 0x25 /* CR_NO_SUCH_VALUE */) {
+                /* We just consider that there's no device in the device list
+                * in such a case. */
+                err = CAHUTE_OK;
+                goto fail;
+            }
+
+            msg(context,
+                ll_error,
+                "CM_Get_Device_ID_List_SizeA returned error 0x%08lX.",
+                cret);
             goto fail;
         }
 
-        msg(context,
-            ll_error,
-            "CM_Get_Device_ID_List_SizeA returned error 0x%08lX.",
-            cret);
-        goto fail;
-    }
-
-    device_id_list = (char *)
-        HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, device_id_list_size);
-    if (!device_id_list) {
-        log_windows_error(context, "HeapAlloc", GetLastError());
-        err = CAHUTE_ERROR_ALLOC;
-        goto fail;
-    }
-
-    cret = (*cfgmgr32->get_device_id_list)(
-        device_id_list_filter,
-        device_id_list,
-        device_id_list_size,
-        device_id_list_filter_flags
-    );
-    if (cret) {
-        if (cret == 0x25 /* CR_NO_SUCH_VALUE */) {
-            /* We just consider that there's no device in the device list
-             * in such a case. */
-            err = CAHUTE_OK;
+        allocated_device_id_list = (char *)
+            HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, device_id_list_size);
+        if (!allocated_device_id_list) {
+            log_windows_error(context, "HeapAlloc", GetLastError());
+            err = CAHUTE_ERROR_ALLOC;
             goto fail;
         }
 
-        msg(context,
-            ll_error,
-            "CM_Get_Device_ID_ListA returned error 0x%08lX.",
-            cret);
-        goto fail;
+        device_id_list = allocated_device_id_list;
+
+        cret = (*cfgmgr32->get_device_id_list)(
+            device_id_list_filter,
+            allocated_device_id_list,
+            device_id_list_size,
+            device_id_list_filter_flags
+        );
+        if (cret) {
+            if (cret == 0x25 /* CR_NO_SUCH_VALUE */) {
+                /* We just consider that there's no device in the device list
+                * in such a case. */
+                err = CAHUTE_OK;
+                goto fail;
+            }
+
+            msg(context,
+                ll_error,
+                "CM_Get_Device_ID_ListA returned error 0x%08lX.",
+                cret);
+            goto fail;
+        }
     }
 
-    for (device_id = device_id_list; *device_id;
-         device_id += strlen(device_id) + 1) {
+    while (device_id_list_size > 0 && *device_id_list) {
         DWORD devinst, obtained_address;
         GUID obtained_device_class;
         BYTE obtained_raw_guid[50];
@@ -194,13 +208,33 @@ cahute_enumerate_win32_devices(
         char driver_name_buf[50], driver_version_buf[50];
         char const *service = NULL;
         char const *driver_name = NULL, *driver_version = NULL;
+        char const *device_id_end = NULL;
         ULONG property_type = 0, property_size = 0;
         int is_invalid = 0, is_guid_valid = 0;
         HKEY key;
 
+        device_id = device_id_list;
+        device_id_end = memchr(device_id, 0, device_id_list_size);
+
+        if (!device_id_end) {
+            /* No NUL terminator present in the device ID; to avoid problems,
+             * we don't process that entry. */
+            msg(context,
+                ll_error,
+                "Last list entry did not have a NUL terminator.");
+            err = CAHUTE_ERROR_UNKNOWN;
+            goto fail;
+        }
+
+        device_id_size = (size_t)(device_id_end - device_id);
+
+        device_id_list += device_id_size + 1;
+        device_id_list_size -= device_id_size + 1;
+
         /* Get the device behind the interface. */
         cret = (*cfgmgr32->locate_devnode)(&devinst, device_id, 0);
-        if (cret == 0x0D /* CR_NO_SUCH_DEVINST */)
+        if (cret == 0x0D /* CR_NO_SUCH_DEVINST */
+            || cret == 0x1E /* CR_INVALID_DEVICE_ID */)
             continue;
 
         if (cret) {
@@ -372,12 +406,6 @@ cahute_enumerate_win32_devices(
             continue;
         }
 
-        /* Optionally check the device ID. */
-        if (filter && filter->path && strcmp(filter->path, device_id)) {
-            msg(context, ll_debug, "Skipped: incorrect device path.");
-            continue;
-        }
-
         /* Optionally check the device. */
         if (device_class
             && memcmp(
@@ -434,8 +462,8 @@ cahute_enumerate_win32_devices(
     err = CAHUTE_OK;
 fail:
     msg(context, ll_info, "End of device lookup.");
-    if (device_id_list)
-        HeapFree(GetProcessHeap(), 0, device_id_list);
+    if (allocated_device_id_list)
+        HeapFree(GetProcessHeap(), 0, allocated_device_id_list);
 
     return err;
 }

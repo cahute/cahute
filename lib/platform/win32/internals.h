@@ -151,8 +151,11 @@ typedef DWORD(WINAPI cahute_cfgmgr32_get_device_id_func)(
 );
 
 /* CM_Locate_DevNodeA() function type. */
-typedef DWORD(WINAPI
-                  cahute_cfgmgr32_locate_devnode_func)(DWORD *, CHAR *, ULONG);
+typedef DWORD(WINAPI cahute_cfgmgr32_locate_devnode_func)(
+    DWORD *,
+    CHAR const *,
+    ULONG
+);
 
 /* CM_Open_DevNode_Key() function type. */
 typedef DWORD(WINAPI cahute_cfgmgr32_open_devnode_key_func)(
