@@ -101,16 +101,6 @@ being Ubuntu_ and `Linux Mint`_. It uses the `GNU C library`_.
 RHEL_ (*Red Hat Enterprise Linux*) is a Linux distribution made by `Red Hat`_
 and based on RPM_. Some distributions are based on it, including CentOS_.
 
-.. _feature-topic-system-void:
-
-|void| Void Linux
-~~~~~~~~~~~~~~~~~
-
-.. include:: ../../guides/_system_guides_voidlinux.rst
-
-`Void Linux`_ is a Linux distribution based on XBPS_ (*X Binary Package
-System*). It uses the `musl libc`_.
-
 .. _feature-topic-system-macos:
 
 |apple| macOS, OS X
@@ -136,32 +126,6 @@ Installation on macOS / OS X of Cahute is done via Homebrew_, which requires
 macOS Sonoma (14) or higher; see :ref:`install-guide-macos` and `Homebrew macOS
 requirements`_ for more information.
 
-.. _feature-topic-system-freebsd:
-
-|freebsd| FreeBSD
------------------
-
-.. warning::
-
-    FreeBSD is not yet supported as an official target by Cahute.
-
-.. include:: ../../guides/_system_guides_freebsd.rst
-
-FreeBSD_ is a BSD-derived system.
-
-.. _feature-topic-system-netbsd:
-
-|netbsd| NetBSD
----------------
-
-.. warning::
-
-    NetBSD is not yet supported as an official target by Cahute.
-
-.. include:: ../../guides/_system_guides_netbsd.rst
-
-NetBSD_ is a BSD-derived system.
-
 .. _feature-topic-system-windows:
 
 |win| Microsoft Windows
@@ -182,11 +146,9 @@ Win16 is the 16-bit Windows API, only present on the x86_ architecture,
 first introduced with `Windows 1.0`_ in 1985.
 It is supported by the following systems:
 
-* :ref:`MS-DOS <feature-topic-system-msdos>` based Windows systems, up to
-  and including `Windows 3.x`_;
-* Windows systems from the `Windows 9x`_ series, using :ref:`MS-DOS
-  <feature-topic-system-msdos>` as a bootloader (see
-  `What was the role of MS-DOS in Windows 95?`_ for more information),
+* MS-DOS based Windows systems, up to and including `Windows 3.x`_;
+* Windows systems from the `Windows 9x`_ series, using MS-DOS as a bootloader
+  (see `What was the role of MS-DOS in Windows 95?`_ for more information),
   including `Windows 95`_, `Windows 98`_ and `Windows Me`_ (*Millenium
   Edition*);
 * `Windows NT`_ based Windows systems up to and including `Windows 2000`_
@@ -290,32 +252,6 @@ Possible drivers include the following:
 See `libusb-compatible kernel drivers`_ for more information on generic
 USB device drivers for Win32.
 
-.. _feature-topic-system-msdos:
-
-|msdos| MS-DOS
---------------
-
-.. warning::
-
-    MS-DOS is not yet supported as an official target by Cahute.
-
-.. include:: ../../guides/_system_guides_msdos.rst
-
-`MS-DOS`_ is a system made by Microsoft_ in 1981.
-
-.. _feature-topic-system-os2:
-
-|os2| OS/2
-----------
-
-.. warning::
-
-    OS/2 is not yet supported as an official target by Cahute.
-
-.. include:: ../../guides/_system_guides_os2.rst
-
-`OS/2`_ is a system made by IBM_ and Microsoft_ between 1987 and 2001.
-
 .. _feature-topic-system-amigaos:
 
 |amigaos| AmigaOS and derivatives
@@ -367,14 +303,9 @@ MorphOS_ is a derivative of AmigaOS.
 .. |archlinux| image:: ../../guides/install/arch.svg
 .. |debian| image:: ../../guides/install/debian.svg
 .. |redhat| image:: ../../guides/install/redhat.svg
-.. |void| image:: ../../guides/install/voidlinux.svg
 .. |win| image:: ../../guides/install/win.png
 .. |win31| image:: ../../guides/install/win31.svg
-.. |freebsd| image:: ../../guides/install/freebsd.png
-.. |netbsd| image:: ../../guides/install/netbsd.png
 .. |apple| image:: ../../guides/install/apple.svg
-.. |msdos| image:: ../../guides/install/msdos.svg
-.. |os2| image:: ../../guides/install/os2.svg
 .. |amigaos| image:: ../../guides/install/amigaos.png
 .. |amigaos-poseidon| image:: ../internals/platforms/amigaos-poseidon.png
 .. |aros| image:: ../../guides/install/aros.png
@@ -407,12 +338,6 @@ MorphOS_ is a derivative of AmigaOS.
 .. _CentOS: https://www.centos.org/
 .. _Red Hat: https://www.redhat.com/
 .. _RPM: https://rpm.org/
-
-.. _Void Linux: https://voidlinux.org/
-.. _XBPS: https://docs.voidlinux.org/xbps/index.html
-
-.. _FreeBSD: https://www.freebsd.org/
-.. _NetBSD: https://www.netbsd.org/
 
 .. _`macOS / OS X`: https://www.apple.com/macos/
 .. _Darwin: https://en.wikipedia.org/wiki/Darwin_(operating_system)

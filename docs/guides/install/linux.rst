@@ -104,23 +104,6 @@ and install the package:
     * :ref:`install-guide-linux-giteapc`
     * :ref:`install-guide-linux-other`
 
-.. _install-guide-linux-void:
-
-|void| Installing Cahute on Voidlinux and derivatives for local use and development, using XBPS
------------------------------------------------------------------------------------------------
-
-.. warning::
-
-    This method is not yet available; see `#72
-    <https://gitlab.com/cahute/cahute/-/issues/72>`_ for more
-    information.
-
-    In the mean time, you can use one of the following methods as an
-    alternative:
-
-    * :ref:`install-guide-linux-giteapc`
-    * :ref:`install-guide-linux-other`
-
 .. _install-guide-linux-giteapc:
 
 |lephe| Installing Cahute on any Linux distribution for local use and development, using GiteaPC
@@ -192,17 +175,6 @@ this block.
     but another value such as ``dialout``. The safest option is to copy the
     command directly!
 
-.. _install-guide-linux-giteapc-gint:
-
-|lephe| Installing Cahute on any Linux distribution for gint development, using GiteaPC
----------------------------------------------------------------------------------------
-
-.. warning::
-
-    This method is not yet available; see `#113
-    <https://gitlab.com/cahute/cahute/-/issues/113>`_ for more
-    information.
-
 .. _install-guide-linux-other:
 
 |linux| Installing Cahute on other distributions
@@ -238,5 +210,4 @@ See :ref:`build-guide-linux` for more information.
 .. |debian| image:: debian.svg
 .. |redhat| image:: redhat.svg
 .. |archlinux| image:: arch.svg
-.. |void| image:: voidlinux.svg
 .. |lephe| image:: lephe.png

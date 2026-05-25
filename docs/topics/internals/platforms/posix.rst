@@ -32,15 +32,14 @@ patterns in the filesystem, expressed using regular expressions:
     see `USB serial on Linux`_ for more information.
 
 ``/dev/cua[dn][0-9]+``
-    Call-out ports on :ref:`feature-topic-system-freebsd`; see
+    Call-out ports on FreeBSD; see
     `Serial communications on FreeBSD`_ for more information.
 
 ``/dev/cu\..+``
     Call-out ports on :ref:`feature-topic-system-macos`.
 
 ``/dev/dty[0-9]+``
-    Call-out ports on :ref:`feature-topic-system-netbsd`; see
-    `tty(4) on NetBSD`_ for more information.
+    Call-out ports on NetBSD; see `tty(4) on NetBSD`_ for more information.
 
 Serial link handling on POSIX compliant platforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

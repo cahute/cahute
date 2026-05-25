@@ -6,8 +6,6 @@
         * :ref:`From the AUR (MinGW-w64)
           <install-guide-linux-aur-mingw>`
         * :ref:`Using GiteaPC <install-guide-linux-giteapc>`
-        * :ref:`Using GiteaPC (gint)
-          <install-guide-linux-giteapc-gint>`
       - * :ref:`Natively <build-guide-linux-sh>`
 
 .. |system-arch| image:: /guides/install/arch.svg

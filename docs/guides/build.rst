@@ -16,9 +16,5 @@ means and source platforms, grouped by target platform.
 
     build/linux
     build/macos
-    build/freebsd
-    build/netbsd
     build/windows
-    build/msdos
-    build/os2
     build/amigaos
