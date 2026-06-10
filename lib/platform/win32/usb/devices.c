@@ -580,6 +580,7 @@ match_win32_usb_device(dev_cookie *cookie, cahute_win32_device const *device) {
     struct conn_info conn_info;
     struct config_descriptor_data cd_data;
     HANDLE hub_handle;
+    char const *driver_name;
     int entry_type;
     int err = CAHUTE_ERROR_UNKNOWN;
 
@@ -653,19 +654,49 @@ match_win32_usb_device(dev_cookie *cookie, cahute_win32_device const *device) {
     if (!device->service) {
     } else if (!strcmp(device->service, "WinUSB"))
         usb_device.driver = CAHUTE_WIN32_USB_DRIVER_WINUSB;
+    else if (!strcmp(device->service, "libusb0"))
+        usb_device.driver = CAHUTE_WIN32_USB_DRIVER_LIBUSB_WIN32;
+    else if (!strcmp(device->service, "libusbK"))
+        usb_device.driver = CAHUTE_WIN32_USB_DRIVER_LIBUSBK;
     else if (!strcmp(device->service, "USBSTOR"))
         usb_device.driver = CAHUTE_WIN32_USB_DRIVER_VOLMGR;
     else if (!strcmp(device->service, "PVUSB")) {
         if (device->driver_name
             && !strcmp(device->driver_name, "CESG502 USB")) {
             if (device->driver_version
-                && strcmp(device->driver_version, "1.0.0.0") != 0)
+                && strcmp(device->driver_version, "1.0.0.0"))
                 usb_device.driver = CAHUTE_WIN32_USB_DRIVER_CESG_1;
-
-            /* If no driver version is provided, we want to be conservative. */
-            usb_device.driver = CAHUTE_WIN32_USB_DRIVER_CESG_0;
+            else {
+                /* If no driver version is provided, we want to be conservative. */
+                usb_device.driver = CAHUTE_WIN32_USB_DRIVER_CESG_0;
+            }
         }
     }
+
+    switch (usb_device.driver) {
+    case CAHUTE_WIN32_USB_DRIVER_VOLMGR:
+        driver_name = "VOLMGR / USBSTOR";
+        break;
+    case CAHUTE_WIN32_USB_DRIVER_CESG_0:
+        driver_name = "CESG 1.0.0.0";
+        break;
+    case CAHUTE_WIN32_USB_DRIVER_CESG_1:
+        driver_name = "CESG 1.0.0.1+";
+        break;
+    case CAHUTE_WIN32_USB_DRIVER_WINUSB:
+        driver_name = "WinUSB";
+        break;
+    case CAHUTE_WIN32_USB_DRIVER_LIBUSB_WIN32:
+        driver_name = "libusb-win32";
+        break;
+    case CAHUTE_WIN32_USB_DRIVER_LIBUSBK:
+        driver_name = "libusbK";
+        break;
+    default:
+        driver_name = "(unknown)";
+    }
+
+    msg(cookie->context, ll_debug, "Interpreted driver is %s.", driver_name);
 
     return (*cookie->func)(cookie->cookie, &usb_device);
 
@@ -730,6 +761,26 @@ cahute_enumerate_win32_usb_devices(
         goto fail;
 
     dev_filter.device_class = &cahute_guid_devclass_usb_device;
+    err = cahute_enumerate_win32_devices(
+        context,
+        &dev_filter,
+        (cahute_enumerate_win32_device_func *)&match_win32_usb_device,
+        &internal_cookie
+    );
+    if (err)
+        goto fail;
+
+    dev_filter.device_class = &cahute_guid_devclass_libusb_win32_device;
+    err = cahute_enumerate_win32_devices(
+        context,
+        &dev_filter,
+        (cahute_enumerate_win32_device_func *)&match_win32_usb_device,
+        &internal_cookie
+    );
+    if (err)
+        goto fail;
+
+    dev_filter.device_class = &cahute_guid_devclass_libusbk_device;
     err = cahute_enumerate_win32_devices(
         context,
         &dev_filter,

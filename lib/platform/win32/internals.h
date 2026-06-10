@@ -54,6 +54,8 @@ CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devinterface_volume;
 
 CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devclass_usb;
 CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devclass_usb_device;
+CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devclass_libusb_win32_device;
+CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devclass_libusbk_device;
 CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devclass_diskdrive;
 CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devclass_volume;
 

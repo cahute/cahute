@@ -104,6 +104,34 @@ DEFINE_GUID(
     0xd6
 );
 DEFINE_GUID(
+    cahute_guid_devclass_libusb_win32_device,
+    0xeb781aaf,
+    0x9c70,
+    0x4523,
+    0xa5,
+    0xdf,
+    0x64,
+    0x2a,
+    0x87,
+    0xec,
+    0xa5,
+    0x67
+);
+DEFINE_GUID(
+    cahute_guid_devclass_libusbk_device,
+    0xecfb0cfd,
+    0x74c4,
+    0x4f52,
+    0xbb,
+    0xf7,
+    0x34,
+    0x34,
+    0x61,
+    0xcd,
+    0x72,
+    0xac
+);
+DEFINE_GUID(
     cahute_guid_devclass_diskdrive,
     0x4d36e967,
     0xe325,
