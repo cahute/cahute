@@ -60,7 +60,7 @@ Cahute depends on the following build-only dependencies:
 .. note::
 
     As opposed to other platforms, Cahute for AmigaOS does not require libusb
-    nor SDL2.
+    nor SDL3.
 
 In order to install the build-only dependencies, it is recommended you use your
 native package manager. A few examples are the following:
@@ -115,7 +115,7 @@ You can now build the project using the following command::
 
 .. warning::
 
-    ``p7screen`` will not be included, since it requires SDL2 which is not
+    ``p7screen`` will not be included, since it requires SDL3 which is not
     available with the AmigaOS 3.2 toolchain.
 
 .. |amigaos| image:: ../install/amigaos.png

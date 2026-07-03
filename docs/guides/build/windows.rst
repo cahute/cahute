@@ -415,7 +415,7 @@ You need to first install the required dependencies from the AUR, by using
 your favourite AUR helper, e.g. with paru_::
 
     paru -S cmake python python-toml mingw-w64 \
-        mingw-w64-cmake mingw-w64-sdl2
+        mingw-w64-cmake mingw-w64-sdl3
 
 Building the project
 ~~~~~~~~~~~~~~~~~~~~
@@ -437,8 +437,8 @@ Before testing with either Wine or a Windows host, it is recommended to
 copy the required shared libraries to the build directory, by running either
 one of the following command depending on the architecture you're targetting::
 
-    cp /usr/i686-w64-mingw32/bin/{libssp-0,SDL2}.dll .
-    cp /usr/x86_64-w64-mingw32/bin/{libssp-0,SDL2}.dll .
+    cp /usr/i686-w64-mingw32/bin/{libssp-0,SDL3}.dll .
+    cp /usr/x86_64-w64-mingw32/bin/{libssp-0,SDL3}.dll .
 
 .. note::
 

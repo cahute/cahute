@@ -28,7 +28,7 @@
 
 #include "p7screen.h"
 #include <string.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #define FRAME_TIMEOUT_MS 400 /* Timeout for a frame to be received. */
 
@@ -119,7 +119,7 @@ static void scale_up_picture(Uint32 *pixels, int width, int height, int zoom) {
  */
 static int
 display_frame(struct display_cookie *cookie, cahute_frame const *frame) {
-    int width, height, format, zoom;
+    int width, height, format, zoom, err;
 
     width = frame->cahute_frame_width;
     height = frame->cahute_frame_height;
@@ -138,16 +138,9 @@ display_frame(struct display_cookie *cookie, cahute_frame const *frame) {
 
     if (!cookie->window) {
         /* We haven't got a window, our objective is to create one,
-         * with a renderer and a texture. First, let's create the
-         * window. */
-        cookie->window = SDL_CreateWindow(
-            "p7screen",
-            SDL_WINDOWPOS_UNDEFINED,
-            SDL_WINDOWPOS_UNDEFINED,
-            width * zoom,
-            height * zoom,
-            0
-        );
+         * with a renderer and a texture. */
+        cookie->window =
+            SDL_CreateWindow("p7screen", width * zoom, height * zoom, 0);
         if (!cookie->window) {
             fprintf(
                 stderr,
@@ -157,9 +150,7 @@ display_frame(struct display_cookie *cookie, cahute_frame const *frame) {
             return 1;
         }
 
-        /* Then let's create the renderer. */
-        cookie->renderer =
-            SDL_CreateRenderer(cookie->window, -1, SDL_RENDERER_SOFTWARE);
+        cookie->renderer = SDL_CreateRenderer(cookie->window, NULL);
         if (!cookie->renderer) {
             fprintf(
                 stderr,
@@ -169,12 +160,11 @@ display_frame(struct display_cookie *cookie, cahute_frame const *frame) {
             return 1;
         }
 
-        /* Finally, create the texture we're gonna use for drawing
-         * the picture as a classic ARGB pixel matric (8 bits per
+        /* The texture is created as a classic ARGB pixel matrix (8 bits per
          * component). */
         cookie->texture = SDL_CreateTexture(
             cookie->renderer,
-            SDL_PIXELFORMAT_ARGB8888,
+            SDL_PIXELFORMAT_XRGB8888,
             SDL_TEXTUREACCESS_STREAMING,
             width * zoom,
             height * zoom
@@ -201,20 +191,30 @@ display_frame(struct display_cookie *cookie, cahute_frame const *frame) {
         Uint32 *texture_pixels;
         int pitch;
 
-        SDL_LockTexture(
-            cookie->texture,
-            NULL,
-            (void **)&texture_pixels,
-            &pitch
-        );
+        if (!SDL_LockTexture(
+                cookie->texture,
+                NULL,
+                (void **)&texture_pixels,
+                &pitch
+            )) {
+            fprintf(stderr, "Couldn't lock the texture: %s\n", SDL_GetError());
+            return 1;
+        }
 
-        /* TODO: Handle the error here? */
-        cahute_convert_picture_from_frame(
+        err = cahute_convert_picture_from_frame(
             cookie->context,
             texture_pixels,
             CAHUTE_PICTURE_FORMAT_32BIT_ARGB_HOST,
             frame
         );
+        if (err) {
+            fprintf(
+                stderr,
+                "Couldn't convert the picture from frame (%s).\n",
+                cahute_get_error_name(err)
+            );
+            return 1;
+        }
 
         if (zoom > 1)
             scale_up_picture(
@@ -227,8 +227,23 @@ display_frame(struct display_cookie *cookie, cahute_frame const *frame) {
         SDL_UnlockTexture(cookie->texture);
     }
 
-    SDL_RenderCopy(cookie->renderer, cookie->texture, NULL, NULL);
-    SDL_RenderPresent(cookie->renderer);
+    if (!SDL_RenderTexture(cookie->renderer, cookie->texture, NULL, NULL)) {
+        fprintf(
+            stderr,
+            "Couldn't render the texture on the renderer: %s\n",
+            SDL_GetError()
+        );
+        return 1;
+    }
+
+    if (!SDL_RenderPresent(cookie->renderer)) {
+        fprintf(
+            stderr,
+            "Couldn't render using the current renderer: %s\n",
+            SDL_GetError()
+        );
+        return 1;
+    }
 
     return 0;
 }
@@ -311,7 +326,7 @@ int main(int ac, char **av) {
     }
 
     /* Initialize the SDL. */
-    if (SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         fprintf(stderr, "Failed to initialize SDL: %s\n", SDL_GetError());
         cahute_close_link(link);
         return 3;
@@ -322,8 +337,8 @@ int main(int ac, char **av) {
         SDL_Event event;
         cahute_frame *frame;
 
-        while (SDL_PollEvent(&event) != 0) {
-            if (event.type == SDL_QUIT) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_EVENT_QUIT) {
                 ret = 0;
                 goto end;
             }

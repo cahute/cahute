@@ -190,8 +190,8 @@ The following variables are specific to Cahute.
 ``CAHUTE_SDL``
     Enable the use of SDL_.
 
-    This is enabled by default on `platforms SDL2 support
-    <SDL2 platforms_>`_.
+    This is enabled by default on `platforms SDL3 support
+    <SDL3 platforms_>`_.
 
 .. _cmake-ref-setting-cahute-shared:
 
@@ -330,8 +330,7 @@ switches:
 .. _libusb: https://libusb.info/
 .. _libusb features: https://github.com/libusb/libusb/wiki#features
 .. _SDL: https://libsdl.org/
-.. _SDL2 platforms:
-    https://wiki.libsdl.org/SDL2/Introduction#what-platforms-does-sdl-run-on
+.. _SDL3 platforms: https://wiki.libsdl.org/SDL3/README-platforms
 .. _pkgconf: https://github.com/pkgconf/pkgconf
 .. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
 

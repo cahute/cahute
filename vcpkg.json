@@ -3,7 +3,7 @@
   "dependencies": [
     "pkgconf",
     "python3",
-    "sdl2"
+    "sdl3"
   ],
   "overrides": []
 }

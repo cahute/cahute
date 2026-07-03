@@ -49,7 +49,7 @@ Cahute depends on the following build-only dependencies:
 
 It also depends on the following build and runtime dependencies:
 
-* SDL_ >= 2.0 (for ``p7screen``);
+* SDL_ >= 3.0 (for ``p7screen``);
 * libusb_ >= 1.0.23.
 
 In order to install the dependencies, it is recommended you use your native
@@ -60,19 +60,19 @@ package manager. A few examples are the following:
   .. code-block:: bash
 
       sudo apt-get update
-      sudo apt-get install cmake python3 python3-toml libusb-1.0-0-dev libsdl2-dev
+      sudo apt-get install cmake python3 python3-toml libusb-1.0-0-dev libsdl3-dev
 
 * On Archlinux and derivatives:
 
   .. code-block:: bash
 
-      sudo pacman -Sy cmake python python-toml libusb sdl2
+      sudo pacman -Sy cmake python python-toml libusb sdl3
 
 * On Voidlinux and derivatives:
 
   .. code-block:: bash
 
-      xbps-install cmake python3 python3-toml libusb-devel sdl2-devel
+      xbps-install cmake python3 python3-toml libusb-devel sdl3-devel
 
 .. _build-guide-linux-sh-group:
 

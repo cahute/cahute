@@ -48,7 +48,7 @@ Cahute depends on the following build-only dependencies:
 
 It also depends on the following build and runtime dependencies:
 
-* SDL_ >= 2.0 (for ``p7screen``);
+* SDL_ >= 3.0 (for ``p7screen``);
 * libusb_ >= 1.0.23.
 
 In order to install the native dependencies, it is recommended you use
@@ -56,7 +56,7 @@ Homebrew_:
 
 .. code-block:: bash
 
-    brew install cmake pkg-config python@3.12 libusb sdl2
+    brew install cmake pkg-config python@3.12 libusb sdl3
 
 You must also install the Python dependencies, by going to the parent directory
 to the source, and creating a virtual environment within ``build/venv`` using

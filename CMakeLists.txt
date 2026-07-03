@@ -182,7 +182,6 @@ find_package(Python3 REQUIRED)
 # dependencies, which does not work well with cross-compiling.
 # We set the platform manually.
 if(WIN32)
-    set(SDL2_NO_MWINDOWS 1)
     set(CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM "windows+pe")
 elseif(APPLE OR IOS)
     set(CMAKE_GET_RUNTIME_DEPENDENCIES_PLATFORM "macos+macho")
@@ -197,7 +196,7 @@ else()
 endif()
 
 if(USE_SDL)
-    find_package(SDL2 REQUIRED)
+    find_package(SDL3 REQUIRED)
 endif()
 
 # Cahute is developed against ANSI C / ISO C90, we want to enforce this as
@@ -821,11 +820,10 @@ if(CAHUTE_CLI_P7SCREEN)
     endif()
     target_link_libraries(p7screen PRIVATE
         ${CLI_LIBRARIES}
-        ${SDL2_LIBRARIES}
+        SDL3::SDL3
     )
     target_include_directories(p7screen PRIVATE
         ${CLI_INCLUDE_DIRS}
-        ${SDL2_INCLUDE_DIRS}
     )
     target_compile_definitions(p7screen PRIVATE ${CLI_COMPILE_DEFS})
 
@@ -866,8 +864,8 @@ if(INSTALL_RUNTIME_DEPS)
     # by default, but doesn't work if the actual DLL name is not lowercase
     # when cross-compiling for Windows on a system with case-sensitive paths.
     #
-    # This is the case for SDL, where the DLL name is "SDL2.dll" instead of
-    # "sdl2.dll"; so, instead of trying to make CMake behave correctly, we
+    # This is the case for SDL, where the DLL name is "SDLx.dll" instead of
+    # "sdlx.dll"; so, instead of trying to make CMake behave correctly, we
     # will simply copy it manually if need be.
     #
     # This is documented here in CMake's Gitlab repository:
@@ -879,7 +877,7 @@ if(INSTALL_RUNTIME_DEPS)
         PRE_EXCLUDE_REGEXES
             # Win32.
             "^(advapi|kernel|shell)32\.dll$"
-            "^sdl2\.dll$"
+            "^sdl\d+\.dll$"
             "^(api|ext)-ms-"
             # Linux.
             "^ld-"
@@ -887,7 +885,7 @@ if(INSTALL_RUNTIME_DEPS)
         COMPONENT lib_runtime)
 
     if(USE_SDL AND WIN32)
-        get_target_property(_SDL_DLL SDL2::SDL2 IMPORTED_LOCATION)
+        get_target_property(_SDL_DLL SDL3::SDL3 IMPORTED_LOCATION)
         install(FILES "${_SDL_DLL}"
             TYPE BIN
             COMPONENT lib_runtime)
@@ -1064,7 +1062,7 @@ set(CPACK_DEBIAN_CLI_P7OS_PACKAGE_DEPENDS ${DEB_RUNTIME_DEP})
 set(CPACK_DEBIAN_CLI_P7OS_PACKAGE_SECTION comm)
 
 set(CPACK_DEBIAN_CLI_P7SCREEN_PACKAGE_NAME p7screen)
-set(CPACK_DEBIAN_CLI_P7SCREEN_PACKAGE_DEPENDS "${DEB_RUNTIME_DEP}, libsdl2-2.0-0")
+set(CPACK_DEBIAN_CLI_P7SCREEN_PACKAGE_DEPENDS "${DEB_RUNTIME_DEP}, libsdl3-3.0-0")
 set(CPACK_DEBIAN_CLI_P7SCREEN_PACKAGE_SECTION comm)
 
 set(CPACK_DEBIAN_CLI_XFER9860_PACKAGE_NAME xfer9860)
