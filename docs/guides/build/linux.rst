@@ -42,9 +42,7 @@ Installing the dependencies
 Cahute depends on the following build-only dependencies:
 
 * cmake_ >= 3.21;
-* Python_ >= 3.8;
-* `toml module for Python <python-toml_>`_, either installed through pip
-  or as a native package such as ``python-toml`` or ``python3-toml``;
+* Python_ >= 3.11;
 * `GNU Make`_, `pkg-config`_, and other C compilation and linking utilities.
 
 It also depends on the following build and runtime dependencies:
@@ -60,19 +58,19 @@ package manager. A few examples are the following:
   .. code-block:: bash
 
       sudo apt-get update
-      sudo apt-get install cmake python3 python3-toml libusb-1.0-0-dev libsdl3-dev
+      sudo apt-get install cmake python3 libusb-1.0-0-dev libsdl3-dev
 
 * On Archlinux and derivatives:
 
   .. code-block:: bash
 
-      sudo pacman -Sy cmake python python-toml libusb sdl3
+      sudo pacman -Sy cmake python libusb sdl3
 
 * On Voidlinux and derivatives:
 
   .. code-block:: bash
 
-      xbps-install cmake python3 python3-toml libusb-devel sdl3-devel
+      xbps-install cmake python3 libusb-devel sdl3-devel
 
 .. _build-guide-linux-sh-group:
 
@@ -223,7 +221,6 @@ computer, for the new supplementary group to take effect.
 
 .. _cmake: https://cmake.org/
 .. _Python: https://www.python.org/
-.. _python-toml: https://pypi.org/project/toml/
 .. _GNU Make: https://www.gnu.org/software/make/
 .. _pkg-config: https://git.sr.ht/~kaniini/pkgconf
 .. _SDL: https://www.libsdl.org/

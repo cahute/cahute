@@ -109,8 +109,6 @@ on the top, and the architecture you're targetting. By leaving the default
 
     Visual Studio, after building and running p7.
 
-.. include:: _vs_build_error.rst
-
 Since Cahute defines mostly command-line utilities, it may be more interesting
 to have access to a command-line interface. In order to this, in the context
 menu, select "Tools", "Command line", then "Developer Powershell":
@@ -233,8 +231,6 @@ on the top, and the architecture you're targetting. By leaving the default
 .. figure:: winvsb1.png
 
     Visual Studio, after building and running p7.
-
-.. include:: _vs_build_error.rst
 
 Since Cahute defines mostly command-line utilities, it may be more interesting
 to have access to a command-line interface. In order to this, in the context
@@ -369,8 +365,6 @@ we obtain the following:
 
     Visual Studio, after building and running p7 using MinGW-w64.
 
-.. include:: _vs_build_error.rst
-
 Since Cahute defines mostly command-line utilities, it may be more interesting
 to have access to a command-line interface. In order to this, in the context
 menu, select "Tools", "Command line", then "Developer Powershell":
@@ -414,8 +408,7 @@ Installing the dependencies
 You need to first install the required dependencies from the AUR, by using
 your favourite AUR helper, e.g. with paru_::
 
-    paru -S cmake python python-toml mingw-w64 \
-        mingw-w64-cmake mingw-w64-sdl3
+    paru -S cmake python mingw-w64 mingw-w64-cmake mingw-w64-sdl3
 
 Building the project
 ~~~~~~~~~~~~~~~~~~~~
@@ -472,7 +465,7 @@ Installing the dependencies
 You need to first install the required dependencies from the AUR, by using
 your favourite AUR helper, e.g. with paru_::
 
-    paru -S cmake python python-toml openwatcom-v2
+    paru -S cmake python openwatcom-v2
 
 You must then define the ``WATCOM`` environment variable, by executing, or
 adding the following lines to your rc file (e.g. ``~/.bashrc`` or ``~/.zshrc``)
@@ -523,7 +516,7 @@ Installing the dependencies
 You need to first install the required dependencies from the AUR, by using
 your favourite AUR helper, e.g. with paru_::
 
-    paru -S cmake python python-toml openwatcom-v2
+    paru -S cmake python openwatcom-v2
 
 You must then define the ``WATCOM`` environment variable, by executing, or
 adding the following lines to your rc file (e.g. ``~/.bashrc`` or ``~/.zshrc``)
@@ -558,7 +551,6 @@ You can now build the project using the following command::
 
 .. _cmake: https://cmake.org/
 .. _Python: https://www.python.org/
-.. _python-toml: https://pypi.org/project/toml/
 .. _GNU Make: https://www.gnu.org/software/make/
 .. _pkg-config: https://git.sr.ht/~kaniini/pkgconf
 .. _SDL: https://www.libsdl.org/

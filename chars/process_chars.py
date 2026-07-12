@@ -26,10 +26,7 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL 2.1 license and that you accept its terms.
 # *****************************************************************************
-"""Process the character references.
-
-This script requires the ``toml`` package to be installed.
-"""
+"""Process the character references."""
 
 from __future__ import annotations
 
@@ -38,9 +35,9 @@ from dataclasses import dataclass, field
 from logging import getLogger
 from os import makedirs
 from pathlib import Path
+import tomllib
 from typing import Any, Iterator, Literal
 
-import toml
 
 CharacterTableKey = Literal["legacy", "9860"]
 """Type representing a character table."""
@@ -298,7 +295,8 @@ class CharacterReference:
         }
 
         try:
-            raw_data = toml.load(path)
+            with open(path, "rb") as f:
+                raw_data = tomllib.load(f)
         except ValueError:
             logger.exception("Could not load the TOML file")
             raise
