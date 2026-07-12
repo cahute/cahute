@@ -85,8 +85,12 @@ As such, you must use the relevant compatibility macros for your case:
     files within the library. This must only be used if the function is
     declared in an internal header (such as ``lib/internals.h``) instead of
     the public headers;
-  - :c:macro:`CAHUTE_LOCAL` or :c:macro:`CAHUTE_INLINE` if the function is
-    only to be used in the same file.
+  - :c:macro:`CAHUTE_LOCAL` if the function is only to be used in the
+    same file.
+
+  It is forbidden for functions to be defined as inline or inlineable, since
+  this was only standardized in C99 and is not guaranteed to be present in
+  C89 / C90 compatible compilers.
 
 * :c:macro:`CAHUTE_NNPTR` and :c:macro:`CAHUTE_NONNULL` must be used together,
   where relevant.

@@ -298,14 +298,24 @@ set(LIB_SOURCES
     lib/file/read.c
     lib/file/size.c
     lib/file/write.c
+    lib/internals/checksum.c
+    lib/internals/copy_ff_string.c
+    lib/internals/get_long_dec.c
+    lib/internals/get_long_hex.c
+    lib/internals/pad_data.c
+    lib/internals/set_ascii_hex.c
+    lib/internals/unpad_data.c
+    lib/link/open/alloc.c
     lib/link/open/init.c
     lib/link/open/serial.c
     lib/link/open/simple_usb.c
     lib/link/open/usb.c
     lib/link/transport/receive.c
+    lib/link/transport/receive_byte.c
     lib/link/transport/scsi_request_from.c
     lib/link/transport/scsi_request_to.c
     lib/link/transport/send.c
+    lib/link/transport/send_byte.c
     lib/link/transport/set_serial_params.c
     lib/link/cas40/decode_data.c
     lib/link/cas40/decode_data_using_description.c
@@ -339,6 +349,7 @@ set(LIB_SOURCES
     lib/link/cas300/send_data_packet.c
     lib/link/cas300/terminate.c
     lib/link/casiolink/check_file_data.c
+    lib/link/casiolink/compute_data_description_size.c
     lib/link/casiolink/decode_data.c
     lib/link/casiolink/determine_header_variant.c
     lib/link/casiolink/initiate_as_receiver.c
@@ -406,10 +417,10 @@ set(LIB_SOURCES
     lib/data.c
     lib/detect_serial.c
     lib/detect_usb.c
+    lib/error_name.c
     lib/info.c
     lib/logging.c
     lib/mcs.c
-    lib/misc.c
     lib/path.c
     lib/picture.c
     lib/text.c

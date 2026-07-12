@@ -42,7 +42,7 @@ cas300_discover_packet[] =
     {1, '0', '0', '0', '0', '0', '4', '0', '0', '1', '1', '7', 'A'};
 
 /* Map the linkopen protocol to the actual protocol. */
-CAHUTE_INLINE(int) get_protocol_value(cahute_context *context, int protocol) {
+CAHUTE_LOCAL(int) get_protocol_value(cahute_context *context, int protocol) {
     switch (protocol) {
     case PROTOCOL_SERIAL_NONE:
         return CAHUTE_LINK_PROTOCOL_SERIAL_NONE;

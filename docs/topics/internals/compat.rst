@@ -62,20 +62,6 @@ Macro definitions
 
         static int my_local_utility(int arg1, char const *arg2);
 
-.. c:macro:: CAHUTE_INLINE(TYPE)
-
-    Macro to use on library function definitions to make them both local and,
-    if the compiler provides the option and is so inclined, inlined or
-    inlinable.
-
-    The macro wraps the return type, for example::
-
-        CAHUTE_INLINE(int) my_tiny_utility(int arg1, char const *arg2);
-
-    This can then use compiler-specific functions, such as GCC's
-    ``always_inline`` attribute; see `GCC function attributes`_ for
-    more information.
-
 .. c:macro:: CAHUTE_LOCAL_DATA(TYPE)
 
     Macro to use in local immutable data in Cahute source files, surrounding

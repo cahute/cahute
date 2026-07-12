@@ -35,7 +35,7 @@
  * @param code Unicode character codepoint.
  * @return Size.
  */
-CAHUTE_INLINE(size_t) cahute_get_utf8_char_size(unsigned long code) {
+CAHUTE_LOCAL(size_t) cahute_get_utf8_char_size(unsigned long code) {
     if (code < 128)
         return 1;
     else if (code < 2048)
@@ -117,7 +117,7 @@ CAHUTE_LOCAL(size_t) cahute_put_utf8_char(cahute_u8 *buf, unsigned long code) {
  * @param lenp Pointer to the sequence length to set.
  * @return Cahute error, or 0 if ok.
  */
-CAHUTE_INLINE(int)
+CAHUTE_LOCAL(int)
 cahute_get_utf8_char(
     cahute_u8 const *data,
     size_t data_size,
@@ -199,7 +199,7 @@ cahute_get_utf8_char(
  * @param code Code for which to get the entry.
  * @return Character entry for the code.
  */
-CAHUTE_INLINE(struct cahute_char_entry const *)
+CAHUTE_LOCAL(struct cahute_char_entry const *)
 cahute_get_legacy_char_entry(unsigned int code) {
     switch ((code >> 8) & 255) {
     case 0x00:
@@ -225,7 +225,7 @@ cahute_get_legacy_char_entry(unsigned int code) {
  * @param seq_lenp Pointer to the sequence length. This is updated if no
  *        error has occurred, to the size of the data.
  */
-CAHUTE_INLINE(int)
+CAHUTE_LOCAL(int)
 cahute_get_legacy_unicode_sequence(
     unsigned int code,
     cahute_u32 *seq,
@@ -292,7 +292,7 @@ cahute_get_legacy_unicode_sequence(
  * @param seq_lenp Pointer to the read sequence length to define.
  * @return Cahute error.
  */
-CAHUTE_INLINE(int)
+CAHUTE_LOCAL(int)
 cahute_get_variable_size_legacy_char(
     cahute_u8 const *data,
     size_t data_size,
@@ -322,7 +322,7 @@ cahute_get_variable_size_legacy_char(
  * @param code Code for which to get the entry.
  * @return Character entry for the code.
  */
-CAHUTE_INLINE(struct cahute_char_entry const *)
+CAHUTE_LOCAL(struct cahute_char_entry const *)
 cahute_get_9860_char_entry(unsigned int code) {
     switch ((code >> 8) & 255) {
     case 0x00:
@@ -356,7 +356,7 @@ cahute_get_9860_char_entry(unsigned int code) {
  * @param seq_lenp Pointer to the sequence length. This is updated if no
  *        error has occurred, to the size of the data.
  */
-CAHUTE_INLINE(int)
+CAHUTE_LOCAL(int)
 cahute_get_9860_unicode_sequence(
     unsigned int code,
     cahute_u32 *seq,
@@ -423,7 +423,7 @@ cahute_get_9860_unicode_sequence(
  * @param seq_lenp Pointer to the read sequence length to define.
  * @return Cahute error.
  */
-CAHUTE_INLINE(int)
+CAHUTE_LOCAL(int)
 cahute_get_variable_size_9860_char(
     cahute_u8 const *data,
     size_t data_size,

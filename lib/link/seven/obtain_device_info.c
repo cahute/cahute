@@ -66,7 +66,7 @@ obtain_raw_device_info(
  * @param max_size Maximum size to read from raw data.
  * @return Pointer to the obtained string.
  */
-CAHUTE_INLINE(int)
+CAHUTE_LOCAL(int)
 extract_info_string(
     char *buf,
     size_t size,

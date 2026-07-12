@@ -636,7 +636,7 @@ cahute_open_libusb_link(
 #endif
 
 /* ---
- * Miscellaneous functions, defined in misc.c
+ * Miscellaneous functions.
  * --- */
 
 CAHUTE_INTERNAL(int) cahute_sleep(cahute_context *context, unsigned long ms);
@@ -655,67 +655,21 @@ cahute_unpad_data(
     size_t data_size
 );
 
-/**
- * Compute an 2-byte ASCII-HEX number representation on a given buffer.
- *
- * @param buf Buffer on which to represent the number.
- * @param number Number to represent.
- */
-CAHUTE_INLINE(void)
-cahute_set_ascii_hex(cahute_u8 *buf, unsigned int number) {
-    buf[0] = "0123456789ABCDEF"[(number >> 4) & 15];
-    buf[1] = "0123456789ABCDEF"[number & 15];
-}
+CAHUTE_INTERNAL(void)
+cahute_set_ascii_hex(cahute_u8 *buf, unsigned int number);
 
-/**
- * Copy a string from a payload to a buffer, while null-terminating it
- * and detecting 0xFF characters as end of strings.
- *
- * SECURITY: The destination buffer is expected to be at least
- * ``max_size + 1`` long.
- *
- * @param buf Buffer pointer for where to copy the data.
- * @param raw Raw data from which to get the string.
- * @param max_size Maximum size to read from raw data.
- * @return Pointer to the obtained string.
- */
-CAHUTE_INLINE(char *)
-cahute_copy_ff_string(char *buf, cahute_u8 const *raw, size_t max_size) {
-    char *result = buf;
+CAHUTE_INTERNAL(char *)
+cahute_copy_ff_string(char *buf, cahute_u8 const *raw, size_t max_size);
 
-    for (; max_size--; raw++) {
-        int byte = *raw;
-
-        if (!byte || byte >= 128)
-            break;
-
-        *(unsigned char *)buf++ = byte;
-    }
-
-    *buf++ = '\0';
-    return result;
-}
+CAHUTE_INTERNAL(unsigned long) cahute_get_long_hex(cahute_u8 const *raw);
+CAHUTE_INTERNAL(unsigned long) cahute_get_long_dec(cahute_u8 const *raw);
 
 #define cahute_is_ascii_hex(C) \
     (((C) >= '0' && (C) <= '9') || ((C) >= 'A' && (C) <= 'F'))
 #define cahute_ascii_hex_to_nibble(C) ((C) >= 'A' ? (C) - 'A' + 10 : (C) - '0')
 
-/**
- * Compute a checksub.
- *
- * @param data Buffer to read from.
- * @param size Size of the buffer to read from.
- * @return Computed checksum.
- */
-CAHUTE_INLINE(unsigned int)
-cahute_checksum(cahute_u8 const *data, size_t size) {
-    unsigned int checksum = 0;
-
-    for (; size; size--)
-        checksum += *data++;
-
-    return checksum;
-}
+CAHUTE_INTERNAL(unsigned int)
+cahute_checksum(cahute_u8 const *data, size_t size);
 
 #define cahute_checksub(CAHUTE__BUF, CAHUTE__SIZE) \
     ((~cahute_checksum((CAHUTE__BUF), (CAHUTE__SIZE)) + 1) & 255)
@@ -817,47 +771,15 @@ cahute_scsi_request_from_link_transport(
     int *statusp
 );
 
-/**
- * Receive a byte on a link's transport.
- *
- * NOTE: If an error occurs, *bytep is NOT set and keeps whatever value it
- * had before the function call.
- *
- * @param link Link on the transport of which to receive the byte.
- * @param bytep Pointer to the byte to receive.
- * @param timeout Timeout to receive the byte.
- * @return Cahute error, or 0 if ok.
- */
-CAHUTE_INLINE(int)
+CAHUTE_INTERNAL(int)
 cahute_receive_byte_on_link_transport(
     cahute_link *link,
     int *bytep,
     unsigned long timeout
-) {
-    cahute_u8 buf[8];
-    int err;
+);
 
-    err = cahute_receive_on_link_transport(link, buf, 1, timeout, timeout);
-    if (!err && bytep)
-        *bytep = buf[0];
-
-    return err;
-}
-
-/**
- * Send a byte on a link's transport.
- *
- * @param link Link on the transport of which to send the byte.
- * @param byte Byte to send.
- * @return Cahute error, or 0 if ok.
- */
-CAHUTE_INLINE(int)
-cahute_send_byte_on_link_transport(cahute_link *link, int byte) {
-    cahute_u8 buf[8];
-
-    buf[0] = byte;
-    return cahute_send_on_link_transport(link, buf, 1);
-}
+CAHUTE_INTERNAL(int)
+cahute_send_byte_on_link_transport(cahute_link *link, int byte);
 
 /* ---
  * Data management, defined in data.c
@@ -927,28 +849,10 @@ struct cahute_casiolink_data_description {
     size_t part_sizes[5];
 };
 
-/**
- * Compute the total size of a data description.
- *
- * @param desc Description of the data to receive.
- * @return Computed size of the data description.
- */
-CAHUTE_INLINE(size_t)
+CAHUTE_INTERNAL(size_t)
 cahute_casiolink_compute_data_description_size(
     struct cahute_casiolink_data_description const *desc
-) {
-    size_t total_size = 0, part_i;
-
-    if (!desc->part_count)
-        return 0;
-
-    for (part_i = desc->part_count - 1; part_i > 0; part_i--)
-        total_size += desc->part_sizes[part_i - 1] + 2;
-
-    total_size +=
-        (desc->part_sizes[desc->part_count - 1] + 2) * desc->last_part_repeat;
-    return total_size;
-}
+);
 
 CAHUTE_INTERNAL(int)
 cahute_casiolink_check_file_data(

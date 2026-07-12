@@ -245,58 +245,6 @@ cahute_seven_receive_bytes_into_stream(
 #define EXPECT_BASIC_ACK_OR_FAIL \
     EXPECT_PACKET_OR_FAIL(PACKET_TYPE_ACK, PACKET_SUBTYPE_ACK_BASIC)
 
-/**
- * Obtain a 32-bit integer from raw data, if available.
- *
- * SECURITY: The raw buffer is expected to be at least 8 bytes long.
- *
- * @param buf Buffer from which to get the 32-bit integer.
- * @return Integer, or 0 if no integer could be decoded.
- */
-CAHUTE_INLINE(unsigned long) cahute_get_long_hex(cahute_u8 const *raw) {
-    if (!cahute_is_ascii_hex(raw[0]) || !cahute_is_ascii_hex(raw[1])
-        || !cahute_is_ascii_hex(raw[2]) || !cahute_is_ascii_hex(raw[3])
-        || !cahute_is_ascii_hex(raw[4]) || !cahute_is_ascii_hex(raw[5])
-        || !cahute_is_ascii_hex(raw[6]) || !cahute_is_ascii_hex(raw[7]))
-        return 0;
-
-    return (cahute_ascii_hex_to_nibble(raw[0]) << 28)
-           | (cahute_ascii_hex_to_nibble(raw[1]) << 24)
-           | (cahute_ascii_hex_to_nibble(raw[2]) << 20)
-           | (cahute_ascii_hex_to_nibble(raw[3]) << 16)
-           | (cahute_ascii_hex_to_nibble(raw[4]) << 12)
-           | (cahute_ascii_hex_to_nibble(raw[5]) << 8)
-           | (cahute_ascii_hex_to_nibble(raw[6]) << 4)
-           | cahute_ascii_hex_to_nibble(raw[7]);
-}
-
-/**
- * Obtain a 32-bit integer from raw data, if available.
- *
- * SECURITY: The raw buffer is expected to be at least 8 bytes long.
- *
- * @param buf Buffer from which to get the 32-bit integer.
- * @return Integer, or 0 if no integer could be decoded.
- */
-CAHUTE_INLINE(unsigned long) cahute_get_long_dec(cahute_u8 const *raw) {
-    unsigned long x = 0;
-
-    if (!isdigit(raw[0]) || !isdigit(raw[1]) || !isdigit(raw[2])
-        || !isdigit(raw[3]) || !isdigit(raw[4]) || !isdigit(raw[5])
-        || !isdigit(raw[6]) || !isdigit(raw[7]))
-        return 0;
-
-    x = (raw[0] - '0') * 10 + raw[1] - '0';
-    x = x * 10 + raw[2] - '0';
-    x = x * 10 + raw[3] - '0';
-    x = x * 10 + raw[4] - '0';
-    x = x * 10 + raw[5] - '0';
-    x = x * 10 + raw[6] - '0';
-    x = x * 10 + raw[7] - '0';
-
-    return x;
-}
-
 CAHUTE_INTERNAL(int)
 cahute_seven_request_file_type(
     cahute_link *link,

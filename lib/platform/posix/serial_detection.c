@@ -33,7 +33,7 @@
  *
  * @param s String to check.
  * @return 1 if all characters are decimal digits, 0 otherwise. */
-CAHUTE_INLINE(int) all_numbers(char const *s) {
+CAHUTE_LOCAL(int) all_numbers(char const *s) {
     for (; *s; s++)
         if (*s < '0' || *s > '9')
             return 0;

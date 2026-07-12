@@ -43,9 +43,6 @@
 /* Make a function accessible locally only. */
 #define CAHUTE_LOCAL(TYPE) static TYPE
 
-/* Make a function accessible locally only, and optionally inline. */
-#define CAHUTE_INLINE(TYPE) static inline TYPE
-
 /* Make some read-only data accessible locally only. */
 #define CAHUTE_LOCAL_DATA(TYPE) static TYPE const
 

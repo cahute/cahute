@@ -56,7 +56,7 @@ struct simple_usb_detection_cookie {
  * @param type Type identifier.
  * @return Name of the type.
  */
-CAHUTE_INLINE(char const *) get_usb_detection_type_name(int type) {
+CAHUTE_LOCAL(char const *) get_usb_detection_type_name(int type) {
     switch (type) {
     case CAHUTE_USB_DETECTION_ENTRY_TYPE_SERIAL:
         return "Serial over bulk transfers";
