@@ -623,7 +623,7 @@ list(APPEND LIB_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h")
 
 add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
-    COMMAND "${Python3_EXECUTABLE}" ${CMAKE_SOURCE_DIR}/chars/process_chars.py
+    COMMAND "${Python3_EXECUTABLE}" ${CMAKE_CURRENT_SOURCE_DIR}/chars/process_chars.py
         "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
     DEPENDS chars/process_chars.py chars/chars.toml
     VERBATIM
@@ -635,7 +635,7 @@ if(CAHUTE_SHARED OR CAHUTE_STATIC_PIC)
     add_dependencies(cahute-pic cahute-headers)
     target_include_directories(cahute-pic PRIVATE
         ${LIB_INCLUDE_DIRS}
-        "${CMAKE_SOURCE_DIR}/lib")
+        "${CMAKE_CURRENT_SOURCE_DIR}/lib")
     target_compile_definitions(cahute-pic PRIVATE
         ${LIB_COMPILE_DEFS})
 endif()
@@ -645,7 +645,7 @@ if(CAHUTE_STATIC)
     add_dependencies(cahute-pdc cahute-headers)
     target_include_directories(cahute-pdc PRIVATE
         ${LIB_INCLUDE_DIRS}
-        "${CMAKE_SOURCE_DIR}/lib")
+        "${CMAKE_CURRENT_SOURCE_DIR}/lib")
     target_compile_definitions(cahute-pdc PRIVATE
         ${LIB_COMPILE_DEFS})
 endif()
@@ -792,9 +792,9 @@ endif()
 if(CAHUTE_CLI_P7OS)
     add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/cli/fxremote-update.exe.bin.c"
-        COMMAND "${Python3_EXECUTABLE}" ${CMAKE_SOURCE_DIR}/misc/process_bin.py
+        COMMAND "${Python3_EXECUTABLE}" ${CMAKE_CURRENT_SOURCE_DIR}/misc/process_bin.py
             "${CMAKE_CURRENT_BINARY_DIR}/cli/fxremote-update.exe.bin.c"
-            "${CMAKE_SOURCE_DIR}/cli/fxremote-update.exe.bin"
+            "${CMAKE_CURRENT_SOURCE_DIR}/cli/fxremote-update.exe.bin"
         DEPENDS cli/fxremote-update.exe.bin misc/process_bin.py
         VERBATIM
     )
