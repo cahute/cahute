@@ -70,7 +70,8 @@ cahute_open_win32_cesg_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
     char const *path,
-    size_t max_read_capacity
+    size_t max_read_capacity,
+    size_t max_write_capacity
 );
 
 CAHUTE_INTERNAL(int)

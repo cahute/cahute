@@ -41,6 +41,7 @@ CAHUTE_DECLARE_TYPE(cahute_win32_cesg_link_cookie)
  * @property read_in_progress Whether a read operation is currently in
  *           progress.
  * @property max_read_capacity Maximum read capacity.
+ * @property max_write_capacity Maximum write capacity.
  */
 struct cahute_win32_cesg_link_cookie {
     HANDLE handle;
@@ -49,6 +50,7 @@ struct cahute_win32_cesg_link_cookie {
     DWORD received;
     DWORD read_in_progress;
     size_t max_read_capacity;
+    size_t max_write_capacity;
 };
 
 /**
@@ -188,6 +190,9 @@ send_on_link(
     DWORD sent;
     BOOL ret;
 
+    if (cookie->max_write_capacity && size > cookie->max_write_capacity)
+        size = cookie->max_write_capacity;
+
     ret =
         WriteFile(cookie->handle, buf, size, &sent, &cookie->write_overlapped);
     if (!ret) {
@@ -251,6 +256,10 @@ cesg_link_interface = {
  *        This parameter is necessary since older versions of the driver
  *        do not support the read capacity of Cahute (CESG 1.0.0.0 does not
  *        support reading 32768 bytes at once). Set to 0 for no limit.
+ * @param max_write_capacity Maximum buffer size to use when writing.
+ *        This parameter is necessary since older versions of the driver
+ *        do not support the write capacity of Cahute (CESG 1.0.0.0 does not
+ *        support writing 32768 bytes at once). Set to 0 for no limit.
  * @return Error, or 0 if successful.
  */
 CAHUTE_INTERNAL(int)
@@ -258,7 +267,8 @@ cahute_open_win32_cesg_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
     char const *path,
-    size_t max_read_capacity
+    size_t max_read_capacity,
+    size_t max_write_capacity
 ) {
     HANDLE handle = INVALID_HANDLE_VALUE;
     HANDLE read_overlapped_event_handle = INVALID_HANDLE_VALUE;
@@ -313,6 +323,7 @@ cahute_open_win32_cesg_link(
     cookie.read_overlapped.hEvent = read_overlapped_event_handle;
     cookie.write_overlapped.hEvent = write_overlapped_event_handle;
     cookie.max_read_capacity = max_read_capacity;
+    cookie.max_write_capacity = max_write_capacity;
 
     return cahute_open_serial_over_usb_bulk_link_from_interface(
         open_params,
