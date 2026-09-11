@@ -251,7 +251,7 @@ match_device(open_cookie *cookie, cahute_win32_usb_device const *device) {
     cahute_win32_device_filter filter;
     open_volmgr_cookie volmgr_cookie;
     device_interface_path path;
-    size_t max_read_capacity = 0, max_write_capacity = 0;
+    size_t max_read_capacity = 32768, max_write_capacity = 32768;
     int err = CAHUTE_ERROR_IMPL;
 
     path.path = NULL;
