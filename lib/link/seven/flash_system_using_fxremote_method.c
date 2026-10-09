@@ -145,7 +145,7 @@ cahute_seven_flash_sector_using_fxremote_method(
  *
  * This uses command 0x76 to get information regarding the calculator model
  * from the bootloader, clears all sectors related to the ROM using
- * command 0x72, then copy all sectors from 0xA0020000 to 0xA0280000 excluded,
+ * command 0x72, then copy all sectors from 0xA0020000 to 0xA0270000 excluded,
  * then the initial system sector at 0xA0010000, and send the final
  * 0x78 command.
  *
@@ -188,7 +188,7 @@ cahute_seven_flash_system_using_fxremote_method(
     if (flags & CAHUTE_FLASH_FLAG_RESET_SMEM)
         max_addr = 0xA0400000;
     else
-        max_addr = 0xA0280000;
+        max_addr = 0xA0270000;
 
     for (addr = 0xA0010000; addr < max_addr; addr += 0x10000) {
         cahute_u8 buf[4];
