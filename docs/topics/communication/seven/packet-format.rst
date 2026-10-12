@@ -203,14 +203,26 @@ The layout of *D* is the following:
       - Current data packet number in current transmission
       - 4-char :ref:`protocol-topic-seven-ascii-hex` value,
         ``0001`` to ``FFFF``.
-    * - 0-512 B
+    * - 0-1024 B
       - Contents (*DD*)
       - Contents of data packet
       -
 
-Note that since 512 bytes is the maximum transmittable amount, and that
-:ref:`protocol-topic-seven-5c-padding` can only double the data size, the maximum size
-of transmitted data within one data packet is 256 bytes.
+Note that since 2048 bytes is the maximum transmittable amount, and that
+:ref:`protocol-topic-seven-5c-padding` can only double the data size, the
+maximum size of transmitted data within one data packet is 1024 bytes.
+
+.. note::
+
+    The original limits recommended here, and used by Cahute, were 256
+    unescaped / 512 escaped bytes as a maximum. These recommandations
+    originated in the fxReverse documentation project, which was done
+    on the first fx-9860G models.
+
+    However, fxRemote uses 1020, and the various official tools seem to be
+    using a limit between 1024 and 4096, so the recommended limit has been
+    increased to 1024, which is supported by the oldest found official OSes
+    supporting Protocol 7.00.
 
 .. _protocol-topic-seven-packet-03:
 

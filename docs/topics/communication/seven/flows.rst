@@ -240,13 +240,13 @@ Data packets are described in :ref:`protocol-topic-seven-packet-02`.
 
     In order to know the number of packets an original buffer can take, due
     to escaping concerns, it is highly recommended to consider that all packets
-    contain up to 256 bytes, except the last one that may contain less.
+    contain up to 1024 bytes, except the last one that may contain less.
     For example:
 
-    * 500 bytes will be represented as 2 data packets (one of 256 bytes,
-      one of 244 bytes).
-    * 512 bytes will be represented as 2 data packets (both of 256 bytes).
-    * 1055 bytes will be represented as 5 data packets (four of 256 bytes,
+    * 1500 bytes will be represented as 2 data packets (one of 1024 bytes,
+      one of 476 bytes).
+    * 2048 bytes will be represented as 2 data packets (both of 1024 bytes).
+    * 4127 bytes will be represented as 5 data packets (four of 1024 bytes,
       one of 31 bytes).
 
 .. _protocol-topic-seven-packet-shifting:

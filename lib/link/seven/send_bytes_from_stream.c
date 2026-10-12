@@ -56,16 +56,18 @@ cahute_seven_send_bytes_from_stream(
     cahute_progress_func *progress_func,
     void *progress_cookie
 ) {
-    cahute_u8 buf[264];
-    size_t last_packet_size;
-    unsigned long packet_count;
+    cahute_u8 buf[SEVEN_MAX_PACKET_DATA_SIZE];
+    size_t packet_data_payload_size =
+        link->protocol_state.seven.packet_data_payload_size;
+    size_t last_packet_size = size % packet_data_payload_size;
+    unsigned long packet_count =
+        (size / packet_data_payload_size) + !!last_packet_size;
     unsigned long offset = 0;
     unsigned long i, loop_send_flags = 0;
     int err, shifted = 0;
 
-    last_packet_size = size & 255;
-    packet_count = (size >> 8) + !!last_packet_size;
-    last_packet_size = last_packet_size ? last_packet_size : 256;
+    last_packet_size =
+        last_packet_size ? last_packet_size : packet_data_payload_size;
     cahute_set_ascii_hex(buf, (packet_count >> 8) & 255);
     cahute_set_ascii_hex(&buf[2], packet_count & 255);
 
@@ -81,11 +83,16 @@ cahute_seven_send_bytes_from_stream(
         buf[6] = '0';
         buf[7] = '1';
 
-        err = cahute_read_from_file(file, offset, &buf[8], 256);
+        err = cahute_read_from_file(
+            file,
+            offset,
+            &buf[8],
+            packet_data_payload_size
+        );
         if (err)
             return err;
 
-        offset += 256;
+        offset += packet_data_payload_size;
 
         err = cahute_seven_send_extended(
             link,
@@ -93,7 +100,7 @@ cahute_seven_send_bytes_from_stream(
             PACKET_TYPE_DATA,
             link->protocol_state.seven.last_command,
             buf,
-            264,
+            8 + packet_data_payload_size,
             TIMEOUT_PACKET_TIMEOUT
         );
         if (err)
@@ -112,7 +119,12 @@ cahute_seven_send_bytes_from_stream(
         cahute_set_ascii_hex(&buf[4], (i >> 8) & 255);
         cahute_set_ascii_hex(&buf[6], i & 255);
 
-        err = cahute_read_from_file(file, offset, &buf[8], 256);
+        err = cahute_read_from_file(
+            file,
+            offset,
+            &buf[8],
+            packet_data_payload_size
+        );
         if (err) {
             if (shifted) {
                 msg(link->context,
@@ -125,7 +137,7 @@ cahute_seven_send_bytes_from_stream(
             return err;
         }
 
-        offset += 256;
+        offset += packet_data_payload_size;
 
         msg(link->context,
             ll_info,
@@ -138,7 +150,7 @@ cahute_seven_send_bytes_from_stream(
             PACKET_TYPE_DATA,
             link->protocol_state.seven.last_command,
             buf,
-            264,
+            8 + packet_data_payload_size,
             TIMEOUT_PACKET_TIMEOUT
         );
         if (err) {

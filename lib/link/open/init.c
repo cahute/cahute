@@ -873,6 +873,10 @@ cahute_initialize_link_protocol(
         seven_state->last_packet_type = -1;
         seven_state->last_packet_subtype = -1;
         seven_state->last_packet_data_size = 0;
+        /* NOTE: If you want to make packet_data_payload_size dynamic, ensure
+         *       that it is less than SEVEN_MAX_PACKET_DATA_SIZE - 8. */
+        seven_state->packet_data_payload_size =
+            SEVEN_DEFAULT_DATA_PACKET_PAYLOAD_SIZE;
         seven_state->raw_device_info_size = 0;
 
         if (~flags & PROTOCOL_FLAG_NOCHECK) {

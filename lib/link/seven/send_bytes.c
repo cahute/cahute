@@ -57,13 +57,17 @@ cahute_seven_send_bytes(
     cahute_progress_func *progress_func,
     void *progress_cookie
 ) {
-    cahute_u8 buf[264];
-    size_t last_packet_size = size & 255;
-    unsigned long packet_count = (size >> 8) + !!last_packet_size;
+    cahute_u8 buf[SEVEN_MAX_PACKET_DATA_SIZE];
+    size_t packet_data_payload_size =
+        link->protocol_state.seven.packet_data_payload_size;
+    size_t last_packet_size = size % packet_data_payload_size;
+    unsigned long packet_count =
+        (size / packet_data_payload_size) + !!last_packet_size;
     unsigned long i, loop_send_flags = 0;
     int err, shifted = 0;
 
-    last_packet_size = last_packet_size ? last_packet_size : 256;
+    last_packet_size =
+        last_packet_size ? last_packet_size : packet_data_payload_size;
     cahute_set_ascii_hex(buf, (packet_count >> 8) & 255);
     cahute_set_ascii_hex(&buf[2], packet_count & 255);
 
@@ -79,8 +83,8 @@ cahute_seven_send_bytes(
         buf[6] = '0';
         buf[7] = '1';
 
-        memcpy(&buf[8], data, 256);
-        data += 256;
+        memcpy(&buf[8], data, packet_data_payload_size);
+        data += packet_data_payload_size;
 
         err = cahute_seven_send_extended(
             link,
@@ -88,7 +92,7 @@ cahute_seven_send_bytes(
             PACKET_TYPE_DATA,
             link->protocol_state.seven.last_command,
             buf,
-            264,
+            8 + packet_data_payload_size,
             TIMEOUT_PACKET_TIMEOUT
         );
         if (err)
@@ -106,8 +110,8 @@ cahute_seven_send_bytes(
     for (i = 1 + shifted; i < packet_count; i++) {
         cahute_set_ascii_hex(&buf[4], (i >> 8) & 255);
         cahute_set_ascii_hex(&buf[6], i & 255);
-        memcpy(&buf[8], data, 256);
-        data += 256;
+        memcpy(&buf[8], data, packet_data_payload_size);
+        data += packet_data_payload_size;
 
         msg(link->context,
             ll_info,
@@ -120,7 +124,7 @@ cahute_seven_send_bytes(
             PACKET_TYPE_DATA,
             link->protocol_state.seven.last_command,
             buf,
-            264,
+            8 + packet_data_payload_size,
             TIMEOUT_PACKET_TIMEOUT
         );
         if (err) {

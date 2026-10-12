@@ -139,12 +139,20 @@ struct cahute_casiolink_state {
 };
 
 /* Maximum size of raw data that can come from an extended packet.
- * Calculators support data packets with up to 256 raw bytes (512 encoded
- * bytes), but fxRemote uses payloads that go up to 1028 raw bytes
- * (2056 encoded bytes). */
-#define SEVEN_MAX_PACKET_DATA_SIZE         1028
-#define SEVEN_MAX_ENCODED_PACKET_DATA_SIZE 2056 /* Max data size x 2. */
-#define SEVEN_MAX_PACKET_SIZE              2066 /* Enc. data size + 10. */
+ * Calculators support data packets with up to 1024 raw bytes (2048 encoded
+ * bytes).
+ *
+ * Theoretically, 8 bytes in the data size are guaranteed not to have to be
+ * escaped when used correctly. However, since this influences the size of
+ * internal buffers, and we want to avoid off-by-x errors, we want to
+ * plan ahead for it. */
+#define SEVEN_MAX_PACKET_DATA_SIZE         1032 /* 1024 + 4 + 4 */
+#define SEVEN_MAX_ENCODED_PACKET_DATA_SIZE 2064 /* 1032 * 2. */
+#define SEVEN_MAX_PACKET_SIZE              2074 /* Enc. data size + 10. */
+
+/* Default data packet payload size is what is used by the
+ * data sending code. */
+#define SEVEN_DEFAULT_DATA_PACKET_PAYLOAD_SIZE 1024
 
 /* Size of the raw device information buffer for Protocol 7.00.
  * This actually varies between devices: the fx-9860G use 164 bytes,
@@ -167,6 +175,8 @@ struct cahute_casiolink_state {
  *           if not available.
  * @property last_packet_data Buffer to the last packet data.
  * @property last_packet_data_size Size of the last packet data.
+ * @property packet_data_payload_size Payload size to use when sending data
+ *           using data packets.
  * @property raw_device_info Raw device information buffer, so that data can
  *           be extracted later if actual device information is requested.
  * @property raw_device_info_size Raw device information size (not capacity).
@@ -181,6 +191,8 @@ struct cahute_seven_state {
 
     size_t last_packet_data_size;
     size_t raw_device_info_size;
+
+    size_t packet_data_payload_size;
 
     cahute_u8 last_packet_data[SEVEN_MAX_PACKET_DATA_SIZE];
     cahute_u8 raw_device_info[SEVEN_RAW_DEVICE_INFO_BUFFER_SIZE];
