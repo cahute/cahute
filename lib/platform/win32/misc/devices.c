@@ -438,7 +438,7 @@ cahute_enumerate_win32_devices(
                 continue;
             }
 
-            if (interface_list_size <= 1) {
+            if (interface_list_size <= 1 || interface_list_size == (ULONG)-1) {
                 msg(context,
                     ll_debug,
                     "Skipped: no device interface with the correct class.");

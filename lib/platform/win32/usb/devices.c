@@ -242,6 +242,7 @@ cahute_open_win32_usb_hub_for_device(
             return CAHUTE_ERROR_UNKNOWN;
         }
 
+        interface_list_len = 0;
         cret = (*cookie->cfgmgr32->get_device_interface_list_size)(
             &interface_list_len,
             &cahute_guid_devinterface_usb_hub,
@@ -260,9 +261,16 @@ cahute_open_win32_usb_hub_for_device(
             return CAHUTE_ERROR_UNKNOWN;
         }
 
-        if (interface_list_len <= 1) {
+        msg(cookie->context,
+            ll_debug,
+            "CM_Get_Device_Interface_List_SizeA returned a length of %luo.",
+            interface_list_len);
+        if (interface_list_len <= 1 || interface_list_len == (ULONG)-1) {
             /* The device does not have USB hub interfaces; it is therefore
-             * not a hub. */
+             * not a hub.
+             * (ULONG)-1 has been encountered in the while, and produces a
+             * CR_INVALID_POINTER (-3) on the corresponding
+             * CM_Get_Device_Interface_ListA. Not sure why it occurs... */
             if (device_id != small_device_id)
                 free(device_id);
 

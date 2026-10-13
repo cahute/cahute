@@ -107,6 +107,7 @@ find_win32_interface(
      * > and the CM_Get_Device_Interface_List call] and retry getting
      * > the size if CM_Get_Device_Interface_List returns CR_BUFFER_SMALL. */
     while (1) {
+        property_size = 0;
         cret = (*cfgmgr32->get_device_interface_list_size)(
             &property_size,
             guid,
@@ -120,6 +121,15 @@ find_win32_interface(
                 "0x%08lX.",
                 cret);
             err = CAHUTE_ERROR_UNKNOWN;
+            goto fail;
+        }
+
+        if (property_size <= 1 || property_size == (ULONG)-1) {
+            msg(context,
+                ll_error,
+                "CM_Get_Device_Interface_List_SizeA returned no entries when "
+                "one was expected.");
+            err = CAHUTE_ERROR_NOT_FOUND;
             goto fail;
         }
 
