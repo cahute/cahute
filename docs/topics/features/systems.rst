@@ -237,12 +237,12 @@ Possible drivers include the following:
       - Generic KMF-based USB device driver provided by libusbK_, a third-party
         library.
       - Windows XP (NT 5.1)+
-      - Not implemented
+      - :ref:`Implemented <internals-topic-win32-libusbk>`
     * - `libusb0.sys`_
       - Generic USB device driver provided by `libusb-win32`_, a third-party
         library implementing the libusb_ 0.1 API.
       - Windows 2000 (NT 5.0)+\ [#libusb0-compat]_
-      - Not implemented
+      - :ref:`Implemented <internals-topic-win32-libusbk>`
     * - UsbDk_
       - Generic USB device driver provided by the eponym, third-party
         component.

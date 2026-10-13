@@ -264,14 +264,22 @@ using the following steps:
             -
             -
             - WinUSB serial / UMS driver
+          * - ``libusb0``
+            -
+            -
+            - libusb-win32
+          * - ``libusbK``
+            -
+            -
+            - libusbK
           * - ``PVUSB``
             - ``CESG502 USB``
             - ``1.0.0.0``
-            - CESG502 (with capped read buffer capacity)
+            - CESG502 (with read/write buffer capacity capped to 4096)
           * - ``PVUSB``
             - ``CESG502 USB``
             -
-            - CESG502
+            - CESG502 (with read/write buffer capacity capped to 32768)
 
 .. _internals-topic-win32-cesg:
 
@@ -345,13 +353,14 @@ Once opened as a |HANDLE|_, UMS operations use the following mechanisms:
 
 .. _internals-topic-win32-winusb-bulk:
 
-Device communication using WinUSB (serial over bulk)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Device communication using the WinUSB driver/library (serial over bulk)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In case the calculator presents itself as :ref:`a serial over USB bulk
-device <protocol-topic-transport-serial-over-usb-bulk>`, the USB device
-has a device interface of class |DEVINTERFACE_USB_DEVICE| which can be
-opened using |WinUsb_Initialize|_.
+device <protocol-topic-transport-serial-over-usb-bulk>` with the WinUSB
+driver specifically, we can use WinUSB through the ``WinUSB.dll`` library.
+
+We start by opening the device using |WinUsb_Initialize|_.
 
 After initialization, the incoming and outgoing bulk pipe (endpoint) numbers
 are queried using |WinUsb_QueryInterfaceSettings|_ and
@@ -371,6 +380,21 @@ From here, the operations use the following functions:
 
     In case of timeout, the read operation continues in the background,
     and is resumed on next read.
+
+.. _internals-topic-win32-libusbk:
+
+Device communication using libusbK (serial over bulk)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In case the calculator presents itself as :ref:`a serial over USB bulk
+device <protocol-topic-transport-serial-over-usb-bulk>` with the WinUSB,
+libusbK or libusb-win32 (libusb0) driver, we can use libusbK using the
+``libusbK.dll`` library.
+
+We start by getting the functions within the DLL that are specific to the
+driver we want to use, using |LibK_GetProcAddress|_. Then we apply the same
+logic as for :ref:`WinUSB <internals-topic-win32-winusb-bulk>`, except
+we use the obtained functions to do so.
 
 File handling using the Win32 API
 ---------------------------------
@@ -427,6 +451,7 @@ the following operations:
 .. |IOCTL_SCSI_PASS_THROUGH_DIRECT| replace:: ``IOCTL_SCSI_PASS_THROUGH_DIRECT``
 .. |IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION| replace:: ``IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION``
 .. |IOCTL_USB_GET_NODE_CONNECTION_INFORMATION| replace:: ``IOCTL_USB_GET_NODE_CONNECTION_INFORMATION``
+.. |LibK_GetProcAddress| replace:: ``LibK_GetProcAddress``
 .. |ReadFile| replace:: ``ReadFile``
 .. |RegCloseKey| replace:: ``RegCloseKey``
 .. |RegQueryValueExA| replace:: ``RegQueryValueExA``
@@ -491,6 +516,9 @@ the following operations:
     https://www.planet-casio.com/Fr/logiciels/voir_un_logiciel_casio.php
     ?showid=16
 
+.. _WCID: https://github.com/pbatard/libwdi/wiki/WCID-Devices
+.. _libusbK: https://libusbk.sourceforge.net/UsbK3/index.html
+
 .. _CM_GETIDLIST_FILTER_CLASS:
     https://learn.microsoft.com/en-us/windows/win32/api/cfgmgr32/
     nf-cfgmgr32-cm_get_device_id_lista
@@ -553,6 +581,9 @@ the following operations:
 .. _IOCTL_USB_GET_NODE_CONNECTION_INFORMATION:
     https://learn.microsoft.com/fr-fr/windows-hardware/drivers/ddi/usbioctl/
     ni-usbioctl-ioctl_usb_get_node_connection_information
+.. _LibK_GetProcAddress:
+    https://libusbk.sourceforge.net/UsbK3/group__libk.html
+    #gad85a16d2edde27c1e42bbe715fe3dc9c
 .. _ReadFile:
     https://learn.microsoft.com/en-us/windows/win32/api/fileapi/
     nf-fileapi-readfile

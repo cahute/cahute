@@ -444,6 +444,7 @@ if(WIN32)
         lib/platform/win32/misc/logging.c
         lib/platform/win32/misc/monotonic.c
         lib/platform/win32/misc/sleep.c
+        lib/platform/win32/misc/usbk.c
         lib/platform/win32/misc/version.c
         lib/platform/win32/misc/winusb.c
         lib/platform/win32/serial/detection.c
@@ -453,6 +454,7 @@ if(WIN32)
         lib/platform/win32/usb/devices.c
         lib/platform/win32/usb/open.c
         lib/platform/win32/usb/ums.c
+        lib/platform/win32/usb/usbk_bulk.c
         lib/platform/win32/usb/winusb_bulk.c)
 elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows3x")
     list(APPEND LIB_COMPILE_DEFS
@@ -888,7 +890,7 @@ if(INSTALL_RUNTIME_DEPS)
         PRE_EXCLUDE_REGEXES
             # Win32.
             "^(advapi|kernel|shell)32\.dll$"
-            "^sdl\d+\.dll$"
+            "^sdl[0-9]+\.dll$"
             "^(api|ext)-ms-"
             # Linux.
             "^ld-"

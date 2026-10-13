@@ -335,6 +335,29 @@ match_device(open_cookie *cookie, cahute_win32_usb_device const *device) {
         );
         break;
 
+    case CAHUTE_WIN32_USB_DRIVER_LIBUSBK:
+    case CAHUTE_WIN32_USB_DRIVER_LIBUSB_WIN32:
+        if (device->entry_type != CAHUTE_USB_DETECTION_ENTRY_TYPE_SERIAL)
+            break;
+
+        /* Equivalent approach to WinUSB, but with UsbK only. */
+        err = find_win32_interface(
+            cookie->context,
+            &path,
+            device->device_id,
+            &cahute_guid_devinterface_usb_device
+        );
+        if (err)
+            goto fail;
+
+        err = cahute_open_win32_usbk_bulk_link(
+            cookie->context,
+            cookie->open_params,
+            path.path,
+            device->driver
+        );
+        break;
+
     default:
         msg(cookie->context,
             ll_error,

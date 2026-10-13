@@ -138,12 +138,16 @@ CAHUTE_INTERNAL(cahute_u32) cahute_htole32(cahute_u32 cahute__x);
  * Context definition.
  * --- */
 
-#define CAHUTE_CONTEXT_POINTER_LIBUSB_CONTEXT 0
-#define CAHUTE_CONTEXT_POINTER_AMIGAOS_TIMER  1
-#define CAHUTE_CONTEXT_POINTER_WIN32_CFGMGR32 2
-#define CAHUTE_CONTEXT_POINTER_WIN32_WINUSB   3
+#define CAHUTE_CONTEXT_POINTER_LIBUSB_CONTEXT            0
+#define CAHUTE_CONTEXT_POINTER_AMIGAOS_TIMER             1
+#define CAHUTE_CONTEXT_POINTER_WIN32_CFGMGR32            2
+#define CAHUTE_CONTEXT_POINTER_WIN32_WINUSB              3
+#define CAHUTE_CONTEXT_POINTER_WIN32_USBK                4
+#define CAHUTE_CONTEXT_POINTER_WIN32_USBK_DRIVER_LIBUSBK 5
+#define CAHUTE_CONTEXT_POINTER_WIN32_USBK_DRIVER_LIBUSB0 6
+#define CAHUTE_CONTEXT_POINTER_WIN32_USBK_DRIVER_WINUSB  7
 
-#define CAHUTE_CONTEXT_POINTER_COUNT 4 /* Update with the maximum value + 1. */
+#define CAHUTE_CONTEXT_POINTER_COUNT 8 /* Update with the maximum value + 1. */
 
 typedef void(cahute_context_destroy_func)(cahute_context *, void *);
 typedef int(cahute_context_init_func)(cahute_context *, void **, cahute_context_destroy_func **);

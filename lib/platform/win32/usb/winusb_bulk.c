@@ -401,7 +401,6 @@ cahute_open_win32_winusb_bulk_link(
     /* Device enabling control flow. */
     {
         struct cahute_winusb_setup_packet setup_packet;
-        BYTE buf[10];
         ULONG transferred = 0;
         BOOL ret;
 
@@ -414,8 +413,8 @@ cahute_open_win32_winusb_bulk_link(
         ret = (*winusb->control_transfer)(
             handle,
             setup_packet,
-            buf,
-            sizeof(buf),
+            NULL,
+            0,
             &transferred,
             NULL
         );

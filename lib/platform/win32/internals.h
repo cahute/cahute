@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2024-2026 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -47,6 +47,8 @@
 
 CAHUTE_DECLARE_TYPE(cahute_win32_cfgmgr32)
 CAHUTE_DECLARE_TYPE(cahute_win32_winusb)
+CAHUTE_DECLARE_TYPE(cahute_win32_usbk)
+CAHUTE_DECLARE_TYPE(cahute_win32_usbk_driver)
 
 CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devinterface_usb_hub;
 CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devinterface_usb_device;
@@ -296,6 +298,116 @@ struct cahute_win32_winusb {
 
 CAHUTE_INTERNAL(int)
 cahute_get_win32_winusb(cahute_context *context, cahute_win32_winusb **libp);
+
+/* ---
+ * libK management.
+ * --- */
+
+CAHUTE_DECLARE_TYPE(cahute_win32_usbk_version)
+CAHUTE_DECLARE_TYPE(cahute_win32_usbk_handle)
+CAHUTE_DECLARE_TYPE(cahute_win32_usbk_interface_descriptor)
+CAHUTE_DECLARE_TYPE(cahute_win32_usbk_pipe_information)
+CAHUTE_DECLARE_TYPE(cahute_win32_usbk_setup_packet)
+
+struct cahute_win32_usbk_version {
+    int Major;
+    int Minor;
+    int Micro;
+    int Nano;
+};
+
+struct cahute_win32_usbk_interface_descriptor {
+    unsigned char bLength;
+    unsigned char bDescriptorType;
+    unsigned char bInterfaceNumber;
+    unsigned char bAlternateSettings;
+    unsigned char bNumEndpoints;
+    unsigned char bInterfaceClass;
+    unsigned char bInterfaceSubClass;
+    unsigned char bInterfaceProtocol;
+    unsigned char iInterface;
+};
+
+struct cahute_win32_usbk_pipe_information {
+    int PipeType; /* enum in original code */
+    unsigned char PipeId;
+    unsigned short MaximumPacketSize;
+    unsigned char Interval;
+};
+
+struct cahute_win32_usbk_setup_packet {
+    unsigned char RequestType;
+    unsigned char Request;
+    unsigned short Value;
+    unsigned short Index;
+    unsigned short Length;
+};
+
+typedef VOID(WINAPI
+                 cahute_win32_usbk_get_version_func)(cahute_win32_usbk_version
+                                                         *);
+typedef BOOL(WINAPI
+                 cahute_win32_usbk_get_proc_address_func)(FARPROC *, int, int);
+
+typedef BOOL(WINAPI
+                 cahute_win32_usbk_initialize_func)(HANDLE, cahute_win32_usbk_handle **);
+typedef BOOL(WINAPI cahute_win32_usbk_free_func)(cahute_win32_usbk_handle *);
+typedef BOOL(WINAPI
+                 cahute_win32_usbk_query_interface_settings_func)(cahute_win32_usbk_handle *, unsigned char, cahute_win32_usbk_interface_descriptor *);
+typedef BOOL(WINAPI
+                 cahute_win32_usbk_query_pipe_func)(cahute_win32_usbk_handle *, unsigned char, unsigned char, cahute_win32_usbk_pipe_information *);
+typedef BOOL(WINAPI
+                 cahute_win32_usbk_control_transfer_func)(cahute_win32_usbk_handle *, cahute_win32_usbk_setup_packet, unsigned char const *, unsigned int, unsigned int *, OVERLAPPED *);
+typedef BOOL(WINAPI
+                 cahute_win32_usbk_read_pipe_func)(cahute_win32_usbk_handle *, unsigned char, unsigned char *, unsigned int, unsigned int *, OVERLAPPED *);
+typedef BOOL(WINAPI
+                 cahute_win32_usbk_write_pipe_func)(cahute_win32_usbk_handle *, unsigned char, unsigned char *, unsigned int, unsigned int *, OVERLAPPED *);
+typedef BOOL(WINAPI cahute_win32_usbk_abort_pipe_func)(
+    cahute_win32_usbk_handle *,
+    unsigned char
+);
+typedef BOOL(WINAPI cahute_win32_usbk_get_overlapped_result_func)(
+    cahute_win32_usbk_handle *,
+    OVERLAPPED *,
+    unsigned int *,
+    int wait
+);
+
+struct cahute_win32_usbk {
+    HMODULE dll;
+
+    cahute_win32_usbk_get_proc_address_func *get_proc_address;
+};
+
+struct cahute_win32_usbk_driver {
+    cahute_win32_usbk_initialize_func *initialize;
+    cahute_win32_usbk_free_func *free;
+    cahute_win32_usbk_query_interface_settings_func *query_interface_settings;
+    cahute_win32_usbk_query_pipe_func *query_pipe;
+    cahute_win32_usbk_control_transfer_func *control_transfer;
+    cahute_win32_usbk_read_pipe_func *read_pipe;
+    cahute_win32_usbk_write_pipe_func *write_pipe;
+    cahute_win32_usbk_abort_pipe_func *abort_pipe;
+    cahute_win32_usbk_get_overlapped_result_func *get_overlapped_result;
+};
+
+CAHUTE_INTERNAL(int)
+cahute_get_win32_usbk(cahute_context *context, cahute_win32_usbk **usbkp);
+CAHUTE_INTERNAL(int)
+cahute_get_win32_usbk_libusbk_driver(
+    cahute_context *context,
+    cahute_win32_usbk_driver **driverp
+);
+CAHUTE_INTERNAL(int)
+cahute_get_win32_usbk_libusb0_driver(
+    cahute_context *context,
+    cahute_win32_usbk_driver **driverp
+);
+CAHUTE_INTERNAL(int)
+cahute_get_win32_usbk_winusb_driver(
+    cahute_context *context,
+    cahute_win32_usbk_driver **driverp
+);
 
 /* ---
  * Device detection.

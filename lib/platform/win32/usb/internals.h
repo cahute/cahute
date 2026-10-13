@@ -88,4 +88,12 @@ cahute_open_win32_winusb_bulk_link(
     char const *path
 );
 
+CAHUTE_INTERNAL(int)
+cahute_open_win32_usbk_bulk_link(
+    cahute_context *context,
+    cahute_usb_link_open_params *open_params,
+    char const *path,
+    int driver
+);
+
 #endif /* PLATFORM_WIN32_USB_INTERNALS_H */
