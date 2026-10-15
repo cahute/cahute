@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent / "_ext"))
 
 project = "Cahute"
 version = "0.6"
-copyright = "2024-2025, Thomas Touhey"
+copyright = "2024-2026, Thomas Touhey"
 author = "Thomas Touhey"
 
 major, minor, *_ = version.split(".")
