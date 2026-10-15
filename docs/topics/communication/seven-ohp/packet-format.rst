@@ -12,9 +12,8 @@ This document defines the packet formats for Protocol 7.00 Screenstreaming.
     Fields represented using ASCII-HEX will reference the section from
     Protocol 7.00 packet format directly.
 
-All packets with Protocol 7.00 Screenstreaming packet have the
-
-The packet mode for this mode is the following:
+All packets with Protocol 7.00 Screenstreaming packet have the following
+format:
 
 .. list-table::
     :header-rows: 1
@@ -288,4 +287,10 @@ The frame format is the same as the previously received frame.
 Check packets are sent by the sender to request an acknowledgement from the
 receiver. See :ref:`protocol-topic-seven-ohp-acknowledge` for more information.
 
-The only known subtype for this mode is ``CAL00``.
+Known subtypes (*ST* values) for this packet are the following:
+
+``CAL00``
+    fx-CG and fx-CP calculators.
+
+``DIC00``
+    EX-word electronic dictionary.

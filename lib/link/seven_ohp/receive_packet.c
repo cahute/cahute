@@ -36,7 +36,9 @@ alignment_sequences[] = {
     "\x0BTYPZ2",
     "\x0BTYPB1",
     ("\x16"
-     "CAL00")
+     "CAL00"),
+    ("\x16"
+     "DIC00")
 };
 CAHUTE_LOCAL_DATA(size_t)
 alignment_sequence_count = sizeof(alignment_sequences) / sizeof(char const *);

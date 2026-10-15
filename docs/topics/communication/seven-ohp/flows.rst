@@ -55,17 +55,15 @@ Acknowledge a Sender
 
 On certain conditions, such as when the ``ScreenRecv(XP)`` mode is used on
 the fx-CG50, the sender requires acknowledgement from the receiver.
-As such, it will continuously send check packets, such as the following one::
+As such, it will continuously send :ref:`check packets
+<protocol-topic-seven-ohp-packet-16>`, such as the following one::
 
     16 43 41 4c 30 30 44 30  .CAL00D0
 
-In such cases, the receiver must answer with the following acknowledgement
-packet::
+In such cases, the receiver must answer with the following
+:ref:`acknowledgement packet <protocol-topic-seven-ohp-packet-06>`::
 
     06 30 32 30 30 31 30 44  .020010D
 
 Once the sender has received acknowledgement, it will start sending
 frame packets.
-
-For more information, see :ref:`protocol-topic-seven-ohp-packet-16` and
-:ref:`protocol-topic-seven-ohp-packet-06`.
