@@ -58,6 +58,12 @@ CAHUTE_INTERNAL(int) cahute_examine_file(cahute_file *file) {
         goto examined;
     }
 
+    /* An fx-9860G add-in also uses a CASIO StandardHeader. */
+    if (!memcmp(std, "USBPower\xF3\0\x10\0\x10\0", 14)) {
+        file->type = CAHUTE_FILE_TYPE_ADDIN_FX;
+        goto examined;
+    }
+
     /* We can try to see if we have a CASIOLINK archive. */
     if (buf[0] == 0x3A) {
         file->type = CAHUTE_FILE_TYPE_CASIOLINK;
