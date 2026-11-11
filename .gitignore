@@ -786,3 +786,6 @@ FodyWeavers.xsd
 /p7*
 /p7screen*
 /xfer9860*
+
+# Generated RPM packages.
+*.rpm

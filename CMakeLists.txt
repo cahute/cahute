@@ -609,19 +609,22 @@ install(
 add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
     COMMAND ${CMAKE_COMMAND}
-        -DCAHUTE_GIT="${CAHUTE_GIT}"
-        -DCAHUTE_GIT_CACHE_PATH="${CMAKE_CURRENT_BINARY_DIR}/git-hash.txt"
-        -DCAHUTE_VERSION_DATA_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
-        -DPROJECT_VERSION="${PROJECT_VERSION}"
-        -DPROJECT_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
-        -DPROJECT_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
-        -DPROJECT_HOMEPAGE_URL="${PROJECT_HOMEPAGE_URL}"
-        -DCAHUTE_REPORT_URL="${CAHUTE_REPORT_URL}"
+        "-DCAHUTE_GIT=${CAHUTE_GIT}"
+        "-DCAHUTE_GIT_CACHE_PATH=${CMAKE_CURRENT_BINARY_DIR}/git-hash.txt"
+        "-DCAHUTE_VERSION_DATA_BUILD_PATH=${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
+        "-DPROJECT_VERSION=${PROJECT_VERSION}"
+        "-DPROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}"
+        "-DPROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}"
+        "-DPROJECT_HOMEPAGE_URL=${PROJECT_HOMEPAGE_URL}"
+        "-DCAHUTE_REPORT_URL=${CAHUTE_REPORT_URL}"
         -P misc/CahuteVersionData.cmake
     DEPENDS common/version_data.h.in misc/CahuteVersionData.cmake
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
-list(APPEND LIB_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h")
+
+add_custom_target(cahute-version-data
+    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/common/version_data.h"
+)
 
 add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lib/chars.c"
@@ -634,7 +637,7 @@ add_custom_command(
 if(CAHUTE_SHARED OR CAHUTE_STATIC_PIC)
     add_library(cahute-pic OBJECT ${LIB_SOURCES})
     set_property(TARGET cahute-pic PROPERTY POSITION_INDEPENDENT_CODE ON)
-    add_dependencies(cahute-pic cahute-headers)
+    add_dependencies(cahute-pic cahute-headers cahute-version-data)
     target_include_directories(cahute-pic PRIVATE
         ${LIB_INCLUDE_DIRS}
         "${CMAKE_CURRENT_SOURCE_DIR}/lib")
@@ -644,7 +647,7 @@ endif()
 
 if(CAHUTE_STATIC)
     add_library(cahute-pdc OBJECT ${LIB_SOURCES})
-    add_dependencies(cahute-pdc cahute-headers)
+    add_dependencies(cahute-pdc cahute-headers cahute-version-data)
     target_include_directories(cahute-pdc PRIVATE
         ${LIB_INCLUDE_DIRS}
         "${CMAKE_CURRENT_SOURCE_DIR}/lib")
@@ -917,13 +920,17 @@ set(CPACK_PACKAGE_CONTACT "${PROJECT_CONTACT}")
 # DESCRIPTION_SUMMARY is automatically placed at the top of Debian packages'
 # descriptions, and there is no way to disable it, which is annoying,
 # especially for packages related to command-line utilities.
-# For simplicy, we set it to blank, so it doesn't come and parasite our
-# components' descriptions.
+# For simplicity, we set it to blank, so it doesn't come and
+# parasite our components' descriptions.
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/misc/cahute.bmp")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
-set(CPACK_STRIP_FILES YES)
+if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    set(CPACK_STRIP_FILES NO)
+else()
+    set(CPACK_STRIP_FILES YES)
+endif()
 set(CPACK_VERBATIM_VARIABLES true)
 
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}")
@@ -979,7 +986,7 @@ cpack_add_component_group(cli
 
 cpack_add_component(cli_cas
     DISPLAY_NAME "CaS command-line utility"
-    DESCRIPTION "Main memory transfer utility for CASIO calculators\nThis utility allows one to send and receive main memory data to and from a\nCASIO calculator of any generation, such as programs, lists, matrixes,\nand so on, over USB or serial cables."
+    DESCRIPTION "Main memory transfer utility for CASIO calculators\nThis utility allows one to send and receive main memory data to and from a\nCASIO calculator of any generation, such as programs, lists, matrices,\nand so on, over USB or serial cables."
     GROUP cli
     DEPENDS lib_runtime
     INSTALL_TYPES full min)
@@ -1104,5 +1111,70 @@ set(CPACK_NSIS_DISPLAY_NAME "Cahute")
 set(CPACK_NSIS_PACKAGE_NAME "Cahute")
 set(CPACK_NSIS_HELP_LINK "https://cahute.org/guides/install/windows.html")
 set(CPACK_NSIS_URL_INFO_ABOUT "https://cahute.org/")
+
+
+set(CPACK_RPM_COMPONENT_INSTALL ON)
+set(CPACK_RPM_FILE_NAME "RPM-DEFAULT")
+set(CPACK_RPM_INSTALL_WITH_EXEC ON)
+
+set(CPACK_RPM_PACKAGE_LICENSE "CECILL-2.1")
+set(CPACK_RPM_PACKAGE_RELEASE_DIST ON)
+
+if(CAHUTE_UDEV)
+    set(CPACK_RPM_UDEV_PACKAGE_NAME "cahute-udev")
+    set(CPACK_RPM_UDEV_PACKAGE_SUMMARY
+        "Rules for CASIO calculator devices using udev")
+    set(CPACK_RPM_UDEV_PACKAGE_ARCHITECTURE "noarch")
+    set(CPACK_RPM_UDEV_POST_INSTALL_SCRIPT_FILE
+        "${CMAKE_CURRENT_SOURCE_DIR}/rpm/udev-post")
+    set(CPACK_RPM_UDEV_POST_UNINSTALL_SCRIPT_FILE
+        "${CMAKE_CURRENT_SOURCE_DIR}/rpm/udev-postun")
+endif()
+
+set(CPACK_RPM_LIB_RUNTIME_PACKAGE_NAME "cahute-libs")
+set(CPACK_RPM_LIB_RUNTIME_PACKAGE_SUMMARY
+    "Shared library for CASIO calculator communication")
+
+set(CPACK_RPM_LIB_DEV_PACKAGE_NAME "cahute-devel")
+set(CPACK_RPM_LIB_DEV_PACKAGE_SUMMARY
+    "Development files for the calculator communication library")
+set(CPACK_RPM_LIB_DEV_PACKAGE_REQUIRES
+    "cahute-libs >= ${PROJECT_VERSION}")
+
+set(CPACK_RPM_CLI_CAS_PACKAGE_NAME "cas")
+set(CPACK_RPM_CLI_CAS_PACKAGE_SUMMARY
+    "CASIO calculator communication utility")
+set(CPACK_RPM_CLI_CAS_PACKAGE_REQUIRES
+    "cahute-libs >= ${PROJECT_VERSION}")
+
+set(CPACK_RPM_CLI_P7_PACKAGE_NAME "p7")
+set(CPACK_RPM_CLI_P7_PACKAGE_SUMMARY
+    "Protocol 7 communication utility for CASIO calculators")
+set(CPACK_RPM_CLI_P7_PACKAGE_REQUIRES
+    "cahute-libs >= ${PROJECT_VERSION}")
+
+set(CPACK_RPM_CLI_P7OS_PACKAGE_NAME "p7os")
+set(CPACK_RPM_CLI_P7OS_PACKAGE_SUMMARY
+    "Operating system transfer utility for CASIO calculators")
+set(CPACK_RPM_CLI_P7OS_PACKAGE_REQUIRES
+    "cahute-libs >= ${PROJECT_VERSION}")
+
+set(CPACK_RPM_CLI_P7SCREEN_PACKAGE_NAME "p7screen")
+set(CPACK_RPM_CLI_P7SCREEN_PACKAGE_SUMMARY
+    "Screen capture utility for CASIO calculators")
+set(CPACK_RPM_CLI_P7SCREEN_PACKAGE_REQUIRES
+    "cahute-libs >= ${PROJECT_VERSION}")
+
+set(CPACK_RPM_CLI_XFER9860_PACKAGE_NAME "xfer9860")
+set(CPACK_RPM_CLI_XFER9860_PACKAGE_SUMMARY
+    "File transfer utility for CASIO 9860-series calculators")
+set(CPACK_RPM_CLI_XFER9860_PACKAGE_REQUIRES
+    "cahute-libs >= ${PROJECT_VERSION}")
+
+if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    set(CPACK_RPM_DEBUGINFO_PACKAGE ON)
+    set(CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX
+        "/usr/src/debug/${PROJECT_NAME}-${PROJECT_VERSION}")
+endif()
 
 include(CPack)
