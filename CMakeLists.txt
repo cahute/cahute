@@ -655,6 +655,8 @@ if(CAHUTE_STATIC)
         ${LIB_COMPILE_DEFS})
 endif()
 
+set(CAHUTE_PKGCONF_PROVIDES "")
+
 if(CAHUTE_STATIC)
     add_library(cahute-static STATIC $<TARGET_OBJECTS:cahute-pdc>)
     set_target_properties(cahute-static PROPERTIES OUTPUT_NAME "cahute-static")
@@ -668,6 +670,7 @@ if(CAHUTE_STATIC)
             COMPONENT lib_dev
             RENAME "cahute-${PROJECT_VERSION_PUBLIC}-static.pc"
         )
+        list(APPEND CAHUTE_PKGCONF_PROVIDES "cahute-${PROJECT_VERSION_PUBLIC}-static")
     endif()
 
     install(TARGETS cahute-static
@@ -688,6 +691,7 @@ if(CAHUTE_STATIC_PIC)
             COMPONENT lib_dev
             RENAME "cahute-${PROJECT_VERSION_PUBLIC}-static-pic.pc"
         )
+        list(APPEND CAHUTE_PKGCONF_PROVIDES "cahute-${PROJECT_VERSION_PUBLIC}-static-pic")
     endif()
 
     install(TARGETS cahute-static-pic
@@ -710,6 +714,7 @@ if(CAHUTE_SHARED)
             COMPONENT lib_dev
             RENAME "cahute-${PROJECT_VERSION_PUBLIC}.pc"
         )
+        list(APPEND CAHUTE_PKGCONF_PROVIDES "cahute-${PROJECT_VERSION_PUBLIC}")
     endif()
 
     install(TARGETS cahute-shared
@@ -1112,13 +1117,27 @@ set(CPACK_NSIS_PACKAGE_NAME "Cahute")
 set(CPACK_NSIS_HELP_LINK "https://cahute.org/guides/install/windows.html")
 set(CPACK_NSIS_URL_INFO_ABOUT "https://cahute.org/")
 
-
 set(CPACK_RPM_COMPONENT_INSTALL ON)
 set(CPACK_RPM_FILE_NAME "RPM-DEFAULT")
-set(CPACK_RPM_INSTALL_WITH_EXEC ON)
-
 set(CPACK_RPM_PACKAGE_LICENSE "CECILL-2.1")
 set(CPACK_RPM_PACKAGE_RELEASE_DIST ON)
+set(CPACK_RPM_INSTALL_WITH_EXEC ON)
+
+# __brp_strip_static_archive defined to nil to keep debuginfo on static lib.
+# __brp_elfperms defined not to update the +x bit on shared libraries.
+set(CPACK_RPM_SPEC_MORE_DEFINE
+    "%define __brp_strip_static_archive %{nil}\n%define __brp_elfperms %{nil}")
+
+unset(CPACK_RPM_LIB_DEV_USER_FILELIST)
+if(CAHUTE_STATIC)
+    # We want to remove the +x bit on the static libraries.
+    list(APPEND CPACK_RPM_LIB_DEV_USER_FILELIST
+        "%attr(0644, root, root) ${CMAKE_INSTALL_FULL_LIBDIR}/libcahute-static.a")
+endif()
+if(CAHUTE_STATIC_PIC)
+    list(APPEND CPACK_RPM_LIB_DEV_USER_FILELIST
+        "%attr(0644, root, root) ${CMAKE_INSTALL_FULL_LIBDIR}/libcahute-static-pic.a")
+endif()
 
 if(CAHUTE_UDEV)
     set(CPACK_RPM_UDEV_PACKAGE_NAME "cahute-udev")
@@ -1140,6 +1159,14 @@ set(CPACK_RPM_LIB_DEV_PACKAGE_SUMMARY
     "Development files for the calculator communication library")
 set(CPACK_RPM_LIB_DEV_PACKAGE_REQUIRES
     "cahute-libs >= ${PROJECT_VERSION}")
+if(CAHUTE_PKGCONF_PROVIDES)
+    list(JOIN
+        CAHUTE_PKGCONF_PROVIDES
+        "), pkgconfig("
+        CAHUTE_PKGCONF_PROVIDES_JOINED)
+    set(CPACK_RPM_LIB_DEV_PACKAGE_PROVIDES
+        "pkgconfig(${CAHUTE_PKGCONF_PROVIDES_JOINED})")
+endif()
 
 set(CPACK_RPM_CLI_CAS_PACKAGE_NAME "cas")
 set(CPACK_RPM_CLI_CAS_PACKAGE_SUMMARY

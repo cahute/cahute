@@ -6,13 +6,13 @@ set -euo pipefail
 
 CONFIGURE_OPTS=()
 
-while IFS='\n' read -r LINE; do
+while IFS= read -r -d '' LINE; do
     IFS='=' read -r NAME VALUE <<< "$LINE"
 
     if [[ "$NAME" =~ ^(CAHUTE|CMAKE|CPACK)_ ]]; then
         CONFIGURE_OPTS+=("-D$NAME=$VALUE")
     fi
-done < <(env -0 | sort)
+done < <(env -0 | sort -z)
 
 if [[ "${#CONFIGURE_OPTS[@]}" -eq 0 ]]; then
     echo "No configure options passed." >&2

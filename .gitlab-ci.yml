@@ -46,6 +46,23 @@ stages:
         CAHUTE_UDEV: "ON"
         CAHUTE_UDEV_GROUP: "dialout"
 
+.build (fedora):
+    extends: .build
+    variables:
+        CMAKE_BUILD_TYPE: "RelWithDebInfo"
+        CMAKE_INSTALL_PREFIX: "/usr"
+        CAHUTE_APPSTREAM: "ON"
+        CAHUTE_CLI_PIE: "ON"
+        CAHUTE_INSTALL_UDEVDIR: "/usr/lib/udev"
+        CAHUTE_SHARED: "ON"
+        CAHUTE_UDEV: "ON"
+        CAHUTE_UDEV_GROUP: "dialout"
+        # CPackRPM has this weird requirement that the original path must be
+        # longer than the final debug path ("/usr/src/debug/cahute-<vs>/src_0")
+        # so we make the clone path longer in these cases.
+        # Note that this must be supported by the runner (which it is).
+        GIT_CLONE_PATH: "$CI_BUILDS_DIR/$CI_PROJECT_PATH/rpm-debuginfo-src"
+
 .build (arch):
     extends: .build
     variables:
@@ -82,6 +99,24 @@ stages:
         paths:
             - build/*.deb
 
+.package for fedora:
+    stage: package
+    rules:
+        - if: $CI_COMMIT_BRANCH == "develop"
+        - if: $CI_COMMIT_TAG
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          changes:
+          - ".gitlab-ci.yml"
+          - "CMakeLists.txt"
+    script:
+        - cd build && cpack -G RPM
+    variables:
+        # See GIT_CLONE_PATH assignment in ".build (fedora)" for more info.
+        GIT_CLONE_PATH: "$CI_BUILDS_DIR/$CI_PROJECT_PATH/rpm-debuginfo-src"
+    artifacts:
+        paths:
+            - build/*.rpm
+
 .publish docs:
     stage: publish
     image: registry.gitlab.com/cahute/docker-images/rsync:latest
@@ -115,6 +150,12 @@ build (x86_64-pc-linux-gnu, debian):
     variables:
         DEB_HOST_MULTIARCH: x86_64-linux-gnu
 
+build (x86_64-pc-linux-gnu, fedora):
+    extends: .build (fedora)
+    image: registry.gitlab.com/cahute/docker-images/x86_64-pc-linux-gnu:latest
+    variables:
+        CPACK_RPM_PACKAGE_ARCHITECTURE: x86_64
+
 build (x86_64-pc-linux-gnu, arch):
     extends: .build (arch)
     image: registry.gitlab.com/cahute/docker-images/x86_64-pc-linux-gnu:latest
@@ -138,6 +179,12 @@ build (aarch64-pc-linux-gnu, debian):
     variables:
         DEB_HOST_MULTIARCH: aarch64-linux-gnu
         CPACK_DEBIAN_PACKAGE_ARCHITECTURE: arm64
+
+build (aarch64-pc-linux-gnu, fedora):
+    extends: .build (fedora)
+    image: registry.gitlab.com/cahute/docker-images/aarch64-pc-linux-gnu:latest
+    variables:
+        CPACK_RPM_PACKAGE_ARCHITECTURE: aarch64
 
 build (powerpc64le-pc-linux-gnu, debian):
     extends: .build (debian)
@@ -265,6 +312,18 @@ package for debian (s390x):
     dependencies:
         - build (s390x-pc-linux-gnu, debian)
 
+package for fedora (x86_64):
+    extends: .package for fedora
+    image: registry.gitlab.com/cahute/docker-images/x86_64-pc-linux-gnu:latest
+    dependencies:
+        - build (x86_64-pc-linux-gnu, fedora)
+
+package for fedora (aarch64):
+    extends: .package for fedora
+    image: registry.gitlab.com/cahute/docker-images/aarch64-pc-linux-gnu:latest
+    dependencies:
+        - build (aarch64-pc-linux-gnu, fedora)
+
 # ---
 # 'lint packages' stage jobs.
 # ---
@@ -289,6 +348,21 @@ lint debian packages:
         - package for debian (ppc64el)
         #- package for debian (riscv64)
         - package for debian (s390x)
+
+lint fedora packages:
+    stage: lint packages
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          changes:
+          - ".gitlab-ci.yml"
+          - "CMakeLists.txt"
+    image: registry.gitlab.com/cahute/docker-images/rpmlint:latest
+    script:
+        - >
+            rpmlint --strict -r misc/rpmlintrc build/*.rpm
+    dependencies:
+        - package for fedora (x86_64)
+        - package for fedora (aarch64)
 
 # ---
 # 'publish' stage jobs.

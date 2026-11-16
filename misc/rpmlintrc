@@ -1,0 +1,2 @@
+addFilter(r"cahute-udev\.noarch: \w: only-non-binary-in-usr-lib")
+addFilter(r"\w+\.\w+: \w: no-manual-page-for-binary \w+")
