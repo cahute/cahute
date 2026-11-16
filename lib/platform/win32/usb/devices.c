@@ -669,27 +669,16 @@ match_win32_usb_device(dev_cookie *cookie, cahute_win32_device const *device) {
     else if (!strcmp(device->service, "libusbK"))
         usb_device.driver = CAHUTE_WIN32_USB_DRIVER_LIBUSBK;
     else if (!strcmp(device->service, "PVUSB")) {
-        if (device->driver_name
-            && !strcmp(device->driver_name, "CESG502 USB")) {
-            if (device->driver_version
-                && strcmp(device->driver_version, "1.0.0.0"))
-                usb_device.driver = CAHUTE_WIN32_USB_DRIVER_CESG_1;
-            else {
-                /* If no driver version is provided, we want to be conservative. */
-                usb_device.driver = CAHUTE_WIN32_USB_DRIVER_CESG_0;
-            }
-        }
+        if (device->driver_name && !strcmp(device->driver_name, "CESG502 USB"))
+            usb_device.driver = CAHUTE_WIN32_USB_DRIVER_CESG502;
     }
 
     switch (usb_device.driver) {
     case CAHUTE_WIN32_USB_DRIVER_VOLMGR:
         driver_name = "VOLMGR / USBSTOR";
         break;
-    case CAHUTE_WIN32_USB_DRIVER_CESG_0:
-        driver_name = "CESG 1.0.0.0";
-        break;
-    case CAHUTE_WIN32_USB_DRIVER_CESG_1:
-        driver_name = "CESG 1.0.0.1+";
+    case CAHUTE_WIN32_USB_DRIVER_CESG502:
+        driver_name = "CESG502";
         break;
     case CAHUTE_WIN32_USB_DRIVER_WINUSB:
         driver_name = "WinUSB";

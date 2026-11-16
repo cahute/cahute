@@ -338,7 +338,7 @@ find_bulk_pipes(
 }
 
 /**
- * Open a Win32 CESG link.
+ * Open a Win32 WinUSB bulk link.
  *
  * @param context
  * @param open_params

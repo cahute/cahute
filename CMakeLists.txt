@@ -449,7 +449,7 @@ if(WIN32)
         lib/platform/win32/misc/winusb.c
         lib/platform/win32/serial/detection.c
         lib/platform/win32/serial/link.c
-        lib/platform/win32/usb/cesg.c
+        lib/platform/win32/usb/cesg502.c
         lib/platform/win32/usb/detection.c
         lib/platform/win32/usb/devices.c
         lib/platform/win32/usb/open.c

@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright (C) 2024-2025 Thomas Touhey <thomas@touhey.fr>
+ * Copyright (C) 2024-2026 Thomas Touhey <thomas@touhey.fr>
  *
  * This software is governed by the CeCILL 2.1 license under French law and
  * abiding by the rules of distribution of free software. You can use, modify
@@ -27,8 +27,12 @@
  * ************************************************************************* */
 
 #include "internals.h"
+#define MAXIMUM_MAXIMUM_TRANSFER_SIZE 65536
+#define DEFAULT_MAXIMUM_TRANSFER_SIZE 4096
+#define BULKUSB_PARAMS_HKEY \
+    "System\\CurrentControlSet\\SERVICES\\BULKUSB\\Parameters"
 
-CAHUTE_DECLARE_TYPE(cahute_win32_cesg_link_cookie)
+CAHUTE_DECLARE_TYPE(cahute_win32_cesg502_link_cookie)
 
 /**
  * Win32 CESG link cookie.
@@ -40,17 +44,15 @@ CAHUTE_DECLARE_TYPE(cahute_win32_cesg_link_cookie)
  *           or write.
  * @property read_in_progress Whether a read operation is currently in
  *           progress.
- * @property max_read_capacity Maximum read capacity.
- * @property max_write_capacity Maximum write capacity.
+ * @property max_transfer_size Maximum transfer size.
  */
-struct cahute_win32_cesg_link_cookie {
+struct cahute_win32_cesg502_link_cookie {
     HANDLE handle;
     OVERLAPPED read_overlapped;
     OVERLAPPED write_overlapped;
     DWORD received;
     DWORD read_in_progress;
-    size_t max_read_capacity;
-    size_t max_write_capacity;
+    size_t max_transfer_size;
 };
 
 /**
@@ -60,7 +62,7 @@ struct cahute_win32_cesg_link_cookie {
  * @param cookie
  */
 CAHUTE_LOCAL(void)
-close_link(cahute_context *context, cahute_win32_cesg_link_cookie *cookie) {
+close_link(cahute_context *context, cahute_win32_cesg502_link_cookie *cookie) {
     if (!CancelIo(cookie->handle)) {
         DWORD werr = GetLastError();
         log_windows_error(context, "CancelIo", werr);
@@ -85,7 +87,7 @@ close_link(cahute_context *context, cahute_win32_cesg_link_cookie *cookie) {
 CAHUTE_LOCAL(int)
 receive_on_link(
     cahute_context *context,
-    cahute_win32_cesg_link_cookie *cookie,
+    cahute_win32_cesg502_link_cookie *cookie,
     cahute_u8 *buf,
     size_t capacity,
     size_t *receivedp,
@@ -96,13 +98,11 @@ receive_on_link(
     /* If a read operation is not already in progress, we want to
      * initiate it now. */
     if (!cookie->read_in_progress) {
-        size_t max_capacity = cookie->max_read_capacity;
-
-        /* Requesting with a capacity too high (e.g. 32768 bytes) results in a
+        /* Requesting with a capacity too high (e.g. 70000 bytes) results in a
          * 0x00000057 (ERROR_INVALID_PARAMETER) error with legacy CESG502.
          * Therefore, we want to limit to that size. */
-        if (max_capacity && capacity > max_capacity)
-            capacity = max_capacity;
+        if (cookie->max_transfer_size && capacity > cookie->max_transfer_size)
+            capacity = cookie->max_transfer_size;
 
         cookie->received = 0;
         ret = ReadFile(
@@ -182,7 +182,7 @@ receive_on_link(
 CAHUTE_LOCAL(int)
 send_on_link(
     cahute_context *context,
-    cahute_win32_cesg_link_cookie *cookie,
+    cahute_win32_cesg502_link_cookie *cookie,
     cahute_u8 const *buf,
     size_t size,
     size_t *sentp
@@ -190,8 +190,8 @@ send_on_link(
     DWORD sent;
     BOOL ret;
 
-    if (cookie->max_write_capacity && size > cookie->max_write_capacity)
-        size = cookie->max_write_capacity;
+    if (cookie->max_transfer_size && size > cookie->max_transfer_size)
+        size = cookie->max_transfer_size;
 
     ret =
         WriteFile(cookie->handle, buf, size, &sent, &cookie->write_overlapped);
@@ -245,41 +245,134 @@ cesg_link_interface = {
     (cahute_link_send_func *)send_on_link
 };
 
+/**
+ * Get the CESG502 maximum transfer sizes.
+ *
+ * @param context
+ * @param sizep Maximum transfer size to set.
+ * @return Cahute error code.
+ */
+CAHUTE_LOCAL(int)
+cahute_get_cesg502_maximum_transfer_size(
+    cahute_context *context,
+    size_t *sizep
+) {
+    HKEY key = INVALID_HANDLE_VALUE;
+    LSTATUS werr;
+    int err = CAHUTE_ERROR_NOT_FOUND;
+    DWORD value, value_size, value_type;
+    size_t max_transfer_size = DEFAULT_MAXIMUM_TRANSFER_SIZE;
+
+    werr = RegOpenKeyA(HKEY_LOCAL_MACHINE, BULKUSB_PARAMS_HKEY, &key);
+    if (werr == ERROR_FILE_NOT_FOUND)
+        goto fail;
+    else if (werr != ERROR_SUCCESS) {
+        log_windows_error(context, "RegOpenKeyA", werr);
+        goto fail;
+    }
+
+    value_size = sizeof(value);
+    werr = RegQueryValueExA(
+        key,
+        "MaximumTransferSize",
+        NULL,
+        &value_type,
+        (void *)&value,
+        &value_size
+    );
+    if (werr == ERROR_FILE_NOT_FOUND)
+        goto fail;
+    else if (werr != ERROR_SUCCESS) {
+        log_windows_error(context, "RegQueryValueA", werr);
+        goto fail;
+    }
+
+    if (value_type != REG_DWORD || value_size != sizeof(value)) {
+        msg(context,
+            ll_warn,
+            "Unsupported registry value type %d or size %d for "
+            "MaximumTransferSize.",
+            value_type,
+            value_size);
+        goto fail;
+    }
+
+    if (value > MAXIMUM_MAXIMUM_TRANSFER_SIZE) {
+        max_transfer_size = MAXIMUM_MAXIMUM_TRANSFER_SIZE;
+        err = CAHUTE_OK;
+
+        msg(context,
+            ll_info,
+            "Maximum transfer size obtained from registry (%uo) is "
+            "too high compared to the maximum (%" CAHUTE_PRIuSIZE
+            "o), "
+            "using said maximum.",
+            value,
+            MAXIMUM_MAXIMUM_TRANSFER_SIZE);
+
+        goto fail;
+    }
+
+    if (!value)
+        goto fail;
+
+    max_transfer_size = (size_t)value;
+    err = CAHUTE_OK;
+
+    msg(context,
+        ll_info,
+        "Maximum transfer size obtained from registry (%" CAHUTE_PRIuSIZE
+        "o).",
+        max_transfer_size);
+
+fail:
+    if (key != INVALID_HANDLE_VALUE)
+        RegCloseKey(key);
+
+    if (err)
+        msg(context,
+            ll_info,
+            "Maximum transfer size could not be obtained from registry, "
+            "using default value (%" CAHUTE_PRIuSIZE "o).",
+            max_transfer_size);
+
+    *sizep = max_transfer_size;
+
+    /* We always return OK here. */
+    return CAHUTE_OK;
+}
 
 /**
- * Open a Win32 CESG link.
+ * Open a Win32 CESG502 link.
  *
  * @param context
  * @param open_params
  * @param path Path to the device interface.
- * @param max_read_capacity Maximum buffer size to use when reading.
- *        This parameter is necessary since older versions of the driver
- *        do not support the read capacity of Cahute (CESG 1.0.0.0 does not
- *        support reading 32768 bytes at once). Set to 0 for no limit.
- * @param max_write_capacity Maximum buffer size to use when writing.
- *        This parameter is necessary since older versions of the driver
- *        do not support the write capacity of Cahute (CESG 1.0.0.0 does not
- *        support writing 32768 bytes at once). Set to 0 for no limit.
  * @return Error, or 0 if successful.
  */
 CAHUTE_INTERNAL(int)
-cahute_open_win32_cesg_link(
+cahute_open_win32_cesg502_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
-    char const *path,
-    size_t max_read_capacity,
-    size_t max_write_capacity
+    char const *path
 ) {
     HANDLE handle = INVALID_HANDLE_VALUE;
     HANDLE read_overlapped_event_handle = INVALID_HANDLE_VALUE;
     HANDLE write_overlapped_event_handle = INVALID_HANDLE_VALUE;
-    cahute_win32_cesg_link_cookie cookie;
+    cahute_win32_cesg502_link_cookie cookie;
+    size_t max_transfer_size;
     int err = CAHUTE_ERROR_UNKNOWN;
 
     msg(context,
         ll_info,
         "Opening a handle to the following device interface: %s",
         path);
+
+    /* Obtain the transfer size. */
+    err =
+        cahute_get_cesg502_maximum_transfer_size(context, &max_transfer_size);
+    if (err)
+        return err;
 
     /* The device is a USB device opened using CESG502. */
     handle = CreateFileA(
@@ -322,8 +415,7 @@ cahute_open_win32_cesg_link(
     memset(&cookie.write_overlapped, 0, sizeof(OVERLAPPED));
     cookie.read_overlapped.hEvent = read_overlapped_event_handle;
     cookie.write_overlapped.hEvent = write_overlapped_event_handle;
-    cookie.max_read_capacity = max_read_capacity;
-    cookie.max_write_capacity = max_write_capacity;
+    cookie.max_transfer_size = max_transfer_size;
 
     return cahute_open_serial_over_usb_bulk_link_from_interface(
         open_params,

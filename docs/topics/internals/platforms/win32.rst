@@ -310,10 +310,6 @@ behind a stream-oriented device interface, on which to use the fileapi_
           - ``01/29/2007`` (January 29th, 2007)
           - FA-124 2.04
 
-    Note that at least ``1.0.0.0`` from 2002 is known to return ``0x00000057``
-    (``ERROR_INVALID_PARAMETER``) if ``ReadFile`` is called with a buffer
-    too large (4096 bytes work, 32768 do not).
-
 Devices using the CESG502 driver, once opened, behaves mostly like native
 serial devices; see :ref:`internals-topic-win32-serial-link` for more
 information. It however has the following differences:
@@ -322,12 +318,38 @@ information. It however has the following differences:
 * It does the :ref:`device enabling control flow
   <protocol-topic-transport-serial-over-usb-bulk-enable-control-flow>`
   automatically when the device is connected;
-* On reading, the provided buffer must be large enough to get all of the
-  available data at once.
 
-  If using :ref:`Protocol 7.00 <protocol-topic-seven>`, 4096 bytes is enough,
-  however in other contexts such as :ref:`Protocol 7.00 Screenstreaming
-  <protocol-topic-seven-ohp>`, 32768 bytes is safer.
+.. note::
+
+    The maximum transfer (reading and writing) size, which should be the size
+    of the userland buffer, is determined by the driver when the device is
+    detected as connected to the system, with the following logic:
+
+    * If the registry key
+      ``System\CurrentControlSet\SERVICES\BULKUSB\Parameters`` does not exist,
+      use the default limit.
+    * If it does not have a ``MaximumTransferSize`` value or if the value is
+      not of type ``DWORD``, use the default limit.
+    * If it has a value above 65536, use 65536.
+    * Otherwise, use the value directly.
+
+    The default value with all known versions of the driver is 4 KiB (4096).
+
+    From the perspective of the userland program, there is no correct way to
+    determine the obtained limit directly:
+
+    * The driver does not present any way to obtain the limit used by its
+      runtime;
+    * The registry key can have been changed between the device opening by
+      the driver and the program execution.
+
+    Which means userland programs have the following choices:
+
+    * Read the registry key anyway, assuming it hasn't changed (or has been
+      increased);
+    * Do not read the registry key, and assume the lowest/default value.
+
+    Cahute chose the first option.
 
 .. _internals-topic-win32-volmgr:
 

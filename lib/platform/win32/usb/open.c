@@ -261,17 +261,12 @@ match_device(open_cookie *cookie, cahute_win32_usb_device const *device) {
     cahute_win32_device_filter filter;
     open_volmgr_cookie volmgr_cookie;
     device_interface_path path;
-    size_t max_read_capacity = 32768, max_write_capacity = 32768;
     int err = CAHUTE_ERROR_IMPL;
 
     path.path = NULL;
 
     switch (device->driver) {
-    case CAHUTE_WIN32_USB_DRIVER_CESG_0:
-        max_read_capacity = 4096;
-        max_write_capacity = 4096;
-        /* FALLTHRU */
-    case CAHUTE_WIN32_USB_DRIVER_CESG_1:
+    case CAHUTE_WIN32_USB_DRIVER_CESG502:
         /* For CESG502, the device interface to use is directly associated
          * with the device. */
         err = find_win32_interface(
@@ -283,12 +278,10 @@ match_device(open_cookie *cookie, cahute_win32_usb_device const *device) {
         if (err)
             goto fail;
 
-        err = cahute_open_win32_cesg_link(
+        err = cahute_open_win32_cesg502_link(
             cookie->context,
             cookie->open_params,
-            path.path,
-            max_read_capacity,
-            max_write_capacity
+            path.path
         );
         break;
 

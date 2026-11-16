@@ -34,11 +34,10 @@ CAHUTE_DECLARE_TYPE(cahute_win32_usb_device)
 
 #define CAHUTE_WIN32_USB_DRIVER_UNKNOWN      0
 #define CAHUTE_WIN32_USB_DRIVER_VOLMGR       1
-#define CAHUTE_WIN32_USB_DRIVER_CESG_0       2 /* CESG == 1.0.0.0 */
-#define CAHUTE_WIN32_USB_DRIVER_CESG_1       3 /* CESG >= 1.0.0.1 */
-#define CAHUTE_WIN32_USB_DRIVER_WINUSB       4
-#define CAHUTE_WIN32_USB_DRIVER_LIBUSB_WIN32 5
-#define CAHUTE_WIN32_USB_DRIVER_LIBUSBK      6
+#define CAHUTE_WIN32_USB_DRIVER_CESG502      2
+#define CAHUTE_WIN32_USB_DRIVER_WINUSB       3
+#define CAHUTE_WIN32_USB_DRIVER_LIBUSB_WIN32 4
+#define CAHUTE_WIN32_USB_DRIVER_LIBUSBK      5
 
 /**
  * USB device enumeration result.
@@ -66,12 +65,10 @@ cahute_enumerate_win32_usb_devices(
 );
 
 CAHUTE_INTERNAL(int)
-cahute_open_win32_cesg_link(
+cahute_open_win32_cesg502_link(
     cahute_context *context,
     cahute_usb_link_open_params *open_params,
-    char const *path,
-    size_t max_read_capacity,
-    size_t max_write_capacity
+    char const *path
 );
 
 CAHUTE_INTERNAL(int)
