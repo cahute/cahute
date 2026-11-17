@@ -267,13 +267,19 @@ match_device(open_cookie *cookie, cahute_win32_usb_device const *device) {
 
     switch (device->driver) {
     case CAHUTE_WIN32_USB_DRIVER_CESG502:
-        /* For CESG502, the device interface to use is directly associated
-         * with the device. */
+        /* For CESG502, two device interfaces are provided:
+         * - One with the "usb_device" device interface, standard and provided
+         *   by Windows' own USB stack;
+         * - One with the "pvusb" device interface, provided by CESG502/PVUSB.
+         *
+         * Since the PVUSB provides more specific ioctl calls we might want
+         * to use later, we want to use that interface rather than the
+         * standard one. */
         err = find_win32_interface(
             cookie->context,
             &path,
             device->device_id,
-            &cahute_guid_devinterface_usb_device
+            &cahute_guid_devinterface_pvusb
         );
         if (err)
             goto fail;

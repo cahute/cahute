@@ -53,6 +53,7 @@ CAHUTE_DECLARE_TYPE(cahute_win32_usbk_driver)
 CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devinterface_usb_hub;
 CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devinterface_usb_device;
 CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devinterface_volume;
+CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devinterface_pvusb;
 
 CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devclass_usb;
 CAHUTE_INTERNAL_DATA_DECL(GUID) cahute_guid_devclass_usb_device;

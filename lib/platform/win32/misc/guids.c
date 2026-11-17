@@ -74,6 +74,20 @@ DEFINE_GUID(
     0xfb,
     0x8b
 );
+DEFINE_GUID(
+    cahute_guid_devinterface_pvusb,
+    0xcde970e0,
+    0xe265,
+    0x11d5,
+    0x8e,
+    0x17,
+    0x00,
+    0x00,
+    0xc0,
+    0xcb,
+    0xb2,
+    0xf3
+);
 
 DEFINE_GUID(
     cahute_guid_devclass_usb,
