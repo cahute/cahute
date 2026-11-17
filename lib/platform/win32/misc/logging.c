@@ -54,7 +54,7 @@ cahute_win32_log_error(
         FORMAT_MESSAGE_FROM_SYSTEM,
         NULL,
         code,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
         buf,
         1023,
         NULL
@@ -71,9 +71,9 @@ cahute_win32_log_error(
         return;
     }
 
-    if (buf_size && buf[buf_size] == '\n')
+    if (buf_size && buf[buf_size - 1] == '\n')
         buf_size--;
-    if (buf_size && buf[buf_size] == '\r')
+    if (buf_size && buf[buf_size - 1] == '\r')
         buf_size--;
 
     buf[buf_size] = '\0';
